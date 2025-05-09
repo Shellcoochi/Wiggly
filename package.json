@@ -1,9 +1,10 @@
 {
-  "name": "Wiggly",
+  "name": "wiggly",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "pnpm --filter wiggly-flow dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
