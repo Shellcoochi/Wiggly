@@ -1,2 +1,3 @@
 export * from './card'
-export * from './Dialog'
+export * from './dialog'
+export * from './button'

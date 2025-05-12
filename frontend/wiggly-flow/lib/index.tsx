@@ -10,6 +10,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import BaseNode from "@/lib/nodes/base-node/node";
 import "remixicon/fonts/remixicon.css";
+import { Button } from "@/ui";
 
 const initialNodes = [
   {
@@ -41,6 +42,11 @@ function Flow() {
 
   return (
     <div style={{ height: "100%" }}>
+         <Button>默认</Button>
+      <Button variant="outline">描边</Button>
+      <Button variant="ghost">幽灵</Button>
+      <Button variant="destructive">危险操作</Button>
+      <Button size="sm">小号</Button>
       <ReactFlow
         proOptions={{ hideAttribution: true }}
         nodes={nodes}
