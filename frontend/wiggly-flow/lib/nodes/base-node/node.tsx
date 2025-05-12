@@ -3,7 +3,8 @@ import { Handle, Position } from "@xyflow/react";
 import { Card } from "@/ui";
 
 /**@todo any类型 */
-export default memo(({ data, isConnectable }: any) => {
+export default memo(({ nodeProps, children }: any) => {
+  const { data, isConnectable } = nodeProps;
   return (
     <>
       <Handle
@@ -12,7 +13,8 @@ export default memo(({ data, isConnectable }: any) => {
         onConnect={(params) => console.log("handle onConnect", params)}
         isConnectable={isConnectable}
       />
-      <Card title={data.label}  icon={<i className="ri-play-line"></i>}>
+      <Card title={data.label} icon={<i className="ri-play-line"></i>}>
+        {children}
       </Card>
       <Handle
         type="source"

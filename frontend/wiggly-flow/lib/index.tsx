@@ -7,10 +7,12 @@ import {
   useEdgesState,
   addEdge,
 } from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
-import BaseNode from "@/lib/nodes/base-node/node";
-import "remixicon/fonts/remixicon.css";
 import { Button } from "@/ui";
+import BaseNode from "@/lib/nodes/base-node/node";
+import StartNode from"@/lib/nodes/start/node"
+import "@xyflow/react/dist/style.css";
+import "remixicon/fonts/remixicon.css";
+
 
 const initialNodes = [
   {
@@ -29,7 +31,7 @@ const initialNodes = [
 const initialEdges = [{ id: "e1-2", source: "1", target: "2" }];
 
 const nodeTypes = {
-  baseNode: BaseNode,
+  baseNode: StartNode,
 };
 
 function Flow() {
