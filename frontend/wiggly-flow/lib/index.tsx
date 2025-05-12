@@ -7,9 +7,9 @@ import {
   useEdgesState,
   addEdge,
 } from "@xyflow/react";
-import { Button } from "@/ui";
+import { Button, Popover } from "@/ui";
 import BaseNode from "@/lib/nodes/base-node/node";
-import StartNode from"@/lib/nodes/start/node"
+import StartNode from "@/lib/nodes/start/node"
 import "@xyflow/react/dist/style.css";
 import "remixicon/fonts/remixicon.css";
 
@@ -18,13 +18,13 @@ const initialNodes = [
   {
     id: "1",
     type: "baseNode",
-    position: { x: 0, y: 0 },
+    position: { x: 100, y: 100 },
     data: { label: "12" },
   },
   {
     id: "2",
     type: "baseNode",
-    position: { x: 0, y: 100 },
+    position: { x: 300, y: 100 },
     data: { label: "2" },
   },
 ];
@@ -44,11 +44,17 @@ function Flow() {
 
   return (
     <div style={{ height: "100%" }}>
-         <Button>默认</Button>
+      <Button>默认</Button>
       <Button variant="outline">描边</Button>
       <Button variant="ghost">幽灵</Button>
       <Button variant="destructive">危险操作</Button>
       <Button size="sm">小号</Button>
+      <Popover
+        trigger={<Button>打开 Popover</Button>}
+        side="right"
+      >
+        <div className="text-sm text-gray-700">这是 Popover 内容</div>
+      </Popover>
       <ReactFlow
         proOptions={{ hideAttribution: true }}
         nodes={nodes}
