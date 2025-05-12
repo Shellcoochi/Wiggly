@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   ReactFlow,
   Controls,
@@ -7,7 +7,7 @@ import {
   useEdgesState,
   addEdge,
 } from "@xyflow/react";
-import { Button, Popover } from "@/ui";
+import { Button, Popover, Input } from "@/ui";
 import BaseNode from "@/lib/nodes/base-node/node";
 import StartNode from "@/lib/nodes/start/node"
 import "@xyflow/react/dist/style.css";
@@ -35,6 +35,7 @@ const nodeTypes = {
 };
 
 function Flow() {
+  const [value, setValue] = useState('');
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const onConnect = useCallback(
@@ -55,6 +56,14 @@ function Flow() {
       >
         <div className="text-sm text-gray-700">这是 Popover 内容</div>
       </Popover>
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="请输入内容"
+        clearable
+        onClear={() => setValue('')}
+        size="md"
+      />
       <ReactFlow
         proOptions={{ hideAttribution: true }}
         nodes={nodes}
