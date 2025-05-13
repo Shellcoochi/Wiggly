@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import {
   ReactFlow,
   Controls,
@@ -6,7 +6,6 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
-  useReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
 import { customAlphabet } from "nanoid";
@@ -38,40 +37,13 @@ const initialEdges = [{ id: "e1-2", source: "1", target: "2" }];
 function Flow() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const { screenToFlowPosition } = useReactFlow();
   const onConnect = useCallback(
     (params: any) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
-  const onConnectEnd = useCallback(
-    (event: any, connectionState: any) => {
-      if (!connectionState.isValid) {
-        const id = nanoNumeric();
-        const { clientX, clientY } =
-          "changedTouches" in event ? event.changedTouches[0] : event;
-        const newNode: any = {
-          id,
-          position: screenToFlowPosition({
-            x: clientX,
-            y: clientY,
-          }),
-          type: "start",
-          data: { label: `Node ${id}` },
-          origin: [0.5, 0.0],
-        };
-
-        setNodes((nds) => nds.concat(newNode));
-        setEdges((eds) =>
-          eds.concat({ id, source: connectionState.fromNode.id, target: id })
-        );
-      }
-    },
-    [screenToFlowPosition]
-  );
-
   return (
-    <div style={{ height: "100%" }}>
+    <div className="h-full relative">
       <ReactFlow
         proOptions={{ hideAttribution: true }}
         nodes={nodes}
@@ -80,11 +52,11 @@ function Flow() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        // onConnectEnd={onConnectEnd}
       >
         <Background />
         <Controls />
       </ReactFlow>
+      <div className="absolute bottom-0 right-0">panel</div>
     </div>
   );
 }
