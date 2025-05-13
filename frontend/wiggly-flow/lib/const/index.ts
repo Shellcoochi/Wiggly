@@ -29,16 +29,18 @@ export enum NodeType {
 
 export enum NodeGroup {}
 
-export const NodeConfig = {
+export const NodeConfig: any = {
   [NodeType.Start]: {
     type: NodeType.Start,
-    label: "开始",
     description: "",
+    width: 255,
+    data: { label: "开始" },
   },
   [NodeType.End]: {
     type: NodeType.End,
-    label: "结束",
     description: "",
+    width: 255,
+    data: { label: "结束" },
   },
 };
 

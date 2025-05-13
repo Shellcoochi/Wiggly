@@ -9,6 +9,7 @@ import {
 import { Popover } from "@/ui";
 import Selector, { SectionItemProps } from "./selector";
 import { numericId } from "@/lib/utils/flowHelper";
+import { NodeConfig } from "@/lib/const";
 
 interface HandleProps {
   type: "target" | "source";
@@ -30,15 +31,13 @@ export default memo(
 
       const currentNode = getNode(nodeId);
       if (!currentNode) return;
-
       const newNode: any = {
         id: newNodeId,
-        type: selectedNode.type,
         position: {
           x: currentNode.position.x,
           y: currentNode.position.y,
         },
-        data: { label: selectedNode.label },
+        ...NodeConfig[selectedNode.type],
       };
 
       const newEdge = {

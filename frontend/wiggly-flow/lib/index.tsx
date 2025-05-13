@@ -22,13 +22,15 @@ const initialNodes = [
     id: "1",
     type: "start",
     position: { x: 100, y: 100 },
-    data: { label: "12" },
+    width: 255,
+    data: { label: "开始" },
   },
   {
     id: "2",
     type: "end",
-    position: { x: 300, y: 100 },
-    data: { label: "2" },
+    position: { x: 400, y: 100 },
+    width: 255,
+    data: { label: "结束" },
   },
 ];
 const initialEdges = [{ id: "e1-2", source: "1", target: "2" }];
