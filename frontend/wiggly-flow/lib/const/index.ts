@@ -26,7 +26,10 @@ export enum NodeType {
   LoopEnd = "loop-end",
 }
 
-export const NodeData = {
+export enum NodeGroup {
+}
+
+export const NodeConfig = {
   [NodeType.Start]: {
     type: NodeType.Start,
     label: "开始",
