@@ -78,7 +78,7 @@ function Flow() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onConnectEnd={onConnectEnd}
+        // onConnectEnd={onConnectEnd}
       >
         <Background />
         <Controls />
