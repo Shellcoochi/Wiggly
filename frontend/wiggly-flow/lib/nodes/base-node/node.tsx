@@ -13,21 +13,21 @@ export default memo(({ nodeProps, children }: any) => {
         onConnect={(params) => console.log("handle onConnect", params)}
         isConnectable={isConnectable}
       />
-      <Card title={data.label} icon={<i className="ri-play-line"></i>}>
+      <Card
+        title={data.label}
+        subtitle={data.description}
+        icon={<i className="ri-play-line"></i>}
+      >
         {children}
       </Card>
       <Handle
         type="source"
         position={Position.Right}
-        id="a"
+        className="!w-5 !h-5 !bg-blue-500  flex flex-col justify-center items-center"
         isConnectable={isConnectable}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="b"
-        isConnectable={isConnectable}
-      />
+      >
+        <i className="ri-add-line text-white pointer-events-none" />
+      </Handle>
     </>
   );
 });

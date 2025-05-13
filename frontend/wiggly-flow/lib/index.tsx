@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ReactFlow,
   Controls,
@@ -6,72 +6,80 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
+  useReactFlow,
+  ReactFlowProvider,
 } from "@xyflow/react";
-import { Button, Popover, Input } from "@/ui";
-import BaseNode from "@/lib/nodes/base-node/node";
-import StartNode from "@/lib/nodes/start/node"
+import { customAlphabet } from "nanoid";
+import { NodeTypes } from "./const";
+
 import "@xyflow/react/dist/style.css";
 import "remixicon/fonts/remixicon.css";
 
+const nanoNumeric = customAlphabet("1234567890", 13);
 
 const initialNodes = [
   {
     id: "1",
-    type: "baseNode",
+    type: "start",
     position: { x: 100, y: 100 },
     data: { label: "12" },
   },
   {
     id: "2",
-    type: "baseNode",
+    type: "start",
     position: { x: 300, y: 100 },
     data: { label: "2" },
   },
 ];
 const initialEdges = [{ id: "e1-2", source: "1", target: "2" }];
 
-const nodeTypes = {
-  baseNode: StartNode,
-};
-
 function Flow() {
-  const [value, setValue] = useState('');
+  const getId = () => `${id++}`;
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const { screenToFlowPosition } = useReactFlow();
   const onConnect = useCallback(
     (params: any) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
+  const onConnectEnd = useCallback(
+    (event: any, connectionState: any) => {
+      if (!connectionState.isValid) {
+        const id = nanoNumeric();
+        const { clientX, clientY } =
+          "changedTouches" in event ? event.changedTouches[0] : event;
+        const newNode: any = {
+          id,
+          position: screenToFlowPosition({
+            x: clientX,
+            y: clientY,
+          }),
+          type: "start",
+          data: { label: `Node ${id}` },
+          origin: [0.5, 0.0],
+        };
+
+        setNodes((nds) => nds.concat(newNode));
+        setEdges((eds) =>
+          eds.concat({ id, source: connectionState.fromNode.id, target: id })
+        );
+      }
+    },
+    [screenToFlowPosition]
+  );
+
   return (
     <div style={{ height: "100%" }}>
-      <Button>默认</Button>
-      <Button variant="outline">描边</Button>
-      <Button variant="ghost">幽灵</Button>
-      <Button variant="destructive">危险操作</Button>
-      <Button size="sm">小号</Button>
-      <Popover
-        trigger={<Button>打开 Popover</Button>}
-        side="right"
-      >
-        <div className="text-sm text-gray-700">这是 Popover 内容</div>
-      </Popover>
-      <Input
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder="请输入内容"
-        clearable
-        onClear={() => setValue('')}
-        size="md"
-      />
       <ReactFlow
         proOptions={{ hideAttribution: true }}
         nodes={nodes}
         edges={edges}
-        nodeTypes={nodeTypes}
+        nodeTypes={NodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectEnd={onConnectEnd}
       >
         <Background />
         <Controls />
@@ -80,4 +88,8 @@ function Flow() {
   );
 }
 
-export default Flow;
+export default () => (
+  <ReactFlowProvider>
+    <Flow />
+  </ReactFlowProvider>
+);

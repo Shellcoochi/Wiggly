@@ -12,6 +12,7 @@
     "@radix-ui/react-slot": "^1.2.2",
     "@xyflow/react": "^12.6.0",
     "clsx": "^2.1.1",
+    "nanoid": "^5.1.5",
     "next": "15.3.2",
     "radix-ui": "^1.4.1",
     "react": "^19.0.0",

@@ -1,3 +1,5 @@
+import StartNode from "@/lib/nodes/start/node";
+
 export enum NodeType {
   Start = "start",
   End = "end",
@@ -28,11 +30,15 @@ export const NodeData = {
   [NodeType.Start]: {
     type: NodeType.Start,
     label: "开始",
-    desc: "",
+    description: "",
   },
   [NodeType.End]: {
     type: NodeType.End,
     label: "结束",
-    desc: "",
+    description: "",
   },
+};
+
+export const NodeTypes = {
+  [NodeType.Start]: StartNode,
 };
