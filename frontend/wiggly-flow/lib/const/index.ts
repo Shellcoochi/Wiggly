@@ -1,4 +1,5 @@
 import StartNode from "@/lib/nodes/start/node";
+import EndNode from "@/lib/nodes/end/node";
 
 export enum NodeType {
   Start = "start",
@@ -26,8 +27,7 @@ export enum NodeType {
   LoopEnd = "loop-end",
 }
 
-export enum NodeGroup {
-}
+export enum NodeGroup {}
 
 export const NodeConfig = {
   [NodeType.Start]: {
@@ -44,4 +44,5 @@ export const NodeConfig = {
 
 export const NodeTypes = {
   [NodeType.Start]: StartNode,
+  [NodeType.End]: EndNode,
 };

@@ -26,7 +26,7 @@ const initialNodes = [
   },
   {
     id: "2",
-    type: "start",
+    type: "end",
     position: { x: 300, y: 100 },
     data: { label: "2" },
   },
