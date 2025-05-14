@@ -2,21 +2,26 @@ import React, { memo } from "react";
 import { Position } from "@xyflow/react";
 import Handle from "./handle";
 import { Card } from "@/ui";
+import { NodeLabel } from "@/lib/const";
+import { FlowNode } from "@/lib/types";
 
-/**@todo any类型 */
-export default memo(({ nodeProps, children }: any) => {
-  const { data, isConnectable } = nodeProps;
+interface BaseNodeProps {
+  node: FlowNode;
+  children: React.ReactNode;
+}
+export default memo(({ node, children }: BaseNodeProps) => {
+  const { data, connectable, type } = node;
   return (
     <>
       <Handle
         type="target"
         position={Position.Left}
         onConnect={(params) => console.log("handle onConnect", params)}
-        isConnectable={isConnectable}
+        isConnectable={connectable}
       />
       <Card
-        title={data.label}
-        subtitle={data.description}
+        title={NodeLabel[type]}
+        subtitle={data?.description}
         icon={<i className="ri-play-line"></i>}
       >
         {children}
@@ -24,7 +29,7 @@ export default memo(({ nodeProps, children }: any) => {
       <Handle
         type="source"
         position={Position.Right}
-        isConnectable={isConnectable}
+        isConnectable={connectable}
       />
     </>
   );

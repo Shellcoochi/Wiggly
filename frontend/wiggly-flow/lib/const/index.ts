@@ -27,20 +27,44 @@ export enum NodeType {
   LoopEnd = "loop-end",
 }
 
+export enum NodeLabel {
+  start = "开始",
+  end = "结束",
+  Answer = "answer",
+  LLM = "llm",
+  KnowledgeRetrieval = "knowledge-retrieval",
+  QuestionClassifier = "question-classifier",
+  IfElse = "if-else",
+  Code = "code",
+  TemplateTransform = "template-transform",
+  HttpRequest = "http-request",
+  VariableAssigner = "variable-assigner",
+  VariableAggregator = "variable-aggregator",
+  Tool = "tool",
+  ParameterExtractor = "parameter-extractor",
+  Iteration = "iteration",
+  DocExtractor = "document-extractor",
+  ListFilter = "list-operator",
+  IterationStart = "iteration-start",
+  Assigner = "assigner",
+  Agent = "agent",
+  Loop = "loop",
+  LoopStart = "loop-start",
+  LoopEnd = "loop-end",
+}
+
 export enum NodeGroup {}
 
 export const NodeConfig: any = {
   [NodeType.Start]: {
     type: NodeType.Start,
-    description: "",
     width: 255,
-    data: { label: "开始" },
+    data: { label: "开始", description: "" },
   },
   [NodeType.End]: {
     type: NodeType.End,
-    description: "",
     width: 255,
-    data: { label: "结束" },
+    data: { label: "结束", description: "" },
   },
 };
 

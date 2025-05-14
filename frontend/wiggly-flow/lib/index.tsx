@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   ReactFlow,
   Controls,
@@ -6,15 +6,14 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
+  Node,
   ReactFlowProvider,
 } from "@xyflow/react";
-import { customAlphabet } from "nanoid";
 import { NodeTypes } from "./const";
+import Panel from "./nodes/base-node/panel";
 
 import "@xyflow/react/dist/style.css";
 import "remixicon/fonts/remixicon.css";
-
-const nanoNumeric = customAlphabet("1234567890", 13);
 
 const initialNodes = [
   {
@@ -35,12 +34,17 @@ const initialNodes = [
 const initialEdges = [{ id: "e1-2", source: "1", target: "2" }];
 
 function Flow() {
+  const [currentNode, setCurrentNode] = useState<Node>();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const onConnect = useCallback(
     (params: any) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
+
+  const handleNodeClick = (_: unknown, node: Node) => {
+    setCurrentNode(node);
+  };
 
   return (
     <div className="h-full relative">
@@ -52,11 +56,14 @@ function Flow() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeClick={handleNodeClick}
       >
         <Background />
         <Controls />
       </ReactFlow>
-      <div className="absolute bottom-0 right-0">panel</div>
+      <div className="absolute bottom-2 right-2">
+        <Panel node={currentNode}/>
+      </div>
     </div>
   );
 }

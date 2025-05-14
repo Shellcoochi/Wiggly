@@ -13,7 +13,7 @@ import { NodeConfig } from "@/lib/const";
 
 interface HandleProps {
   type: "target" | "source";
-  isConnectable: boolean;
+  isConnectable?: boolean;
   position: Position;
   onConnect?: OnConnect;
 }
@@ -31,10 +31,11 @@ export default memo(
 
       const currentNode = getNode(nodeId);
       if (!currentNode) return;
+      
       const newNode: any = {
         id: newNodeId,
         position: {
-          x: currentNode.position.x,
+          x: currentNode.position.x +300,
           y: currentNode.position.y,
         },
         ...NodeConfig[selectedNode.type],
@@ -45,7 +46,6 @@ export default memo(
         source: nodeId,
         target: newNodeId,
       };
-
       addNodes(newNode);
       addEdges(newEdge);
     };

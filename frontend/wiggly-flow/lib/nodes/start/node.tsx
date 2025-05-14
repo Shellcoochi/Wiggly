@@ -2,5 +2,5 @@ import React, { memo } from "react";
 import BaseNode from "../base-node/node";
 /**@todo any类型 */
 export default memo((props: any) => {
-  return <BaseNode nodeProps={props}>开始</BaseNode>;
+  return <BaseNode node={props}>开始</BaseNode>;
 });
