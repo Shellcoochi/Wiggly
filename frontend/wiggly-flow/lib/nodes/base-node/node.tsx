@@ -11,37 +11,38 @@ interface BaseNodeProps {
   children: React.ReactNode;
 }
 export default memo(({ node, children }: BaseNodeProps) => {
-  const { data, connectable, type } = node;
+  const { selected, data, connectable, type } = node;
   const [hovered, setHovered] = useState(false);
-
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <Card
-       className={clsx(
-        'px-4 py-2 rounded border border-gray-200 shadow-sm transition-transform duration-200 bg-white',
-        {
-          'shadow-xl scale-[1.02]': hovered,
-        }
-      )}
+        className={clsx(
+          "px-4 py-2 rounded border-2 transition duration-200 bg-white box-border",
+          {
+            "scale-[1.02]": hovered,
+            "border-blue-500 ring-2 ring-blue-100": selected,
+            "border-transparent": !selected,
+          }
+        )}
         title={NodeLabel[type]}
         subtitle={data?.description}
         icon={<i className="ri-play-line"></i>}
       >
         {children}
       </Card>
-       <Handle
+      <Handle
         type="target"
-        hovered={hovered}
+        hovered={hovered || selected}
         position={Position.Left}
         onConnect={(params) => console.log("handle onConnect", params)}
         isConnectable={connectable}
       />
       <Handle
         type="source"
-        hovered={hovered}
+        hovered={hovered || selected}
         position={Position.Right}
         isConnectable={connectable}
       />
