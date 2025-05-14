@@ -9,7 +9,7 @@ import {
 import { Popover } from "@/ui";
 import Selector, { SectionItemProps } from "./selector";
 import { numericId } from "@/lib/utils/flowHelper";
-import { NodeConfig } from "@/lib/const";
+import { EdgeType, NodeConfig } from "@/lib/const";
 import clsx from "clsx";
 
 interface HandleProps {
@@ -47,6 +47,7 @@ export default memo(
         id: newEdgeId,
         source: nodeId,
         target: newNodeId,
+        type: EdgeType.Base
       };
       addNodes(newNode);
       addEdges(newEdge);
@@ -59,9 +60,10 @@ export default memo(
             type={type}
             position={position}
             className={clsx(
+              '!border-none',
               hovered
                 ? "!w-5 !h-5 !bg-blue-500  flex flex-col justify-center items-center"
-                : "!w-1 !h-3 !bg-blue-500 !rounded-none"
+                : "!w-[3px] !min-w-[2px] !h-3 !bg-blue-500 !rounded-none"
             )}
             onConnect={onConnect}
             isConnectable={isConnectable}

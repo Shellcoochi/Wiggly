@@ -1,6 +1,3 @@
-import StartNode from "@/lib/nodes/start/node";
-import EndNode from "@/lib/nodes/end/node";
-
 export enum NodeType {
   Start = "start",
   End = "end",
@@ -25,6 +22,10 @@ export enum NodeType {
   Loop = "loop",
   LoopStart = "loop-start",
   LoopEnd = "loop-end",
+}
+
+export enum EdgeType {
+  Base = "base",
 }
 
 export enum NodeLabel {
@@ -66,9 +67,4 @@ export const NodeConfig: any = {
     width: 255,
     data: { label: "结束", description: "" },
   },
-};
-
-export const NodeTypes = {
-  [NodeType.Start]: StartNode,
-  [NodeType.End]: EndNode,
 };

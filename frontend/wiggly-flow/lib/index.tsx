@@ -9,7 +9,8 @@ import {
   Node,
   ReactFlowProvider,
 } from "@xyflow/react";
-import { NodeTypes } from "./const";
+import { NodeTypes } from "./nodes";
+import { EdgeTypes } from "./edges";
 import Panel from "./nodes/base-node/panel";
 
 import "@xyflow/react/dist/style.css";
@@ -26,12 +27,12 @@ const initialNodes = [
   {
     id: "2",
     type: "end",
-    position: { x: 400, y: 100 },
+    position: { x: 500, y: 100 },
     width: 255,
     data: { label: "结束" },
   },
 ];
-const initialEdges = [{ id: "e1-2", source: "1", target: "2" }];
+const initialEdges = [{ id: "e1-2", source: "1", target: "2", type: "base" }];
 
 function Flow() {
   const [currentNode, setCurrentNode] = useState<Node>();
@@ -41,7 +42,6 @@ function Flow() {
     (params: any) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
-
   const handleNodeClick = (_: unknown, node: Node) => {
     setCurrentNode(node);
   };
@@ -53,6 +53,7 @@ function Flow() {
         nodes={nodes}
         edges={edges}
         nodeTypes={NodeTypes}
+        edgeTypes={EdgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -62,7 +63,7 @@ function Flow() {
         <Controls />
       </ReactFlow>
       <div className="absolute bottom-2 right-2">
-        <Panel node={currentNode}/>
+        <Panel node={currentNode} />
       </div>
     </div>
   );
