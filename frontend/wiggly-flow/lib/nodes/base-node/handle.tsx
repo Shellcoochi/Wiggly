@@ -10,16 +10,18 @@ import { Popover } from "@/ui";
 import Selector, { SectionItemProps } from "./selector";
 import { numericId } from "@/lib/utils/flowHelper";
 import { NodeConfig } from "@/lib/const";
+import clsx from "clsx";
 
 interface HandleProps {
   type: "target" | "source";
   isConnectable?: boolean;
   position: Position;
   onConnect?: OnConnect;
+  hovered?: boolean;
 }
 
 export default memo(
-  ({ type, position, isConnectable, onConnect }: HandleProps) => {
+  ({ type, position, isConnectable, onConnect, hovered }: HandleProps) => {
     const { getNode, addNodes, addEdges } = useReactFlow();
     const nodeId = useNodeId();
 
@@ -31,11 +33,11 @@ export default memo(
 
       const currentNode = getNode(nodeId);
       if (!currentNode) return;
-      
+
       const newNode: any = {
         id: newNodeId,
         position: {
-          x: currentNode.position.x +300,
+          x: currentNode.position.x + 300,
           y: currentNode.position.y,
         },
         ...NodeConfig[selectedNode.type],
@@ -56,11 +58,17 @@ export default memo(
           <Handle
             type={type}
             position={position}
-            className="!w-5 !h-5 !bg-blue-500  flex flex-col justify-center items-center"
+            className={clsx(
+              hovered
+                ? "!w-5 !h-5 !bg-blue-500  flex flex-col justify-center items-center"
+                : "!w-1 !h-3 !bg-blue-500 !rounded-none"
+            )}
             onConnect={onConnect}
             isConnectable={isConnectable}
           >
-            <i className="ri-add-line text-white pointer-events-none" />
+            {hovered ? (
+              <i className="ri-add-line text-white pointer-events-none" />
+            ) : null}
           </Handle>
         }
       >
