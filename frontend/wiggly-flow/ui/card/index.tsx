@@ -19,7 +19,7 @@ export function Card({
   return (
       <div
       className={clsx(
-        "rounded-xl border shadow-sm bg-white p-2 w-full max-w-md",
+        "rounded-xl shadow-sm bg-white p-2 w-full max-w-md",
         className
       )}
     >
