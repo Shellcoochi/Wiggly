@@ -11,7 +11,7 @@ interface BaseNodeProps {
   children: React.ReactNode;
 }
 export default memo(({ node, children }: BaseNodeProps) => {
-  const { selected, data, connectable, type } = node;
+  const { selected, data, isConnectable, type } = node;
   const [hovered, setHovered] = useState(false);
   return (
     <div
@@ -38,13 +38,13 @@ export default memo(({ node, children }: BaseNodeProps) => {
         hovered={hovered || selected}
         position={Position.Left}
         onConnect={(params) => console.log("handle onConnect", params)}
-        isConnectable={connectable}
+        isConnectable={isConnectable}
       />
       <Handle
         type="source"
         hovered={hovered || selected}
         position={Position.Right}
-        isConnectable={connectable}
+        isConnectable={isConnectable}
       />
     </div>
   );
