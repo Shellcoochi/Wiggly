@@ -6,6 +6,7 @@ import {
   useReactFlow,
   type EdgeProps,
 } from "@xyflow/react";
+import clsx from "clsx";
 
 export default function CustomEdge(props: EdgeProps) {
   const {
@@ -16,8 +17,8 @@ export default function CustomEdge(props: EdgeProps) {
     targetY,
     sourcePosition,
     targetPosition,
-    style,
     markerEnd,
+    selected
   } = props;
   const { setEdges } = useReactFlow();
 
@@ -32,17 +33,17 @@ export default function CustomEdge(props: EdgeProps) {
   });
 
   const onEdgeClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEdges((edges) => edges.filter((edge) => edge.id !== id));
+    
   };
 
   return (
     <>
-      <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
-      <EdgeLabelRenderer>
+      <BaseEdge path={edgePath} markerEnd={markerEnd} className={clsx("!stroke-2", selected ? "!stroke-blue-500 " : "!stroke-blue-300 ")} />
+      {selected ? <EdgeLabelRenderer>
         <div
           style={{
             position: "absolute",
+            pointerEvents: "auto",
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
           }}
         >
@@ -51,7 +52,8 @@ export default function CustomEdge(props: EdgeProps) {
             onClick={onEdgeClick}
           />
         </div>
-      </EdgeLabelRenderer>
+      </EdgeLabelRenderer> : null}
+
     </>
   );
 }
