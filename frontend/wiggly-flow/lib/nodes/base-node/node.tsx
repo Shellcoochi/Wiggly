@@ -8,7 +8,7 @@ import clsx from "clsx";
 
 interface BaseNodeProps {
   node: FlowNodeProps;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 export default memo(({ node, children }: BaseNodeProps) => {
   const { selected, data, isConnectable, type } = node;
