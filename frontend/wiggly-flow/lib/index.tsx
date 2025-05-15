@@ -6,15 +6,16 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
-  Node,
+ type Node,
   ReactFlowProvider,
 } from "@xyflow/react";
 import { NodeTypes } from "./nodes";
 import { EdgeTypes } from "./edges";
-import Panel from "./nodes/base-node/panel";
+import Panel from "./panels/base-panel";
 
 import "@xyflow/react/dist/style.css";
 import "remixicon/fonts/remixicon.css";
+import { FlowNodeProps } from "./types";
 
 const initialNodes = [
   {
@@ -35,7 +36,7 @@ const initialNodes = [
 const initialEdges = [{ id: "e1-2", source: "1", target: "2", type: "base" }];
 
 function Flow() {
-  const [currentNode, setCurrentNode] = useState<Node>();
+  const [currentNode, setCurrentNode] = useState<FlowNodeProps>();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const onConnect = useCallback(
@@ -43,7 +44,7 @@ function Flow() {
     [setEdges]
   );
   const handleNodeClick = (_: unknown, node: Node) => {
-    setCurrentNode(node);
+    setCurrentNode(node as unknown as FlowNodeProps);
   };
 
   return (

@@ -1,13 +1,41 @@
-import { FC } from "react";
-import { Node } from "@xyflow/react";
+import { FC, useEffect, useState, ChangeEvent } from "react";
+import { Input } from "@/ui";
+import { FlowNodeProps } from "@/lib/types";
+import { useReactFlow } from "@xyflow/react";
+import { NodeLabel } from "@/lib/const";
 
 interface PanelProps {
-  node?: Node;
+  node?: FlowNodeProps;
 }
 
 const Panel: FC<PanelProps> = ({ node }) => {
-  const label = (node?.data?.label as string) || "节点";
-  const description = (node?.data?.description as string) || "请添加描述...";
+  const { updateNodeData } = useReactFlow();
+  const [label, setLabel] = useState<string>(node?.data.label ?? "节点");
+  const description = node?.data?.description ?? "请添加描述...";
+
+  useEffect(() => {
+    setLabel(node?.data.label ?? "节点");
+  }, [node?.data.label]);
+
+  const updateLabel = (val: string) => {
+    if (node) {
+      setLabel(val);
+      updateNodeData(node.id, {
+        label: val,
+      });
+    }
+  };
+
+  const handleLabelChange = (e: ChangeEvent<HTMLInputElement>) => {
+    updateLabel(e.target.value);
+  };
+
+  const handleLabelBlur = () => {
+    if (!label?.length && node) {
+      updateLabel(NodeLabel[node.type]);
+    }
+  };
+
   return (
     <div className="w-[400px] rounded-xl bg-white border border-gray-200 p-5 text-sm shadow-sm">
       {/* Header */}
@@ -16,7 +44,14 @@ const Panel: FC<PanelProps> = ({ node }) => {
           <div className="w-8 h-8 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg">
             ⚙️
           </div>
-          <div className="text-base font-semibold">{label}</div>
+          <div className="text-base font-semibold">
+            <Input
+              className="pl-0 border-none focus-within:!ring-0"
+              value={label}
+              onChange={handleLabelChange}
+              onBlur={handleLabelBlur}
+            />
+          </div>
         </div>
         <div className="mt-1 text-sm text-gray-400">{description}</div>
       </div>

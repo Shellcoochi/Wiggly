@@ -3,11 +3,11 @@ import { Position } from "@xyflow/react";
 import Handle from "./handle";
 import { Card } from "@/ui";
 import { NodeLabel } from "@/lib/const";
-import { FlowNode } from "@/lib/types";
+import { FlowNodeProps } from "@/lib/types";
 import clsx from "clsx";
 
 interface BaseNodeProps {
-  node: FlowNode;
+  node: FlowNodeProps;
   children: React.ReactNode;
 }
 export default memo(({ node, children }: BaseNodeProps) => {
@@ -27,7 +27,7 @@ export default memo(({ node, children }: BaseNodeProps) => {
             "border-transparent": !selected,
           }
         )}
-        title={NodeLabel[type]}
+        title={data?.label || NodeLabel[type]}
         subtitle={data?.description}
         icon={<i className="ri-play-line"></i>}
       >

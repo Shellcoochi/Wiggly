@@ -25,7 +25,8 @@ export default function CustomEdge(props: EdgeProps) {
     markerEnd,
     source,
     target,
-    selected
+    selected,
+    style
   } = props;
   const { addNodes, addEdges, setEdges } = useReactFlow();
   const [edgePath, labelX, labelY] = getBezierPath({
@@ -54,43 +55,49 @@ export default function CustomEdge(props: EdgeProps) {
       id: newSourceEdgeId,
       source: source,
       target: newNodeId,
-      type: EdgeType.Base
+      type: EdgeType.Base,
     };
     const newTargetEdge = {
       id: newTargetEdgeId,
       source: newNodeId,
       target: target,
-      type: EdgeType.Base
+      type: EdgeType.Base,
     };
     addNodes(newNode);
     addEdges([newSourceEdge, newTargetEdge]);
-    setEdges((eds) => eds.filter((e) => e.id !== id))
+    setEdges((eds) => eds.filter((e) => e.id !== id));
   };
 
   return (
     <>
       <BaseEdge
-        path={edgePath} markerEnd={markerEnd} className={clsx("!stroke-2", selected ? "!stroke-blue-500 " : "!stroke-blue-300 ")} />
-      {selected ? <EdgeLabelRenderer>
-        <div
-          style={{
-            position: "absolute",
-            pointerEvents: "auto",
-            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-          }}
-        >
-          <Popover
-            trigger={
-              <i
-                className="ri-add-line w-5 h-5 flex items-center justify-center bg-blue-500 text-white rounded-full"
-              />
-            }
+        path={edgePath}
+        markerEnd={markerEnd}
+        style={style}
+        className={clsx(
+          "!stroke-2",
+          selected ? "!stroke-blue-500 " : "!stroke-blue-300 "
+        )}
+      />
+      {selected ? (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: "absolute",
+              pointerEvents: "auto",
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+            }}
           >
-            <Selector onChange={handleSelectorChange} />
-          </Popover>
-        </div>
-      </EdgeLabelRenderer> : null}
-
+            <Popover
+              trigger={
+                <i className="ri-add-line w-5 h-5 flex items-center justify-center bg-blue-500 text-white rounded-full" />
+              }
+            >
+              <Selector onChange={handleSelectorChange} />
+            </Popover>
+          </div>
+        </EdgeLabelRenderer>
+      ) : null}
     </>
   );
 }
