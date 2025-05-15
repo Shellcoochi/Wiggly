@@ -68,3 +68,15 @@ export const NodeConfig: any = {
     data: { label: "结束", description: "" },
   },
 };
+
+export const VariableTypes = {
+  string: {
+    label: "String",
+  },
+  number: {
+    label: "Number",
+  },
+  boolean: {
+    label: "Boolean",
+  },
+};
