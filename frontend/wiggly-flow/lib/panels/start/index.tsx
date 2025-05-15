@@ -3,8 +3,8 @@ import { Accordion, AccordionItem } from "@/ui";
 
 const StartPanel: FC = () => {
   return (
-    <Accordion type="multiple">
-      <AccordionItem value="item-1" header="标题一">
+    <Accordion type="multiple" bordered={false} defaultValue={["item-1", "item-2"]}>
+      <AccordionItem value="item-1" header="标题一" actions="123">
         内容一
       </AccordionItem>
       <AccordionItem value="item-2" header="标题二">

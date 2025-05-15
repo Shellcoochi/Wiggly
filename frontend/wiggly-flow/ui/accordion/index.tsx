@@ -11,12 +11,12 @@ type BaseProps = {
   children: React.ReactNode;
 };
 
-interface AccordionItemProps
-  extends AccordionPrimitive.AccordionItemProps {
+interface AccordionItemProps extends AccordionPrimitive.AccordionItemProps {
   className?: string;
   header: React.ReactNode;
   children: React.ReactNode;
   disabled?: boolean;
+  actions?: React.ReactNode;
 }
 
 type AccordionSingleProps = {
@@ -75,40 +75,52 @@ export const Accordion = (props: AccordionProps) => {
 export const AccordionItem = React.forwardRef<
   HTMLDivElement,
   AccordionItemProps
->(({ className, header, children, disabled = false, ...props }, ref) => {
-  return (
-    <AccordionPrimitive.Item
-      ref={ref}
-      disabled={disabled}
-      className={clsx(
-        "border-b border-[#f0f0f0] last:border-none",
-        "bg-white",
-        className
-      )}
-      {...props}
-    >
-      <AccordionPrimitive.Header>
-        <AccordionPrimitive.Trigger
+>(
+  (
+    { className, header, children, actions, disabled = false, ...props },
+    ref
+  ) => {
+    return (
+      <AccordionPrimitive.Item
+        ref={ref}
+        disabled={disabled}
+        className={clsx(
+          "border-b border-[#f0f0f0] last:border-none",
+          "bg-white",
+          className
+        )}
+        {...props}
+      >
+        <AccordionPrimitive.Header
           className={clsx(
-            "group w-full px-4 py-3 flex items-center justify-between text-left",
-            "text-[16px] text-[#1f1f1f] font-medium hover:bg-[#f5f5f5]",
-            "transition-all disabled:cursor-not-allowed disabled:opacity-50"
+            "flex items-center justify-between px-4 py-3 transition-colors",
+            "hover:bg-[#f5f5f5]" 
           )}
         >
-          <span>{header}</span>
-          <i className="ri-arrow-down-s-line ml-2 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-        </AccordionPrimitive.Trigger>
-      </AccordionPrimitive.Header>
-      <AccordionPrimitive.Content
-        className={clsx(
-          "px-4 pb-4 text-[#595959] text-sm leading-relaxed",
-          "data-[state=closed]:animate-accordion-up",
-          "data-[state=open]:animate-accordion-down"
-        )}
-      >
-        {children}
-      </AccordionPrimitive.Content>
-    </AccordionPrimitive.Item>
-  );
-});
+          <AccordionPrimitive.Trigger
+            className={clsx(
+              "group flex items-center flex-1 text-left",
+              "text-[16px] text-[#1f1f1f] font-medium",
+              "transition-all disabled:cursor-not-allowed disabled:opacity-50"
+            )}
+          >
+            <i className="ri-arrow-down-s-line mr-2 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            <span>{header}</span>
+          </AccordionPrimitive.Trigger>
+          {actions && <div className="ml-4 flex-shrink-0">{actions}</div>}
+        </AccordionPrimitive.Header>
+
+        <AccordionPrimitive.Content
+          className={clsx(
+            "px-4 pb-4 text-[#595959] text-sm leading-relaxed",
+            "data-[state=closed]:animate-accordion-up",
+            "data-[state=open]:animate-accordion-down"
+          )}
+        >
+          {children}
+        </AccordionPrimitive.Content>
+      </AccordionPrimitive.Item>
+    );
+  }
+);
 AccordionItem.displayName = "AccordionItem";
