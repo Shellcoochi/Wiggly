@@ -1,5 +1,5 @@
-import { FC, useEffect, useState, ChangeEvent } from "react";
-import { Input } from "@/ui";
+import { FC, useEffect, useState } from "react";
+import { Input, InputChangeEvent } from "@/ui";
 import { FlowNodeProps } from "@/lib/types";
 import { useReactFlow } from "@xyflow/react";
 import { NodeLabel } from "@/lib/const";
@@ -11,11 +11,14 @@ interface PanelProps {
 const Panel: FC<PanelProps> = ({ node }) => {
   const { updateNodeData } = useReactFlow();
   const [label, setLabel] = useState<string>(node?.data.label ?? "节点");
-  const description = node?.data?.description ?? "请添加描述...";
+  const [description, setDescription] = useState<string>(
+    node?.data?.description ?? ""
+  );
 
   useEffect(() => {
     setLabel(node?.data.label ?? "节点");
-  }, [node?.data.label]);
+    setDescription(node?.data.description ?? "");
+  }, [node?.id]);
 
   const updateLabel = (val: string) => {
     if (node) {
@@ -26,8 +29,21 @@ const Panel: FC<PanelProps> = ({ node }) => {
     }
   };
 
-  const handleLabelChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const updateDescription = (val: string) => {
+    if (node) {
+      setDescription(val);
+      updateNodeData(node.id, {
+        description: val,
+      });
+    }
+  };
+
+  const handleLabelChange = (e: InputChangeEvent) => {
     updateLabel(e.target.value);
+  };
+
+  const handleDescriptionChange = (e: InputChangeEvent) => {
+    updateDescription(e.target.value);
   };
 
   const handleLabelBlur = () => {
@@ -53,7 +69,15 @@ const Panel: FC<PanelProps> = ({ node }) => {
             />
           </div>
         </div>
-        <div className="mt-1 text-sm text-gray-400">{description}</div>
+        <div className="mt-1 text-sm text-gray-400">
+          <Input
+            className="pl-0 border-none focus-within:!ring-0"
+            value={description}
+            inputType="textarea"
+            placeholder="请添加描述..."
+            onChange={handleDescriptionChange}
+          />
+        </div>
       </div>
 
       {/* 模型 */}
