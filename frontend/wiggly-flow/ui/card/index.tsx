@@ -29,10 +29,10 @@ export function Card({
           <h2 className="text-lg text-black font-semibold">{title}</h2>
         </div>
         {subtitle && (
-          <p className="text-sm text-gray-500 mt-2 break-words w-full">{subtitle}</p>
+          <p className="text-sm text-gray-500 mt-1 break-words w-full">{subtitle}</p>
         )}
       </div>
-      <div className="text-sm text-gray-700">{children}</div>
+      <div className="text-sm text-gray-700 mt-2">{children}</div>
     </div>
   );
 }

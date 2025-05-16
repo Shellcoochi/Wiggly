@@ -69,6 +69,12 @@ export const NodeConfig: any = {
   },
 };
 
+export enum VariableType {
+  String = "string",
+  Number = "number",
+  Boolean = "boolean",
+}
+
 export const VariableTypes = {
   string: {
     label: "String",

@@ -3,6 +3,7 @@ import { Dialog, Input } from "@/ui";
 
 type VariableType =
   | "string"
+  | "boolean"
   | "number"
   | "array"
   | "json"

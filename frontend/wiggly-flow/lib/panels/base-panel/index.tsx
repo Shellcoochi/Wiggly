@@ -74,7 +74,7 @@ const Panel: FC<PanelProps> = ({ node }) => {
           <Input
             className="pl-0 border-none focus-within:!ring-0"
             value={description}
-            inputType="textarea"
+            type="textarea"
             placeholder="请添加描述..."
             onChange={handleDescriptionChange}
           />
