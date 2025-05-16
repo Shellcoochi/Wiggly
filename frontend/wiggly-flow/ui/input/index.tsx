@@ -9,7 +9,7 @@ interface CustomInputProps {
   size?: "sm" | "md" | "lg";
   clearable?: boolean;
   onClear?: () => void;
-  inputType?: "text" | "password" | "textarea";
+  type?: "text" | "password" | "textarea" | "number";
   className?: string;
 }
 
@@ -41,7 +41,7 @@ export const Input = React.forwardRef<
       clearable = false,
       onClear,
       size = "md",
-      inputType = "text",
+      type = "text",
       className,
       value,
       onChange,
@@ -56,7 +56,7 @@ export const Input = React.forwardRef<
       value &&
       value.toString().length > 0 &&
       !disabled &&
-      inputType !== "textarea";
+      type !== "textarea";
 
     const handleClear = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -78,10 +78,10 @@ export const Input = React.forwardRef<
       "border-[#d9d9d9] hover:border-[#4096ff]",
       "disabled:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60",
       {
-        "h-8 text-sm px-2": size === "sm" && inputType !== "textarea",
-        "h-10 text-base px-3": size === "md" && inputType !== "textarea",
-        "h-12 text-lg px-4": size === "lg" && inputType !== "textarea",
-        "px-3 py-2": inputType === "textarea",
+        "h-8 text-sm px-2": size === "sm" && type !== "textarea",
+        "h-10 text-base px-3": size === "md" && type !== "textarea",
+        "h-12 text-lg px-4": size === "lg" && type !== "textarea",
+        "px-3 py-2": type === "textarea",
       },
       className
     );
@@ -98,7 +98,7 @@ export const Input = React.forwardRef<
             {prefix}
           </span>
         )}
-        {inputType === "textarea" ? (
+        {type === "textarea" ? (
           <textarea
             ref={ref as React.Ref<HTMLTextAreaElement>}
             value={value as string}
@@ -112,7 +112,7 @@ export const Input = React.forwardRef<
         ) : (
           <input
             ref={ref as React.Ref<HTMLInputElement>}
-            type={inputType}
+            type={type}
             value={value as string}
             onChange={onChange as React.ChangeEventHandler<HTMLInputElement>}
             onBlur={onBlur as React.FocusEventHandler<HTMLInputElement>}
