@@ -11,7 +11,7 @@ type VariableType =
   | "object"
   | "files";
 
-interface Variable {
+export interface VariableProps {
   name: string;
   description: string;
   type: VariableType;
@@ -19,10 +19,10 @@ interface Variable {
 }
 
 interface AddVariableDialogProps {
-  onSubmit?: (variable: Variable) => void;
+  onSubmit?: (variable: VariableProps) => void;
 }
 
-const defaultForm: Variable = {
+const defaultForm: VariableProps = {
   name: "",
   description: "",
   type: "string",
@@ -31,14 +31,13 @@ const defaultForm: Variable = {
 
 export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
   ({ onSubmit }) => {
-    const [form, setForm] = useState<Variable>(defaultForm);
+    const [form, setForm] = useState<VariableProps>(defaultForm);
 
-    const handleChange = (key: keyof Variable, value: any) => {
+    const handleChange = (key: keyof VariableProps, value: any) => {
       setForm((prev) => ({ ...prev, [key]: value }));
     };
 
     const handleSubmit = () => {
-      console.log(form);
       if (onSubmit) onSubmit(form);
       setForm(defaultForm);
     };

@@ -112,7 +112,7 @@ export const AccordionItem = React.forwardRef<
 
         <AccordionPrimitive.Content
           className={clsx(
-            "px-4 pb-4 text-[#595959] text-sm leading-relaxed",
+            "p-4 text-[#595959] text-sm leading-relaxed",
             "data-[state=closed]:animate-accordion-up",
             "data-[state=open]:animate-accordion-down"
           )}

@@ -5,7 +5,7 @@ import { useReactFlow } from "@xyflow/react";
 import { NodeLabel } from "@/lib/const";
 import { PanelTypes } from "../";
 
-interface PanelProps {
+export interface PanelProps {
   node?: FlowNodeProps;
 }
 
