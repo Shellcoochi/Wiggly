@@ -5,37 +5,37 @@ import { AddVariableDialog, VariableProps } from "@/lib/components";
 import VariableLabel from "@/lib/components/variable-label";
 import { PanelProps } from "../base-panel";
 
-const StartPanel: FC<PanelProps> = ({ node }) => {
+const EndPanel: FC<PanelProps> = ({ node }) => {
   const { updateNodeData } = useReactFlow();
-  const [variables, setVariables] = useState<VariableProps[]>([]);
+  const [outputs, setOutputs] = useState<VariableProps[]>([]);
 
   useEffect(() => {
     if (node) {
-      setVariables(node.data.variables ?? []);
+      setOutputs(node.data.outputs ?? []);
     }
   }, [node?.id]);
 
   useEffect(() => {
     if (node) {
       updateNodeData(node.id, {
-        variables: variables,
+        outputs: outputs,
       });
     }
-  }, [variables]);
+  }, [outputs]);
 
   const handleAddVariable = (data: VariableProps) => {
-    setVariables((prev) => prev.concat(data));
+    setOutputs((prev) => prev.concat(data));
   };
   return (
     <>
       <Accordion type="multiple" bordered={false} defaultValue={["input"]}>
         <AccordionItem
           value="input"
-          header="输入"
+          header="输出"
           actions={<AddVariableDialog onSubmit={handleAddVariable} />}
         >
           <div className="grid gap-1">
-            {variables?.map((variable) => (
+            {outputs?.map((variable) => (
               <VariableLabel
                 key={variable.name}
                 type={variable.type}
@@ -49,4 +49,4 @@ const StartPanel: FC<PanelProps> = ({ node }) => {
   );
 };
 
-export default memo(StartPanel);
+export default memo(EndPanel);
