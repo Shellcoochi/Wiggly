@@ -11,6 +11,12 @@ const StartPanel: FC<PanelProps> = ({ node }) => {
 
   useEffect(() => {
     if (node) {
+      setVariables(node.data.variables ?? []);
+    }
+  }, [node?.id]);
+
+  useEffect(() => {
+    if (node) {
       updateNodeData(node.id, {
         variables: variables,
       });

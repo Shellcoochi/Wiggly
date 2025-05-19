@@ -1,7 +1,11 @@
-import Icon from './icons';
+import { clsx } from "clsx";
+import Icon from "./icons";
 
-const IconEl = (props:any) => {
-  const { name, ...restProps } = props;
-  return <Icon {...restProps} name={name} />;
+const WigglyIcon = (props: any) => {
+  const { name, className, ...restProps } = props;
+  if (name.startsWith("ri-")) {
+    return <i className={clsx(name, className)} {...restProps}></i>;
+  }
+  return <Icon className={className} {...restProps} name={name} />;
 };
-export default IconEl;
+export default WigglyIcon;
