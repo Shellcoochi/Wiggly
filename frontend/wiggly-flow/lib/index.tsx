@@ -6,7 +6,7 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
- type Node,
+  type Node,
   ReactFlowProvider,
 } from "@xyflow/react";
 import { NodeTypes } from "./nodes";
@@ -16,6 +16,7 @@ import Panel from "./panels/base-panel";
 import "@xyflow/react/dist/style.css";
 import "remixicon/fonts/remixicon.css";
 import { FlowNodeProps } from "./types";
+import Toolbar from "./toolbar";
 
 const initialNodes = [
   {
@@ -63,7 +64,10 @@ function Flow() {
         <Background />
         <Controls />
       </ReactFlow>
-      <div className="absolute bottom-2 right-2">
+      <div className="absolute top-2 right-2 h-[50px] p-2 rounded-lg">
+        <Toolbar/>
+      </div>
+      <div className="absolute bottom-2 right-2  h-[calc(100%-50px-2rem)] overflow-hidden">
         <Panel node={currentNode} />
       </div>
     </div>

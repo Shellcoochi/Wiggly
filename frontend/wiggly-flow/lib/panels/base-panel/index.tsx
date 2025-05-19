@@ -55,7 +55,7 @@ const Panel: FC<PanelProps> = ({ node }) => {
   };
 
   return (
-    <div className="w-[400px] rounded-xl bg-white border border-gray-200 p-5 text-sm shadow-sm">
+    <div className="w-[400px] flex flex-col h-full rounded-xl bg-white border border-gray-200 p-5 text-sm shadow-sm">
       <div className="mb-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg">
@@ -80,7 +80,7 @@ const Panel: FC<PanelProps> = ({ node }) => {
           />
         </div>
       </div>
-      <div>
+      <div className="overflow-auto">
         {DynamicPanelComponent && <DynamicPanelComponent node={node} />}
       </div>
     </div>
