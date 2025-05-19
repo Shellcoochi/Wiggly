@@ -29,18 +29,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         className={clsx(
-          "inline-flex items-center justify-center rounded-md font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer",
+          "cursor-pointer inline-flex items-center justify-center font-medium transition-all select-none whitespace-nowrap outline-none disabled:opacity-60 disabled:cursor-not-allowed rounded-md",
           {
-            "bg-black text-white hover:bg-gray-800": variant === "default",
-            "bg-transparent border border-gray-300 hover:bg-gray-100":
+            "bg-[#1677ff] text-white hover:bg-[#4096ff] active:bg-[#0958d9]":
+              variant === "default",
+            "border border-[#d9d9d9] bg-white text-black hover:border-[#4096ff] hover:text-[#1677ff] hover:bg-[#e6f4ff]":
               variant === "outline",
-            "bg-transparent text-black hover:bg-gray-100": variant === "ghost",
-            "bg-red-600 text-white hover:bg-red-700": variant === "destructive",
+            "bg-transparent text-black hover:bg-[#f5f5f5] active:bg-[#e6f4ff]":
+              variant === "ghost",
+            "bg-[#ff4d4f] text-white hover:bg-[#ff7875] active:bg-[#d9363e]":
+              variant === "destructive",
           },
           {
-            "h-8 px-3 text-sm": size === "sm",
-            "h-10 px-4 text-base": size === "md",
-            "h-12 px-6 text-lg": size === "lg",
+            "h-7 px-3 text-xs": size === "sm",
+            "h-9 px-4 text-sm": size === "md",
+            "h-11 px-5 text-base": size === "lg",
           },
           className
         )}
