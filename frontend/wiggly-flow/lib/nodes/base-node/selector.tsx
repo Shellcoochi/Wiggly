@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Tabs } from "@/ui";
+import { Icon, Tabs } from "@/ui";
 
 export interface SectionItemProps {
   label: string;
@@ -41,13 +41,13 @@ const Selector: FC<SelectorProps> = ({ onChange }) => {
                       label: "开始",
                       type: "start",
                       color: "text-indigo-600",
-                      icon: <i className="ri-play-line" />,
+                      icon: <Icon name={"start"} />,
                     },
                     {
                       label: "结束",
                       type: "end",
                       color: "text-indigo-600",
-                      icon: <i className="ri-stop-line" />,
+                      icon: <Icon name={"end"} />,
                     },
                   ]}
                 />
