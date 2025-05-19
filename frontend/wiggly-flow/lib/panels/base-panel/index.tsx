@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from "react";
-import { Input, InputChangeEvent } from "@/ui";
+import { Icon, Input, InputChangeEvent } from "@/ui";
 import { FlowNodeProps } from "@/lib/types";
 import { useReactFlow } from "@xyflow/react";
 import { NodeLabel } from "@/lib/const";
@@ -59,7 +59,7 @@ const Panel: FC<PanelProps> = ({ node }) => {
       <div className="mb-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg">
-            ⚙️
+            <Icon name={node?.type}/>
           </div>
           <div className="text-base font-semibold">
             <Input

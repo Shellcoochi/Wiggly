@@ -1,7 +1,7 @@
 import React, { memo, useState } from "react";
 import { Position } from "@xyflow/react";
 import Handle from "./handle";
-import { Card } from "@/ui";
+import { Card, Icon } from "@/ui";
 import { NodeLabel } from "@/lib/const";
 import { FlowNodeProps } from "@/lib/types";
 import clsx from "clsx";
@@ -29,7 +29,7 @@ export default memo(({ node, children }: BaseNodeProps) => {
         )}
         title={data?.label || NodeLabel[type]}
         subtitle={data?.description}
-        icon={<i className="ri-play-line"></i>}
+        icon={<Icon name={node?.type} />}
       >
         {children}
       </Card>
