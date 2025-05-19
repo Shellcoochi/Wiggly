@@ -79,8 +79,8 @@ export const Select: FC<SelectProps> = ({
             const { label, value, children, key } = opt;
             if (children) {
               return (
-                <>
-                  <Primitive.Group key={key ?? value}>
+                <div key={key ?? value}>
+                  <Primitive.Group>
                     <Primitive.Label className="px-3 py-1 text-xs text-secondary">
                       {label ?? value}
                     </Primitive.Label>
@@ -96,7 +96,7 @@ export const Select: FC<SelectProps> = ({
                   {i < options.length - 1 ? (
                     <Primitive.Separator className="my-1 h-px bg-border-secondary" />
                   ) : null}
-                </>
+                </div>
               );
             } else {
               return (
