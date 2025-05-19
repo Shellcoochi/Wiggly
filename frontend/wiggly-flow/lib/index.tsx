@@ -65,7 +65,7 @@ function Flow() {
         <Controls />
       </ReactFlow>
       <div className="absolute top-2 right-2 h-[50px] p-2 rounded-lg">
-        <Toolbar/>
+        <Toolbar />
       </div>
       <div className="absolute bottom-2 right-2  h-[calc(100%-50px-2rem)] overflow-hidden">
         <Panel node={currentNode} />
