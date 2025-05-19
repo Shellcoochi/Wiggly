@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Button, Select, SelectOptionItemProps } from "@/ui";
+import { Button, Select, SelectOptionItemProps, Switch } from "@/ui";
 
 export interface ToolbarProps {
   run?: () => void;
@@ -24,6 +24,7 @@ const Toolbar: FC<ToolbarProps> = ({ run }) => {
   ];
   return (
     <div className="flex gap-1">
+      <Switch />
       <Select options={options} />
       <Button variant="outline" onClick={run}>
         运行
