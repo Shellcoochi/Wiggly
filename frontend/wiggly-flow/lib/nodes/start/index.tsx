@@ -8,7 +8,7 @@ export default memo((props: FlowNodeProps) => {
   const {
     data: { variables },
   } = props;
-
+  const handles = [{ id: "a", type: "source", content: <div>123</div> }];
   return (
     <BaseNode node={props}>
       <div className="grid gap-1">

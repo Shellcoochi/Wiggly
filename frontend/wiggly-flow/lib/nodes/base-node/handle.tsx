@@ -12,16 +12,26 @@ import { numericId } from "@/lib/utils/flowHelper";
 import { EdgeType, NodeConfig } from "@/lib/const";
 import clsx from "clsx";
 
-interface HandleProps {
+export interface HandleProps {
   type: "target" | "source";
+  id?: string;
   isConnectable?: boolean;
   position: Position;
   onConnect?: OnConnect;
   hovered?: boolean;
+  handleClass?: string;
 }
 
 export default memo(
-  ({ type, position, isConnectable, onConnect, hovered }: HandleProps) => {
+  ({
+    id,
+    type,
+    position,
+    isConnectable,
+    onConnect,
+    hovered,
+    handleClass,
+  }: HandleProps) => {
     const { getNode, addNodes, addEdges } = useReactFlow();
     const nodeId = useNodeId();
 
@@ -47,7 +57,7 @@ export default memo(
         id: newEdgeId,
         source: nodeId,
         target: newNodeId,
-        type: EdgeType.Base
+        type: EdgeType.Base,
       };
       addNodes(newNode);
       addEdges(newEdge);
@@ -57,10 +67,12 @@ export default memo(
       <Popover
         trigger={
           <Handle
+            id={id}
             type={type}
             position={position}
             className={clsx(
-              '!border-none',
+              "!border-none",
+              handleClass,
               hovered
                 ? "!w-5 !h-5 !bg-blue-500  flex flex-col justify-center items-center"
                 : "!w-[3px] !min-w-[2px] !h-3 !bg-blue-500 !rounded-none"
