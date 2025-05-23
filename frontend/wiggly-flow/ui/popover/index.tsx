@@ -10,6 +10,10 @@ interface PopoverProps {
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
   className?: string;
+  defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  modal?: boolean;
 }
 
 export function Popover({
@@ -18,19 +22,25 @@ export function Popover({
   side,
   align = "center",
   className,
+  defaultOpen,
+  open,
+  onOpenChange,
+  modal,
 }: PopoverProps) {
   return (
-    <RadixPopover.Root>
+    <RadixPopover.Root
+      defaultOpen={defaultOpen}
+      open={open}
+      onOpenChange={onOpenChange}
+      modal={modal}
+    >
       <RadixPopover.Trigger asChild>{trigger}</RadixPopover.Trigger>
       <RadixPopover.Portal>
         <RadixPopover.Content
           side={side}
           align={align}
           sideOffset={8}
-          className={clsx(
-            "rounded-md bg-white p-4 shadow-md z-50",
-            className
-          )}
+          className={clsx("rounded-md bg-white p-4 shadow-md z-50", className)}
         >
           {children}
           <RadixPopover.Arrow className="fill-white" />

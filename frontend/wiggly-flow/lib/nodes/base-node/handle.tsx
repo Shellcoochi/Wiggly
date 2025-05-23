@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import {
   Handle,
   Position,
@@ -33,6 +33,7 @@ export default memo(
     handleClass,
   }: HandleProps) => {
     const { getNode, addNodes, addEdges } = useReactFlow();
+    const [open, setOpen] = useState(false);
     const nodeId = useNodeId();
 
     const handleSelectorChange = (selectedNode: SectionItemProps) => {
@@ -62,10 +63,17 @@ export default memo(
       };
       addNodes(newNode);
       addEdges(newEdge);
+      handleOpenChange();
+    };
+
+    const handleOpenChange = () => {
+      setOpen(!open);
     };
 
     return (
       <Popover
+        open={open}
+        onOpenChange={handleOpenChange}
         trigger={
           <Handle
             id={id}
