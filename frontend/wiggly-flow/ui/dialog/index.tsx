@@ -1,5 +1,6 @@
 import { ReactNode, FC } from "react";
 import { Dialog as Primitive } from "radix-ui";
+import { Icon } from "../icon";
 
 interface DialogProps {
   title?: ReactNode;
@@ -43,7 +44,7 @@ export const Dialog: FC<DialogProps> = ({
             className="cursor-pointer absolute right-2.5 top-2.5 inline-flex size-[25px] appearance-none items-center justify-center rounded-full text-primary bg-gray-100 hover:bg-purple-100 "
             aria-label="Close"
           >
-            <i className="ri-close-line" />
+            <Icon name="ri-close-line" />
           </button>
         </Primitive.Close>
       </Primitive.Content>

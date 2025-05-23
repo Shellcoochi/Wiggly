@@ -56,6 +56,7 @@ export default memo(
       const newEdge = {
         id: newEdgeId,
         source: nodeId,
+        sourceHandle: id,
         target: newNodeId,
         type: EdgeType.Base,
       };

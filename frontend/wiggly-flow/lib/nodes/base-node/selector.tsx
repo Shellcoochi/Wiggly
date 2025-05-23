@@ -1,11 +1,12 @@
 import { FC } from "react";
 import { Icon, Tabs } from "@/ui";
+import { NodeType } from "@/lib/const";
 
 export interface SectionItemProps {
   label: string;
   type: string;
   icon: React.ReactNode;
-  color: string;
+  color?: string;
 }
 interface SelectorProps {
   onChange?: (value: SectionItemProps) => void;
@@ -39,15 +40,21 @@ const Selector: FC<SelectorProps> = ({ onChange }) => {
                   items={[
                     {
                       label: "开始",
-                      type: "start",
+                      type: NodeType.Start,
                       color: "text-indigo-600",
-                      icon: <Icon name={"start"} />,
+                      icon: <Icon name="start" />,
                     },
                     {
                       label: "结束",
-                      type: "end",
+                      type: NodeType.End,
                       color: "text-indigo-600",
-                      icon: <Icon name={"end"} />,
+                      icon: <Icon name="end" />,
+                    },
+                    {
+                      label: "条件",
+                      color: "text-indigo-600",
+                      type: NodeType.IfElse,
+                      icon: <Icon name="if-else" />,
                     },
                   ]}
                 />

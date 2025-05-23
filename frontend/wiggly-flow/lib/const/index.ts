@@ -35,7 +35,7 @@ export enum NodeLabel {
   LLM = "llm",
   KnowledgeRetrieval = "knowledge-retrieval",
   QuestionClassifier = "question-classifier",
-  IfElse = "if-else",
+  IfElse = "条件",
   Code = "code",
   TemplateTransform = "template-transform",
   HttpRequest = "http-request",
@@ -60,12 +60,17 @@ export const NodeConfig: any = {
   [NodeType.Start]: {
     type: NodeType.Start,
     width: 255,
-    data: { label: "开始", description: "" },
+    data: { label: NodeLabel.start, description: "" },
   },
   [NodeType.End]: {
     type: NodeType.End,
     width: 255,
-    data: { label: "结束", description: "" },
+    data: { label: NodeLabel.end, description: "" },
+  },
+  [NodeType.IfElse]: {
+    type: NodeType.IfElse,
+    width: 255,
+    data: { label: NodeLabel.IfElse, description: "" },
   },
 };
 
@@ -84,5 +89,67 @@ export const VariableTypes = {
   },
   boolean: {
     label: "Boolean",
+  },
+};
+
+export enum ComparisonOperator {
+  contains = "contains",
+  notContains = "not contains",
+  startWith = "start with",
+  endWith = "end with",
+  is = "is",
+  isNot = "is not",
+  empty = "empty",
+  notEmpty = "not empty",
+  null = "null",
+  notNull = "not null",
+  in = "in",
+  notIn = "not in",
+  allOf = "all of",
+  exists = "exists",
+  notExists = "not exists",
+  before = "before",
+  after = "after",
+}
+
+export enum ComparisonOperatorLabel {
+  contains = "包含",
+  "not contains" = "不包含",
+  "start with" = "开始是",
+  "end with" = "结束是",
+  is = "是",
+  "is not" = "不是",
+  empty = "为空",
+  "not empty" = "不为空",
+  null = "空",
+  "not null" = "不为空",
+  in = "是",
+  "not in" = "不是",
+  "all of" = "全部是",
+  exists = "存在",
+  "not exists" = "不存在",
+  before = "早于",
+  after = "晚于",
+}
+
+export const ComparisonOperators = {
+  string: {
+    contains: "包含",
+    "not contains": "不包含",
+    "start with": "开始是",
+    "end with": "结束是",
+    is: "是",
+    "is not": "不是",
+    empty: "为空",
+    "not empty": "不为空",
+    null: "空",
+    "not null": "不为空",
+    in: "是",
+    "not in": "不是",
+    "all of": "全部是",
+    exists: "存在",
+    "not exists": "不存在",
+    before: "早于",
+    after: "晚于",
   },
 };

@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Button, Select, SelectOptionItemProps, Switch } from "@/ui";
+import { Button, Select, SelectOptionItemProps, Switch, Tag } from "@/ui";
 
 export interface ToolbarProps {
   run?: () => void;
@@ -24,6 +24,7 @@ const Toolbar: FC<ToolbarProps> = ({ run }) => {
   ];
   return (
     <div className="flex gap-1">
+      <Tag color="primary">tag</Tag>
       <Switch />
       <Select options={options} />
       <Button variant="outline" onClick={run}>

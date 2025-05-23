@@ -78,7 +78,7 @@ export default memo(
             .map((handle) => (
               <div
                 key={`${handle.targetId}-${handle.sourceId}`}
-                className="flex justify-between min-h-6"
+                className="flex justify-between min-h-6 my-1"
               >
                 <div className="right-4.5 relative">
                   {handle.targetId ? (
@@ -91,7 +91,7 @@ export default memo(
                     />
                   ) : null}
                 </div>
-                <div className="overflow-hidden">{handle.content}</div>
+                <div className="overflow-hidden w-full">{handle.content}</div>
                 <div className="left-4.5 relative">
                   {handle.sourceId ? (
                     <Handle
