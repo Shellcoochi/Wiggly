@@ -9,3 +9,4 @@ export * from "./icon";
 export * from "./select";
 export * from "./switch";
 export * from "./tag";
+export * from "./tooltip";
