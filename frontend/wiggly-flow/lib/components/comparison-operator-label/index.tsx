@@ -1,45 +1,39 @@
-import { VariableType } from "@/lib/const";
-import { FC, memo } from "react";
+"use client";
+
+import { ComparisonOperator, ComparisonOperatorName } from "@/lib/const";
 import { clsx } from "clsx";
+import { ReactNode } from "react";
 
-interface ComparisonOperatorLabelProps {
-  type?: string;
-  label?: string;
-  isRequired?: boolean;
+type ConditionTextProps = {
+  field: string;
+  operator: ComparisonOperator;
+  value?: ReactNode;
   className?: string;
-}
+};
 
-const ComparisonOperatorLabel: FC<ComparisonOperatorLabelProps> = ({
-  type,
-  isRequired,
-  label,
+export function ComparisonOperatorLabel({
+  field,
+  operator,
+  value,
   className,
-}) => {
-  const renderIcon = () => {
-    if (type == "string") {
-      return "{str.}";
-    } else {
-      return "{var}";
-    }
-  };
+}: ConditionTextProps) {
+  const opLabel = ComparisonOperatorName[operator];
+
+  const showValue = ![ComparisonOperator.empty, ComparisonOperator.notEmpty].includes(operator);
 
   return (
-    <div
+    <span
       className={clsx(
-        "flex justify-between px-1 rounded-md items-center font-mono h-6  bg-gray-100 text-sm",
+        "text-xs text-gray-800 h-6",
+        "inline-flex items-center max-w-full overflow-hidden",
+        "px-1 rounded-md",
+        "bg-gray-100",
         className
       )}
     >
-      <span className="text-gray-800">
-        <span className="text-gray-500 rounded">{renderIcon()}</span>
-        {label ?? "未定义"}
-      </span>
-
-      {isRequired && (
-        <span className="flex items-center text-gray-500">必填</span>
-      )}
-    </div>
+      <span className="font-medium truncate">{field}</span>
+      <span className="mx-1 text-primary shrink-0">{opLabel}</span>
+      {showValue && <span className="truncate">{value}</span>}
+    </span>
   );
-};
-
-export default memo(ComparisonOperatorLabel);
+}

@@ -91,7 +91,7 @@ export default memo(
                     />
                   ) : null}
                 </div>
-                <div className="overflow-hidden w-full">{handle.content}</div>
+                <div className="flex items-center overflow-hidden w-full">{handle.content}</div>
                 <div className="left-4.5 relative">
                   {handle.sourceId ? (
                     <Handle

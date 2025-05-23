@@ -26,7 +26,7 @@ const VariableLabel: FC<VariableLabelProps> = ({
   return (
     <div
       className={clsx(
-        "flex justify-between px-1 rounded-md items-center font-mono h-6  bg-gray-100 text-sm",
+        "flex justify-between px-1 rounded-md items-center font-mono h-6  bg-gray-100 text-xs",
         className
       )}
     >

@@ -112,7 +112,7 @@ export enum ComparisonOperator {
   after = "after",
 }
 
-export enum ComparisonOperatorLabel {
+export enum ComparisonOperatorName {
   contains = "包含",
   "not contains" = "不包含",
   "start with" = "开始是",
