@@ -13,34 +13,60 @@ export default memo((props: FlowNodeProps) => {
     {
       sourceId: "2",
       content: (
-        <div className="flex-col flex gap-0  w-full">
-          <ComparisonOperatorLabel
-            className="w-full"
-            field="密码"
-            operator={ComparisonOperator.contains}
-            value="abcab"
-          />
-          <div className="text-xs font-bold relative z-10 -my-1.5 ml-auto mr-2 px-2 text-primary">
-            AND
+        <div className="flex w-full mb-1">
+          <div className="text-xs font-bold w-[38px] text-right text-primary pr-2 shrink-0 content-center">IF</div>
+          <div className="flex flex-col gap-0 px-2 w-full border-l-2 border-r-2 border-solid border-gray-200 rounded-l-md rounded-r-md">
+            <ComparisonOperatorLabel
+              className="w-full"
+              field="密码"
+              operator={ComparisonOperator.contains}
+              value="abcab"
+            />
+            <div className="text-xs font-bold relative z-10 -my-1.5 ml-auto mr-4 px-2 text-primary">
+              AND
+            </div>
+            <ComparisonOperatorLabel
+              className="w-full"
+              field="密码"
+              operator={ComparisonOperator.contains}
+              value="abcab"
+            />
+            <div className="text-xs font-bold relative z-10 -my-1.5 ml-auto mr-4 px-2 text-primary">
+              AND
+            </div>
+            <ComparisonOperatorLabel
+              className="w-full"
+              field="密码"
+              operator={ComparisonOperator.contains}
+              value="abcab"
+            />
           </div>
-          <ComparisonOperatorLabel
-            className="w-full"
-            field="密码"
-            operator={ComparisonOperator.contains}
-            value="abcab"
-          />
         </div>
       ),
     },
     {
       sourceId: "3",
       content: (
-        <ComparisonOperatorLabel
-          className="w-full"
-          field="密码"
-          operator={ComparisonOperator.startWith}
-          value="abcab"
-        />
+        <div className="flex w-full">
+          <div className="text-xs font-bold  w-[38px]text-right text-primary pr-2 shrink-0 content-center">ELSE</div>
+          <div className="flex flex-col gap-0 px-2 w-full border-l-2 border-r-2 border-solid border-gray-200 rounded-l-md rounded-r-md">
+            <ComparisonOperatorLabel
+              className="w-full"
+              field="密码"
+              operator={ComparisonOperator.contains}
+              value="abcab"
+            />
+            <div className="text-xs font-bold relative z-10 -my-1.5 ml-auto mr-4 px-2 text-primary">
+              AND
+            </div>
+            <ComparisonOperatorLabel
+              className="w-full"
+              field="密码"
+              operator={ComparisonOperator.contains}
+              value="abcab"
+            />
+          </div>
+        </div>
       ),
     },
   ];
