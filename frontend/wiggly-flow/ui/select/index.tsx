@@ -30,6 +30,7 @@ interface SelectProps {
   disabled?: boolean;
   required?: boolean;
   placeholder?: string;
+  className?: string;
 }
 
 export const Select: FC<SelectProps> = ({
@@ -40,6 +41,7 @@ export const Select: FC<SelectProps> = ({
   disabled,
   required,
   options,
+  className,
 }) => (
   <Primitive.Root
     value={value}
@@ -54,7 +56,8 @@ export const Select: FC<SelectProps> = ({
         "px-3 rounded border border-border bg-white",
         "text-sm text-text-primary placeholder:text-text-disabled",
         "shadow-sm hover:border-border-hover hover:shadow focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-ring",
-        "transition-all"
+        "transition-all",
+        className
       )}
     >
       <Primitive.Value placeholder={placeholder} />

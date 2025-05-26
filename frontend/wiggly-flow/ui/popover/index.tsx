@@ -14,6 +14,7 @@ interface PopoverProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   modal?: boolean;
+  showArrow?: boolean;
 }
 
 export function Popover({
@@ -26,6 +27,7 @@ export function Popover({
   open,
   onOpenChange,
   modal,
+  showArrow = true,
 }: PopoverProps) {
   return (
     <RadixPopover.Root
@@ -43,7 +45,7 @@ export function Popover({
           className={clsx("rounded-md bg-white p-4 shadow-md z-50", className)}
         >
           {children}
-          <RadixPopover.Arrow className="fill-white" />
+          {showArrow ? <RadixPopover.Arrow className="fill-white" /> : null}
         </RadixPopover.Content>
       </RadixPopover.Portal>
     </RadixPopover.Root>

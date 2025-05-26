@@ -28,10 +28,10 @@ const initialNodes = [
   },
   {
     id: "2",
-    type: "end",
+    type: "if-else",
     position: { x: 500, y: 100 },
     width: 255,
-    data: { label: "结束" },
+    data: { label: "条件" },
   },
 ];
 const initialEdges = [{ id: "e1-2", source: "1", target: "2", type: "base" }];

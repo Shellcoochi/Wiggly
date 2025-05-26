@@ -1,8 +1,7 @@
 import React, { memo } from "react";
 import BaseNode from "../base-node/node";
 import { FlowNodeProps } from "@/lib/types";
-import VariableLabel from "@/lib/components/variable-label";
-import { VariableProps } from "@/lib/components";
+import { VariableProps, VariableLabel } from "@/lib/components";
 
 export default memo((props: FlowNodeProps) => {
   const {

@@ -7,8 +7,9 @@ import {
   VariableLabel,
 } from "@/lib/components";
 import { PanelProps } from "../base-panel";
+import LogicBuilder from "./logic-builder";
 
-const EndPanel: FC<PanelProps> = ({ node }) => {
+const IfElsePanel: FC<PanelProps> = ({ node }) => {
   const { updateNodeData } = useReactFlow();
   const [outputs, setOutputs] = useState<VariableProps[]>([]);
 
@@ -31,25 +32,9 @@ const EndPanel: FC<PanelProps> = ({ node }) => {
   };
   return (
     <>
-      <Accordion type="multiple" bordered={false} defaultValue={["input"]}>
-        <AccordionItem
-          value="input"
-          header="输出"
-          actions={<AddVariableDialog onSubmit={handleAddVariable} />}
-        >
-          <div className="grid gap-1">
-            {outputs?.map((variable) => (
-              <VariableLabel
-                key={variable.name}
-                type={variable.type}
-                label={variable.name}
-              />
-            ))}
-          </div>
-        </AccordionItem>
-      </Accordion>
+      <LogicBuilder />
     </>
   );
 };
 
-export default memo(EndPanel);
+export default memo(IfElsePanel);

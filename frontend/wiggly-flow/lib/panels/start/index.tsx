@@ -1,8 +1,11 @@
 import { FC, memo, useEffect, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { Accordion, AccordionItem } from "@/ui";
-import { AddVariableDialog, VariableProps } from "@/lib/components";
-import VariableLabel from "@/lib/components/variable-label";
+import {
+  AddVariableDialog,
+  VariableProps,
+  VariableLabel,
+} from "@/lib/components";
 import { PanelProps } from "../base-panel";
 
 const StartPanel: FC<PanelProps> = ({ node }) => {

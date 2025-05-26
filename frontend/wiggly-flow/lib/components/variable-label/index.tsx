@@ -1,5 +1,4 @@
-import { VariableType } from "@/lib/const";
-import { FC, memo } from "react";
+import { FC } from "react";
 import { clsx } from "clsx";
 
 interface VariableLabelProps {
@@ -9,7 +8,7 @@ interface VariableLabelProps {
   className?: string;
 }
 
-const VariableLabel: FC<VariableLabelProps> = ({
+export const VariableLabel: FC<VariableLabelProps> = ({
   type,
   isRequired,
   label,
@@ -41,5 +40,3 @@ const VariableLabel: FC<VariableLabelProps> = ({
     </div>
   );
 };
-
-export default memo(VariableLabel);

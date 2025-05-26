@@ -13,7 +13,7 @@ export default memo((props: FlowNodeProps) => {
     {
       sourceId: "2",
       content: (
-        <div className="flex w-full mb-1">
+        <div className="flex w-full my-1">
           <div className="text-xs font-bold w-[38px] text-right text-primary pr-2 shrink-0 content-center">IF</div>
           <div className="flex flex-col gap-0 px-2 w-full border-l-2 border-r-2 border-solid border-gray-200 rounded-l-md rounded-r-md">
             <ComparisonOperatorLabel
