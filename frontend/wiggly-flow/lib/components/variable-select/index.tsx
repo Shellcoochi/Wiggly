@@ -1,6 +1,7 @@
 import { useState, Fragment, useMemo, FC } from "react";
 import clsx from "clsx";
 import { Icon, Input, Popover, Tag } from "@/ui";
+
 interface VariableProps {
   type?: string;
   name?: string;
@@ -10,11 +11,17 @@ interface VariableProps {
 interface VariableSelectProps {
   hideSearch?: boolean;
   options: VariableProps[];
+  prefix?: React.ReactNode;
+  suffix?: React.ReactNode;
+  allowClear?: boolean;
 }
 
 export const VariableSelect: FC<VariableSelectProps> = ({
   hideSearch,
   options,
+  prefix,
+  suffix,
+  allowClear,
 }) => {
   const [selectedVariable, setSelectedVariable] = useState<any>();
   const [open, setOpen] = useState(false);
@@ -64,29 +71,33 @@ export const VariableSelect: FC<VariableSelectProps> = ({
       trigger={
         <div
           className={clsx(
-            "flex items-center justify-between cursor-pointer rounded-md",
-            "h-8 px-1 bg-gray-100"
+            "flex items-center cursor-pointer rounded-md bg-gray-100 h-8 px-2 space-x-1",
+            "hover:border-gray-300"
           )}
           onMouseEnter={() => setClearVisible(true)}
           onMouseLeave={() => setClearVisible(false)}
           onClick={() => setOpen(!open)}
         >
-          {selectedVariable ? (
-            <Tag className="bg-bg-base">
-              <span>{selectedVariable.parentName}</span>
-              {selectedVariable.parentName ? <span>/</span> : null}
-              <span className="text-primary">{selectedVariable.name}</span>
-            </Tag>
-          ) : (
-            <div className="text-text-disabled">请选择变量</div>
-          )}
-          {clearVisible && selectedVariable && (
+          {prefix && <div className="text-gray-500">{prefix}</div>}
+          <div className="flex-1 flex items-center overflow-hidden">
+            {selectedVariable ? (
+              <Tag className="bg-bg-base truncate">
+                <span>{selectedVariable.parentName}</span>
+                {selectedVariable.parentName ? <span>/</span> : null}
+                <span className="text-primary">{selectedVariable.name}</span>
+              </Tag>
+            ) : (
+              <div className="text-text-disabled truncate">请选择变量</div>
+            )}
+          </div>
+          {allowClear && clearVisible && selectedVariable && (
             <Icon
-              name="ri-close-line"
-              className="text-text-secondary"
+              name="ri-close-circle-fill"
+              className="text-gray-500"
               onClick={handleClear}
             />
           )}
+          {suffix && <div className="text-gray-500">{suffix}</div>}
         </div>
       }
     >
