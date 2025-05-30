@@ -1,36 +1,52 @@
-import { memo, useState, Fragment } from "react";
+import { useState, Fragment, useMemo, FC } from "react";
 import clsx from "clsx";
 import { Icon, Input, Popover, Tag } from "@/ui";
+interface VariableProps {
+  type?: string;
+  name?: string;
+  children?: VariableProps[];
+}
 
-export const VariableSelect = () => {
+interface VariableSelectProps {
+  hideSearch?: boolean;
+  options: VariableProps[];
+}
+
+export const VariableSelect: FC<VariableSelectProps> = ({
+  hideSearch,
+  options,
+}) => {
   const [selectedVariable, setSelectedVariable] = useState<any>();
   const [open, setOpen] = useState(false);
   const [clearVisible, setClearVisible] = useState(false);
+  const [searchKey, setSearchKey] = useState("");
 
-  const variables = [
-    {
-      name: "开始",
-      children: [
-        { name: "sdf", type: "String", editable: true },
-        { name: "eeeee", type: "String", editable: true },
-        { name: "aaasss", type: "String", editable: true },
-        { name: "nmn", type: "Number", editable: true },
-      ],
-    },
-    { name: "sys.user_id", type: "String", editable: true },
-    { name: "sys.files", type: "Array[File]", editable: true },
-    { name: "sys.app_id", type: "String", editable: true },
-    { name: "sys.workflow_id", type: "String", editable: true },
-    { name: "sys.workflow_run_id", type: "String", editable: true },
-    { name: "ENVIRONMENT", value: "qwqq", type: "String", editable: false },
-  ];
+  const variables = useMemo(() => {
+    if (!searchKey.trim()) return options;
+
+    const filteredOptions = options
+      .map((option) => {
+        if (option.children) {
+          const filteredChildren = option.children.filter((child) =>
+            child?.name?.toLowerCase().includes(searchKey.toLowerCase())
+          );
+          return { ...option, children: filteredChildren };
+        }
+        return option?.name?.toLowerCase().includes(searchKey.toLowerCase())
+          ? option
+          : null;
+      })
+      .filter(Boolean) as VariableProps[];
+
+    return filteredOptions;
+  }, [options, searchKey]);
 
   const handleSearch = (val: string) => {
-    console.log(val);
+    setSearchKey(val);
   };
 
-  const handleSelect = (item: any) => {
-    setSelectedVariable(item);
+  const handleSelect = (item: any, parent?: any) => {
+    setSelectedVariable({ ...item, parentName: parent?.name });
     setOpen(false);
   };
 
@@ -56,7 +72,11 @@ export const VariableSelect = () => {
           onClick={() => setOpen(!open)}
         >
           {selectedVariable ? (
-            <Tag className="bg-bg-base">{selectedVariable.name}</Tag>
+            <Tag className="bg-bg-base">
+              <span>{selectedVariable.parentName}</span>
+              {selectedVariable.parentName ? <span>/</span> : null}
+              <span className="text-primary">{selectedVariable.name}</span>
+            </Tag>
           ) : (
             <div className="text-text-disabled">请选择变量</div>
           )}
@@ -71,20 +91,18 @@ export const VariableSelect = () => {
       }
     >
       <div className="rounded-lg text-xs w-[300px]">
-        <div className="mb-4">
-          <Input
-            type="text"
-            size="sm"
-            placeholder="搜索变量"
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 font-medium text-gray-600 pb-2 border-b">
-            <span>变量名</span>
-            <span>类型</span>
+        {!hideSearch ? (
+          <div className="mb-4">
+            <Input
+              type="text"
+              size="sm"
+              placeholder="搜索变量"
+              onChange={(e) => handleSearch(e.target.value)}
+            />
           </div>
+        ) : null}
 
+        <div className="space-y-2 max-h-[300px] overflow-auto">
           {variables.map((item, index) => {
             if (item.children) {
               return (
@@ -94,20 +112,11 @@ export const VariableSelect = () => {
                     <div
                       key={`${item.name}-${child.name}`}
                       className="grid grid-cols-2 py-2 cursor-pointer hover:bg-gray-100 rounded px-1"
-                      onClick={() => handleSelect(child)}
+                      onClick={() => handleSelect(child, item)}
                     >
                       <div className="flex items-center">
-                        {child.editable && (
-                          <span className="text-gray-500 mr-1">{"{x}"}</span>
-                        )}
-                        <span className="font-mono">
-                          {child.name}
-                          {child.value && (
-                            <span className="text-gray-500 ml-2">
-                              {child.value}
-                            </span>
-                          )}
-                        </span>
+                        <span className="text-gray-500 mr-1">{"{x}"}</span>
+                        <span className="font-mono">{child.name}</span>
                       </div>
                       <span className="font-mono text-gray-600 text-right">
                         {child.type}
@@ -124,15 +133,8 @@ export const VariableSelect = () => {
                 onClick={() => handleSelect(item)}
               >
                 <div className="flex items-center">
-                  {item.editable && (
-                    <span className="text-gray-500 mr-1">{"{x}"}</span>
-                  )}
-                  <span className="font-mono">
-                    {item.name}
-                    {item.value && (
-                      <span className="text-gray-500 ml-2">{item.value}</span>
-                    )}
-                  </span>
+                  <span className="text-gray-500 mr-1">{"{x}"}</span>
+                  <span className="font-mono">{item.name}</span>
                 </div>
                 <span className="font-mono text-gray-600 text-right">
                   {item.type}
