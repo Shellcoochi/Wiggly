@@ -54,6 +54,7 @@ interface DropdownMenuProps {
   dir?: "ltr" | "rtl";
   children?: React.ReactNode;
   options: DropdownOption[];
+  onItemClick?: (val: DropdownOption) => void;
   radioGroup?: {
     value: string;
     onValueChange: (val: string) => void;
@@ -69,6 +70,7 @@ export const DropdownMenu: FC<DropdownMenuProps> = ({
   children,
   options,
   radioGroup,
+  onItemClick,
 }) => {
   const renderOption = (option: DropdownOption, index: number) => {
     switch (option.type) {
@@ -78,6 +80,7 @@ export const DropdownMenu: FC<DropdownMenuProps> = ({
             key={index}
             disabled={option.disabled}
             onSelect={option.onSelect}
+            onClick={() => onItemClick?.(option)}
             className="group relative flex h-[25px] select-none items-center rounded px-2 text-sm text-gray-800 outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-blue-500 data-[highlighted]:text-white data-[disabled]:text-gray-400"
           >
             {option.label}
@@ -94,6 +97,7 @@ export const DropdownMenu: FC<DropdownMenuProps> = ({
             key={index}
             checked={option.checked}
             onCheckedChange={option.onCheckedChange}
+            onClick={() => onItemClick?.(option)}
             className="group relative flex h-[25px] select-none items-center rounded px-2 text-sm pl-[25px] text-gray-800 outline-none data-[highlighted]:bg-blue-500 data-[highlighted]:text-white"
           >
             <Primitive.ItemIndicator className="absolute left-0 inline-flex w-[25px] items-center justify-center">
@@ -107,6 +111,7 @@ export const DropdownMenu: FC<DropdownMenuProps> = ({
           <Primitive.RadioItem
             key={index}
             value={option.value}
+            onClick={() => onItemClick?.(option)}
             className="relative flex h-[25px] select-none items-center rounded px-2 text-sm pl-[25px] text-gray-800 outline-none data-[highlighted]:bg-blue-500 data-[highlighted]:text-white"
           >
             <Primitive.ItemIndicator className="absolute left-0 inline-flex w-[25px] items-center justify-center">
@@ -116,12 +121,15 @@ export const DropdownMenu: FC<DropdownMenuProps> = ({
           </Primitive.RadioItem>
         );
       case "separator":
-        return <Primitive.Separator key={index} className="m-1 h-px bg-gray-200" />;
+        return (
+          <Primitive.Separator key={index} className="m-1 h-px bg-gray-200" />
+        );
       case "label":
         return (
           <Primitive.Label
             key={index}
             className="pl-[25px] text-xs leading-[25px] text-gray-500"
+            onClick={() => onItemClick?.(option)}
           >
             {option.label}
           </Primitive.Label>

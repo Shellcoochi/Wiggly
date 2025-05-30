@@ -11,6 +11,7 @@ import * as React from "react";
 import { useState } from "react";
 
 const LogicBuilder = () => {
+  const [operator, setOperator] = useState("");
   const options: Array<SelectOptionItemProps> = [
     {
       value: "start",
@@ -48,6 +49,9 @@ const LogicBuilder = () => {
         prefix={<Icon name="ri-search-line" className="text-gray-400" />}
         suffix={
           <DropdownMenu
+            onItemClick={(val) => {
+              setOperator(val.label ?? "");
+            }}
             options={[
               { type: "item", label: "New Tab3", shortcut: "⌘+T" },
               { type: "separator" },
@@ -77,7 +81,7 @@ const LogicBuilder = () => {
             <div className="flex items-center space-x-2">
               <Separator orientation="vertical" />
               <span>
-                不为空 <Icon name="ri-arrow-down-s-line" />
+                {operator} <Icon name="ri-arrow-down-s-line" />
               </span>
             </div>
           </DropdownMenu>

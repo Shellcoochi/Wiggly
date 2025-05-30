@@ -78,7 +78,16 @@ export const VariableSelect: FC<VariableSelectProps> = ({
           onMouseLeave={() => setClearVisible(false)}
           onClick={() => setOpen(!open)}
         >
-          {prefix && <div className="text-gray-500">{prefix}</div>}
+          {prefix && (
+            <div
+              className="text-gray-500"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              {prefix}
+            </div>
+          )}
           <div className="flex-1 flex items-center overflow-hidden">
             {selectedVariable ? (
               <Tag className="bg-bg-base truncate">
@@ -97,7 +106,17 @@ export const VariableSelect: FC<VariableSelectProps> = ({
               onClick={handleClear}
             />
           )}
-          {suffix && <div className="text-gray-500">{suffix}</div>}
+
+          {suffix && (
+            <div
+              className="text-gray-500"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              {suffix}
+            </div>
+          )}
         </div>
       }
     >
