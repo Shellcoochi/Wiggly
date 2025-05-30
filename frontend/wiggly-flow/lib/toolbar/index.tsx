@@ -1,6 +1,7 @@
 import { FC } from "react";
 import {
   Button,
+  DropdownMenu,
   Select,
   SelectOptionItemProps,
   Switch,
@@ -31,6 +32,33 @@ const Toolbar: FC<ToolbarProps> = ({ run }) => {
   ];
   return (
     <div className="flex gap-1">
+      <DropdownMenu
+        options={[
+          { type: "item", label: "New Tab3", shortcut: "⌘+T" },
+          { type: "separator" },
+          {
+            type: "submenu",
+            label: "More Tools",
+            children: [
+              { type: "item", label: "Save Page As…" },
+              { type: "item", label: "Developer Tools" },
+            ],
+          },
+          {
+            type: "checkbox",
+            label: "Show Bookmarks",
+            checked: true,
+            onCheckedChange: (v) => {},
+          },
+          { type: "label", label: "People" },
+          { type: "radio", label: "Pedro Duarte", value: "pedro" },
+          { type: "radio", label: "Colm Tuite", value: "colm" },
+        ]}
+        radioGroup={{
+          value: "pedro",
+          onValueChange: (v) => {},
+        }}
+      />
       <Tooltip content="这是一个标签">
         <Tag color="primary">tag</Tag>
       </Tooltip>

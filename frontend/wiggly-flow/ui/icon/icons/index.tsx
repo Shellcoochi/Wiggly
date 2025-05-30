@@ -4,6 +4,7 @@ import IfElse from "./if-else";
 import Loop from "./loop";
 import Http from "./http";
 import Code from "./code";
+import Dot from "./dot";
 
 const Icon = (props: any) => {
   switch (props.name) {
@@ -19,6 +20,8 @@ const Icon = (props: any) => {
       return <Http {...props} />;
     case "code":
       return <Code {...props} />;
+    case "dot":
+      return <Dot {...props} />;
     default:
       return <Start {...props} />;
   }
