@@ -14,6 +14,7 @@ interface VariableSelectProps {
   prefix?: React.ReactNode;
   suffix?: React.ReactNode;
   allowClear?: boolean;
+  onSelect?: (value: any) => void;
 }
 
 export const VariableSelect: FC<VariableSelectProps> = ({
@@ -22,6 +23,7 @@ export const VariableSelect: FC<VariableSelectProps> = ({
   prefix,
   suffix,
   allowClear,
+  onSelect
 }) => {
   const [selectedVariable, setSelectedVariable] = useState<any>();
   const [open, setOpen] = useState(false);
@@ -53,7 +55,9 @@ export const VariableSelect: FC<VariableSelectProps> = ({
   };
 
   const handleSelect = (item: any, parent?: any) => {
-    setSelectedVariable({ ...item, parentName: parent?.name });
+    const data = { ...item, parentName: parent?.name }
+    onSelect?.(data)
+    setSelectedVariable(data);
     setOpen(false);
   };
 

@@ -32,7 +32,7 @@ const IfElsePanel: FC<PanelProps> = ({ node }) => {
   };
   return (
     <>
-      <LogicBuilder />
+      <LogicBuilder node={node} />
     </>
   );
 };

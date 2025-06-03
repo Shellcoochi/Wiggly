@@ -5,6 +5,7 @@ import { Icon } from "../icon";
 type MenuItemBase = {
   type: "item" | "checkbox" | "radio" | "separator" | "label" | "submenu";
   label?: string;
+  value?: string;
   shortcut?: string;
   disabled?: boolean;
 };
@@ -176,7 +177,7 @@ export const DropdownMenu: FC<DropdownMenuProps> = ({
 
       <Primitive.Portal>
         <Primitive.Content
-          className="min-w-[220px] rounded-md bg-white p-1 shadow-lg ring-1 ring-black/10"
+          className="rounded-md bg-white p-1 shadow-lg ring-1 ring-black/10"
           sideOffset={5}
         >
           {radioGroup ? (

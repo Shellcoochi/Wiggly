@@ -1,3 +1,5 @@
+import { newId } from "../utils/flowHelper";
+
 export enum NodeType {
   Start = "start",
   End = "end",
@@ -70,7 +72,22 @@ export const NodeConfig: any = {
   [NodeType.IfElse]: {
     type: NodeType.IfElse,
     width: 255,
-    data: { label: NodeLabel.IfElse, description: "" },
+    data: {
+      label: NodeLabel.IfElse,
+      description: "",
+      cases: [
+        {
+          id: newId(),
+          type: "IF",
+          conditions: [],
+        },
+        {
+          id: newId(),
+          type: "ELIF",
+          conditions: [],
+        },
+      ],
+    },
   },
 };
 
