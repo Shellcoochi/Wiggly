@@ -69,7 +69,7 @@ function Flow() {
         <Toolbar />
       </div>
       <div className="absolute bottom-2 right-2  h-[calc(100%-50px-2rem)] overflow-hidden">
-        <Panel node={currentNode} />
+        <Panel key={currentNode?.id} node={currentNode} />
       </div>
     </div>
   );
