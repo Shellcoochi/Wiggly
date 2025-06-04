@@ -1,5 +1,5 @@
 import { VariableSelect } from "@/lib/components";
-import { ComparisonOperator } from "@/lib/const";
+import { ComparisonOperator, ComparisonOperatorName } from "@/lib/const";
 import { FlowNodeProps } from "@/lib/types";
 import { newId } from "@/lib/utils/flowHelper";
 import { Button, DropdownMenu, DropdownOption, Icon, Separator } from "@/ui";
@@ -30,6 +30,7 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
     node?.data.cases
   );
 
+   /** @todo 改为动态，不同类型变量对应的可选操作符不同 */
   const comparisonOperators: DropdownOption[] = [
     { type: "radio", label: "包含", value: "contains" },
     {
@@ -51,6 +52,7 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
     { type: "radio", label: "小于", value: "less than" },
   ];
 
+  /** @todo 从前置节点和全局获取变量 */
   const options2 = [
     {
       name: "开始",
@@ -71,7 +73,6 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
 
   useEffect(() => {
     if (node) {
-      console.log(conditionGroups);
       updateNodeData(node.id, {
         cases: conditionGroups,
       });
@@ -159,7 +160,7 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
 
   return (
     <div className="grid gap-4">
-      {conditionGroups.map((group, groupIndex) => (
+      {conditionGroups?.map((group, groupIndex) => (
         <div key={group.id} className="grid gap-2">
           <div className="flex items-center justify-between">
             <div className="font-bold">{group.type}</div>
@@ -220,7 +221,7 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
                           <div className="flex items-center space-x-2">
                             <Separator orientation="vertical" />
                             <span>
-                              {condition.operator || "选择操作"}{" "}
+                              {ComparisonOperatorName[condition.operator] || "选择操作"}{" "}
                               <Icon name="ri-arrow-down-s-line" />
                             </span>
                           </div>
