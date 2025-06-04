@@ -41,7 +41,8 @@ function Flow() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const onConnect = useCallback(
-    (params: any) => setEdges((eds) => addEdge(params, eds)),
+    (params: any) =>
+      setEdges((eds) => addEdge({ ...params, type: "base" }, eds)),
     [setEdges]
   );
   const handleNodeClick = (_: unknown, node: Node) => {
