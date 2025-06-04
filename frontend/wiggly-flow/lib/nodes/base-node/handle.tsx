@@ -53,6 +53,7 @@ export default memo(
         },
         parentId: currentNode.parentId,
         extent: "parent",
+        expandParent:true,
         ...NodeConfig[selectedNode.type],
       };
 

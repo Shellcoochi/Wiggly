@@ -26,7 +26,6 @@ export default memo((props: FlowNodeProps) => {
       <Background id={`loop-background-${props.id}`} className="!z-0" />
       <div className="grid gap-1">
         loop
-        {props.selected ? 1 : 2}
       </div>
     </BaseNode>
   );
