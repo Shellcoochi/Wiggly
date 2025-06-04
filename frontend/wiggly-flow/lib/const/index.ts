@@ -89,6 +89,17 @@ export const NodeConfig: any = {
       ],
     },
   },
+  [NodeType.Loop]: {
+    type: NodeType.Loop,
+    width: 255,
+    data: { label: NodeLabel.Loop, description: "" },
+  },
+  [NodeType.LoopStart]: {
+    type: NodeType.LoopStart,
+    width: 50,
+    height:50,
+    data: { label: "", description: "" },
+  },
 };
 
 export enum VariableType {

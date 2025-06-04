@@ -51,6 +51,8 @@ export default memo(
           x: currentNode.position.x + 300,
           y: currentNode.position.y,
         },
+        parentId: currentNode.parentId,
+        extent: "parent",
         ...NodeConfig[selectedNode.type],
       };
 
@@ -60,6 +62,7 @@ export default memo(
         sourceHandle: id,
         target: newNodeId,
         type: EdgeType.Base,
+        zIndex: currentNode.parentId ? 1002 : 0,
       };
       addNodes(newNode);
       addEdges(newEdge);

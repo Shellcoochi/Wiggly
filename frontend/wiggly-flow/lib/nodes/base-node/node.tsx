@@ -1,5 +1,5 @@
-import React, { memo, ReactNode, useState } from "react";
-import { Position } from "@xyflow/react";
+import React, { memo, ReactNode, useEffect, useState } from "react";
+import { NodeResizeControl, Position } from "@xyflow/react";
 import Handle from "./handle";
 import { Card, Icon } from "@/ui";
 import { NodeLabel } from "@/lib/const";
@@ -17,6 +17,8 @@ interface BaseNodeProps {
   node: FlowNodeProps;
   children?: React.ReactNode;
   handles?: NodeHandleProps[];
+  className?: string;
+  showResizer?: boolean;
 }
 
 const defaultHandles: NodeHandleProps[] = [
@@ -26,25 +28,43 @@ const defaultHandles: NodeHandleProps[] = [
     isPrimary: true,
   },
 ];
+
+const controlStyle = {
+  background: "transparent",
+  border: "none",
+  top: "calc(100% - 25px)",
+  left: "calc(100% - 25px)",
+};
+
 export default memo(
-  ({ node, children, handles = defaultHandles }: BaseNodeProps) => {
+  ({
+    node,
+    children,
+    handles = defaultHandles,
+    className,
+    showResizer,
+  }: BaseNodeProps) => {
     const { selected, data, isConnectable, type } = node;
     const [hovered, setHovered] = useState(false);
+
+    useEffect(() => {}, [hovered]);
 
     const primaryHandle = handles.find((h) => h.isPrimary);
     return (
       <div
+        className="h-full"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
         <Card
           className={clsx(
-            "px-4 py-2 rounded border-2 transition bg-white box-border",
+            "h-full px-3 py-2 rounded border-2 transition bg-white box-border",
             {
               "ring-2 ring-border-shadow": hovered,
               "border-primary-active !ring-0": selected,
               "border-transparent": !selected,
-            }
+            },
+            className
           )}
           title={data?.label || NodeLabel[type]}
           subtitle={data?.description}
@@ -72,6 +92,11 @@ export default memo(
               ) : null}
             </div>
           ) : null}
+          {showResizer && (hovered || selected) && (
+            <NodeResizeControl style={controlStyle}>
+              <Icon name="resizer" />
+            </NodeResizeControl>
+          )}
           {children}
           {handles
             .filter((h) => !h.isPrimary)
@@ -91,7 +116,9 @@ export default memo(
                     />
                   ) : null}
                 </div>
-                <div className="flex items-center overflow-hidden w-full">{handle.content}</div>
+                <div className="flex items-center overflow-hidden w-full">
+                  {handle.content}
+                </div>
                 <div className="left-4.5 relative">
                   {handle.sourceId ? (
                     <Handle

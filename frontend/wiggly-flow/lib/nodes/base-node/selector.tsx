@@ -56,6 +56,12 @@ const Selector: FC<SelectorProps> = ({ onChange }) => {
                       type: NodeType.IfElse,
                       icon: <Icon name="if-else" />,
                     },
+                    {
+                      label: "循环",
+                      color: "text-indigo-600",
+                      type: NodeType.Loop,
+                      icon: <Icon name="loop" />,
+                    },
                   ]}
                 />
               </div>

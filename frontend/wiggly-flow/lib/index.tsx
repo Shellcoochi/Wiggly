@@ -8,10 +8,11 @@ import {
   addEdge,
   type Node,
   ReactFlowProvider,
+  Panel,
 } from "@xyflow/react";
 import { NodeTypes } from "./nodes";
 import { EdgeTypes } from "./edges";
-import Panel from "./panels/base-panel";
+import BasePanel from "./panels/base-panel";
 
 import "@xyflow/react/dist/style.css";
 import "remixicon/fonts/remixicon.css";
@@ -28,11 +29,20 @@ const initialNodes = [
   },
   {
     id: "2",
-    type: "if-else",
+    type: "loop",
     position: { x: 500, y: 100 },
-    width: 255,
-    data: { label: "条件" },
+    height: 150,
+    width: 270,
+    data: { label: "循环" },
   },
+  // {
+  //   id: "2-a",
+  //   type: "start",
+  //   data: { label: "Node B.1" },
+  //   position: { x: 15, y: 65 },
+  //   parentId: "2",
+  //   extent: "parent",
+  // },
 ];
 const initialEdges = [{ id: "e1-2", source: "1", target: "2", type: "base" }];
 
@@ -40,6 +50,7 @@ function Flow() {
   const [currentNode, setCurrentNode] = useState<FlowNodeProps>();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
   const onConnect = useCallback(
     (params: any) =>
       setEdges((eds) => addEdge({ ...params, type: "base" }, eds)),
@@ -64,12 +75,16 @@ function Flow() {
       >
         <Background />
         <Controls />
+
+        <Panel
+          position="bottom-right"
+          className="h-[calc(100%-50px-2rem)] overflow-hidden"
+        >
+          <BasePanel key={currentNode?.id} node={currentNode} />
+        </Panel>
       </ReactFlow>
       <div className="absolute top-2 right-2 h-[50px] p-2 rounded-lg">
         <Toolbar />
-      </div>
-      <div className="absolute bottom-2 right-2  h-[calc(100%-50px-2rem)] overflow-hidden">
-        <Panel key={currentNode?.id} node={currentNode} />
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ export function Card({
   return (
       <div
       className={clsx(
-        "rounded-xl shadow-sm bg-white p-2 w-full max-w-md",
+        "rounded-xl shadow-sm bg-white p-2 w-full",
         className
       )}
     >
@@ -32,7 +32,7 @@ export function Card({
           <p className="text-sm text-gray-500 mt-1 break-words w-full">{subtitle}</p>
         )}
       </div>
-      <div className="text-sm text-gray-700 mt-2">{children}</div>
+      <div className="text-sm text-gray-700">{children}</div>
     </div>
   );
 }
