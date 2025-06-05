@@ -12,3 +12,4 @@ export * from "./tag";
 export * from "./tooltip";
 export * from "./dropdown-menu";
 export * from "./separator";
+export * from "./slider";

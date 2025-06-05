@@ -1,6 +1,14 @@
 import { ChangeEvent, FC, memo, useEffect, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { DropdownMenu, DropdownOption, Icon, Separator } from "@/ui";
+import {
+  Accordion,
+  AccordionItem,
+  DropdownMenu,
+  DropdownOption,
+  Icon,
+  Separator,
+  Slider,
+} from "@/ui";
 import { ComparisonOperatorInput, VariableProps } from "@/lib/components";
 import { PanelProps } from "../base-panel";
 import { ComparisonOperator } from "@/lib/const";
@@ -27,9 +35,18 @@ const LoopPanel: FC<PanelProps> = ({ node }) => {
   }, [outputs]);
 
   return (
-    <>
-      <ComparisonOperatorInput />
-    </>
+    <Accordion
+      type="multiple"
+      bordered={false}
+      defaultValue={["operator", "times"]}
+    >
+      <AccordionItem value="operator" header="循环终止条件">
+        <ComparisonOperatorInput />
+      </AccordionItem>
+      <AccordionItem value="times" header="最大循环次数">
+        <Slider />
+      </AccordionItem>
+    </Accordion>
   );
 };
 
