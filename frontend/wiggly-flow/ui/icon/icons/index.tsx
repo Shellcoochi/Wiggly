@@ -7,11 +7,21 @@ import Code from "./code";
 import Dot from "./dot";
 import LoopStart from "./loop-start";
 import Resizer from "./resizer";
+import String from "./string";
+import Number from "./number";
+import ArrayNumber from "./array-number";
+import ArrayString from "./array-string";
+import Array from "./array";
+import Object from "./object";
+import ArrayImage from "./array-image";
+import Boolean from "./boolean";
 
 const Icon = (props: any) => {
   switch (props.name) {
     case "start":
       return <Start {...props} />;
+    case "boolean":
+      return <Boolean {...props} />;
     case "end":
       return <End {...props} />;
     case "if-else":
@@ -28,6 +38,20 @@ const Icon = (props: any) => {
       return <Dot {...props} />;
     case "resizer":
       return <Resizer {...props} />;
+    case "string":
+      return <String {...props} />;
+    case "number":
+      return <Number {...props} />;
+    case "array":
+      return <Array {...props} />;
+    case "object":
+      return <Object {...props} />;
+    case "array-number":
+      return <ArrayNumber {...props} />;
+    case "array-string":
+      return <ArrayString {...props} />;
+    case "array-image":
+      return <ArrayImage {...props} />;
     default:
       return <Start {...props} />;
   }

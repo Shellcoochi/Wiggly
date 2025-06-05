@@ -2,6 +2,7 @@ import { FC } from "react";
 import {
   Button,
   DropdownMenu,
+  Icon,
   Select,
   SelectOptionItemProps,
   Switch,
@@ -31,7 +32,7 @@ const Toolbar: FC<ToolbarProps> = ({ run }) => {
     },
   ];
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1 items-center">
       <DropdownMenu
         options={[
           { type: "item", label: "New Tab3", shortcut: "⌘+T" },
@@ -59,6 +60,14 @@ const Toolbar: FC<ToolbarProps> = ({ run }) => {
           onValueChange: (v) => {},
         }}
       />
+      <Icon name="string"/>
+      <Icon name="number"/>
+      <Icon name="boolean"/>
+      <Icon name="object"/>
+      <Icon name="array"/>
+      <Icon name="array-number"/>
+      <Icon name="array-string"/>
+      <Icon name="array-image"/>
       <Tooltip content="这是一个标签">
         <Tag color="primary">tag</Tag>
       </Tooltip>
