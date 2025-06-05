@@ -22,9 +22,7 @@ type InputProps = CustomInputProps &
     React.InputHTMLAttributes<HTMLInputElement>,
     "size" | "type" | "onChange" | "onBlur"
   > & {
-    onChange?: (
-      e: InputChangeEvent
-    ) => void;
+    onChange?: (e: InputChangeEvent) => void;
     onBlur?: (
       e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => void;
@@ -73,7 +71,7 @@ export const Input = React.forwardRef<
     };
 
     const baseWrapperClass = clsx(
-      "flex items-center w-full border rounded-md bg-white transition",
+      "flex items-center border rounded-md bg-white transition",
       "focus-within:ring-1 focus-within:ring-[#1677ff] focus-within:border-[#1677ff]",
       "border-[#d9d9d9] hover:border-[#4096ff]",
       "disabled:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60",
@@ -87,7 +85,7 @@ export const Input = React.forwardRef<
     );
 
     const sharedInputClass = clsx(
-      "flex-1 bg-transparent outline-none resize-none placeholder:text-[#bfbfbf]",
+      "w-full bg-transparent outline-none resize-none placeholder:text-[#bfbfbf]",
       "disabled:cursor-not-allowed"
     );
 
