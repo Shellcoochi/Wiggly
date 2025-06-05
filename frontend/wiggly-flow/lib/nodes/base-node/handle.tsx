@@ -48,12 +48,11 @@ export default memo(
       const newNode: any = {
         id: newNodeId,
         position: {
-          x: currentNode.position.x + 300,
+          x: currentNode.position.x + (currentNode?.width ?? 255) + 300,
           y: currentNode.position.y,
         },
         parentId: currentNode.parentId,
-        extent: "parent",
-        expandParent:true,
+        expandParent: true,
         ...NodeConfig[selectedNode.type],
       };
 

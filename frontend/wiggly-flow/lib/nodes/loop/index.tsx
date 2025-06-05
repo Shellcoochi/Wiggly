@@ -16,6 +16,7 @@ export default memo((props: FlowNodeProps) => {
       },
       parentId: props.id,
       extent: "parent",
+      expandParent:true,
       ...NodeConfig[NodeType.LoopStart],
     };
     addNodes(startLoop);
