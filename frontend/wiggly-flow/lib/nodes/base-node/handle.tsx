@@ -1,4 +1,4 @@
-import React, { memo, useState } from "react";
+import React, { memo, useMemo, useState } from "react";
 import {
   Handle,
   Position,
@@ -36,6 +36,10 @@ export default memo(
     const [open, setOpen] = useState(false);
     const nodeId = useNodeId();
 
+    const isSource = useMemo(() => {
+      return type === "source";
+    }, [type]);
+
     const handleSelectorChange = (selectedNode: SectionItemProps) => {
       const newNodeId = numericId();
       const newEdgeId = numericId();
@@ -70,7 +74,11 @@ export default memo(
     };
 
     const handleOpenChange = () => {
-      setOpen(!open);
+      if (isSource) {
+        setOpen(!open);
+      } else {
+        setOpen(false);
+      }
     };
 
     return (
@@ -85,14 +93,14 @@ export default memo(
             className={clsx(
               "!border-none",
               handleClass,
-              hovered
+              hovered && isSource
                 ? "!w-5 !h-5 !bg-blue-500  flex flex-col justify-center items-center"
                 : "!w-[3px] !min-w-[2px] !h-3 !bg-blue-500 !rounded-none"
             )}
             onConnect={onConnect}
             isConnectable={isConnectable}
           >
-            {hovered ? (
+            {hovered && isSource ? (
               <i className="ri-add-line text-white pointer-events-none" />
             ) : null}
           </Handle>

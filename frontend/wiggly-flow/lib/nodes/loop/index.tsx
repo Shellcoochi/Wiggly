@@ -25,9 +25,6 @@ export default memo((props: FlowNodeProps) => {
   return (
     <BaseNode node={props} showResizer>
       <Background id={`loop-background-${props.id}`} className="!z-0" />
-      <div className="grid gap-1">
-        loop
-      </div>
     </BaseNode>
   );
 });

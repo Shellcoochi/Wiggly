@@ -9,7 +9,12 @@ export default memo((props: FlowNodeProps) => {
   } = props;
 
   return (
-    <BaseNode node={props}>
+    <BaseNode node={props}  handles={[
+        {
+          targetId: "1",
+          isPrimary: true,
+        },
+      ]}>
       <div className="grid gap-1">
         {outputs?.map((variable: VariableProps) => (
           <VariableLabel

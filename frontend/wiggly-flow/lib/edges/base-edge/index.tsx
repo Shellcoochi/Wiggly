@@ -83,6 +83,7 @@ export default function CustomEdge(props: EdgeProps) {
         <EdgeLabelRenderer>
           <div
             style={{
+              zIndex:1002,
               position: "absolute",
               pointerEvents: "auto",
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,

@@ -1,68 +1,67 @@
-import { FC, useState } from "react";
 import { DropdownMenu as Primitive } from "radix-ui";
 import { Icon } from "../icon";
 
-type MenuItemBase = {
+type MenuItemBase<T> = {
   type: "item" | "checkbox" | "radio" | "separator" | "label" | "submenu";
   label?: string;
-  value?: string;
+  value?: T;
   shortcut?: string;
   disabled?: boolean;
 };
 
-type ItemOption = MenuItemBase & {
+type ItemOption<T> = MenuItemBase<T> & {
   type: "item";
   onSelect?: () => void;
 };
 
-type CheckboxOption = MenuItemBase & {
+type CheckboxOption<T> = MenuItemBase<T> & {
   type: "checkbox";
   checked: boolean;
   onCheckedChange: (value: boolean) => void;
 };
 
-type RadioOption = MenuItemBase & {
+type RadioOption<T> = MenuItemBase<T> & {
   type: "radio";
   value: string;
 };
 
-type LabelOption = MenuItemBase & {
+type LabelOption<T> = MenuItemBase<T> & {
   type: "label";
 };
 
-type SeparatorOption = MenuItemBase & {
+type SeparatorOption<T> = MenuItemBase<T> & {
   type: "separator";
 };
 
-type SubmenuOption = MenuItemBase & {
+type SubmenuOption<T> = MenuItemBase<T> & {
   type: "submenu";
-  children: DropdownOption[];
+  children: DropdownOption<T>[];
 };
 
-export type DropdownOption =
-  | ItemOption
-  | CheckboxOption
-  | RadioOption
-  | LabelOption
-  | SeparatorOption
-  | SubmenuOption;
+export type DropdownOption<T = string> =
+  | ItemOption<T>
+  | CheckboxOption<T>
+  | RadioOption<T>
+  | LabelOption<T>
+  | SeparatorOption<T>
+  | SubmenuOption<T>;
 
-interface DropdownMenuProps {
+interface DropdownMenuProps<T> {
   defaultOpen?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   modal?: boolean;
   dir?: "ltr" | "rtl";
   children?: React.ReactNode;
-  options: DropdownOption[];
-  onItemClick?: (val: DropdownOption) => void;
+  options: DropdownOption<T>[];
+  onItemClick?: (val: DropdownOption<T>) => void;
   radioGroup?: {
     value: string;
     onValueChange: (val: string) => void;
   };
 }
 
-export const DropdownMenu: FC<DropdownMenuProps> = ({
+export const DropdownMenu = <T,>({
   defaultOpen,
   open,
   onOpenChange,
@@ -72,8 +71,8 @@ export const DropdownMenu: FC<DropdownMenuProps> = ({
   options,
   radioGroup,
   onItemClick,
-}) => {
-  const renderOption = (option: DropdownOption, index: number) => {
+}: DropdownMenuProps<T>) => {
+  const renderOption = (option: DropdownOption<T>, index: number) => {
     switch (option.type) {
       case "item":
         return (
