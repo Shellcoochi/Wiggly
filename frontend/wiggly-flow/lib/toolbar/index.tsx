@@ -1,5 +1,6 @@
 import { FC } from "react";
 import {
+  Avatar,
   Button,
   DropdownMenu,
   Icon,
@@ -32,54 +33,26 @@ const Toolbar: FC<ToolbarProps> = ({ run }) => {
     },
   ];
   return (
-    <div className="flex gap-1 items-center">
+    <div className="flex gap-2 items-center">
       <DropdownMenu
         options={[
           { type: "item", label: "New Tab3", shortcut: "⌘+T" },
           { type: "separator" },
-          {
-            type: "submenu",
-            label: "More Tools",
-            children: [
-              { type: "item", label: "Save Page As…" },
-              { type: "item", label: "Developer Tools" },
-            ],
-          },
-          {
-            type: "checkbox",
-            label: "Show Bookmarks",
-            checked: true,
-            onCheckedChange: (v) => {},
-          },
           { type: "label", label: "People" },
           { type: "radio", label: "Pedro Duarte", value: "pedro" },
           { type: "radio", label: "Colm Tuite", value: "colm" },
         ]}
-        radioGroup={{
-          value: "pedro",
-          onValueChange: (v) => {},
-        }}
       />
-      <Icon name="time"/>
-      <Icon name="string"/>
-      <Icon name="variable"/>
-      <Icon name="number"/>
-      <Icon name="boolean"/>
-      <Icon name="object"/>
-      <Icon name="array"/>
-      <Icon name="array-number"/>
-      <Icon name="array-file"/>
-      <Icon name="array-string"/>
-      <Icon name="array-image"/>
-      <Tooltip content="这是一个标签">
-        <Tag color="primary">tag</Tag>
-      </Tooltip>
-      <Switch />
-      <Select options={options} />
+
       <Button variant="outline" onClick={run}>
         运行
       </Button>
       <Button>发布</Button>
+      <Avatar
+        src="https://images.unsplash.com/photo-1511485977113-f34c92461ad9?ixlib=rb-1.2.1&w=128&h=128&dpr=2&q=80"
+        fallback="U"
+        size="large"
+      />
     </div>
   );
 };
