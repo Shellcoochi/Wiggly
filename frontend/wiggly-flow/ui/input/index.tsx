@@ -104,7 +104,7 @@ export const Input = React.forwardRef<
             onBlur={onBlur as React.FocusEventHandler<HTMLTextAreaElement>}
             disabled={disabled}
             className={sharedInputClass}
-            rows={3}
+            rows={2}
             {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
           />
         ) : (

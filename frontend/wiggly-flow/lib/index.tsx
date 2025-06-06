@@ -29,20 +29,11 @@ const initialNodes = [
   },
   {
     id: "2",
-    type: "loop",
+    type: "llm",
     position: { x: 500, y: 100 },
-    height: 150,
-    width: 270,
-    data: { label: "循环" },
+    width: 255,
+    data: { label: "LLM" },
   },
-  // {
-  //   id: "2-a",
-  //   type: "start",
-  //   data: { label: "Node B.1" },
-  //   position: { x: 15, y: 65 },
-  //   parentId: "2",
-  //   extent: "parent",
-  // },
 ];
 const initialEdges = [{ id: "e1-2", source: "1", target: "2", type: "base" }];
 

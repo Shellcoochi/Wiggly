@@ -15,9 +15,21 @@ import Array from "./array";
 import Object from "./object";
 import ArrayImage from "./array-image";
 import Boolean from "./boolean";
+import Time from "./time";
+import ArrayFile from "./array-file";
+import Variable from "./variable";
+import LLM from "./llm";
 
 const Icon = (props: any) => {
   switch (props.name) {
+    case "llm":
+      return <LLM {...props} />;
+    case "variable":
+      return <Variable {...props} />;
+    case "array-file":
+      return <ArrayFile {...props} />;
+    case "time":
+      return <Time {...props} />;
     case "start":
       return <Start {...props} />;
     case "boolean":

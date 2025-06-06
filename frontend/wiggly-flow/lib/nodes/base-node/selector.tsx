@@ -51,6 +51,12 @@ const Selector: FC<SelectorProps> = ({ onChange }) => {
                       icon: <Icon name="end" />,
                     },
                     {
+                      label: "LLM",
+                      color: "text-indigo-600",
+                      type: NodeType.LLM,
+                      icon: <Icon name="llm" />,
+                    },
+                    {
                       label: "条件",
                       color: "text-indigo-600",
                       type: NodeType.IfElse,

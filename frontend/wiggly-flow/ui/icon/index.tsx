@@ -6,5 +6,5 @@ export const Icon = (props: any) => {
   if (name?.startsWith("ri-")) {
     return <i className={clsx(name, className)} {...restProps}></i>;
   }
-  return <WigglyIcon className={className} {...restProps} name={name} />;
+  return <WigglyIcon className={clsx("inline",className)} {...restProps} name={name} />;
 };

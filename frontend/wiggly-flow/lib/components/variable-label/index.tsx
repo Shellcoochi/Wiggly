@@ -1,5 +1,6 @@
 import { FC } from "react";
 import { clsx } from "clsx";
+import { Icon } from "@/ui";
 
 interface VariableLabelProps {
   type?: string;
@@ -16,9 +17,15 @@ export const VariableLabel: FC<VariableLabelProps> = ({
 }) => {
   const renderIcon = () => {
     if (type == "string") {
-      return "{str.}";
+      return <Icon name="string" width={16} />;
+    } else if (type == "number") {
+      return <Icon name="number" width={16} />;
+    } else if (type == "boolean") {
+      return <Icon name="boolean" width={16} />;
+    } else if (type == "array") {
+      return <Icon name="array" width={16} />;
     } else {
-      return "{var}";
+      return <Icon name="variable" width={16} />;
     }
   };
 

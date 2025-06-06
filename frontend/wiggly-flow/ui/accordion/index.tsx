@@ -94,13 +94,12 @@ export const AccordionItem = React.forwardRef<
         <AccordionPrimitive.Header
           className={clsx(
             "flex items-center justify-between px-4 py-3 transition-colors",
-            "hover:bg-[#f5f5f5]" 
           )}
         >
           <AccordionPrimitive.Trigger
             className={clsx(
               "group flex items-center flex-1 text-left",
-              "text-[16px] text-[#1f1f1f] font-medium",
+              "text-[14px]/[22px] text-[#1f1f1f] font-medium",
               "transition-all disabled:cursor-not-allowed disabled:opacity-50"
             )}
           >

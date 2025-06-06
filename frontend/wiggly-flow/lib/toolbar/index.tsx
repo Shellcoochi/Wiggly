@@ -60,12 +60,15 @@ const Toolbar: FC<ToolbarProps> = ({ run }) => {
           onValueChange: (v) => {},
         }}
       />
+      <Icon name="time"/>
       <Icon name="string"/>
+      <Icon name="variable"/>
       <Icon name="number"/>
       <Icon name="boolean"/>
       <Icon name="object"/>
       <Icon name="array"/>
       <Icon name="array-number"/>
+      <Icon name="array-file"/>
       <Icon name="array-string"/>
       <Icon name="array-image"/>
       <Tooltip content="这是一个标签">

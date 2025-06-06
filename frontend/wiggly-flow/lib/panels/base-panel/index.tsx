@@ -56,7 +56,7 @@ const Panel: FC<PanelProps> = ({ node }) => {
 
   return (
     <div className="w-[420px] flex flex-col h-full rounded-xl bg-white border border-gray-200 p-5 text-sm shadow-sm">
-      <div className="mb-4">
+      <div>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-md flex items-center justify-center text-indigo-600 text-lg">
             <Icon name={node?.type}/>

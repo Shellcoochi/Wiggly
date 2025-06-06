@@ -69,6 +69,11 @@ export const NodeConfig: any = {
     width: 255,
     data: { label: NodeLabel.end, description: "" },
   },
+   [NodeType.LLM]: {
+    type: NodeType.LLM,
+    width: 255,
+    data: { label: NodeLabel.LLM, description: "" },
+  },
   [NodeType.IfElse]: {
     type: NodeType.IfElse,
     width: 255,

@@ -97,7 +97,7 @@ export default memo(
               <Icon name="resizer" />
             </NodeResizeControl>
           )}
-          {children}
+          <div className="pt-2">{children}</div>
           {handles
             .filter((h) => !h.isPrimary)
             .map((handle) => (
