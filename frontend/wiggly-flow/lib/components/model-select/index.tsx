@@ -1,11 +1,19 @@
 import { useState, Fragment, useMemo, FC } from "react";
 import clsx from "clsx";
-import { Icon, Input, Popover, Tag } from "@/ui";
+import { Avatar, Icon, Input, Popover, Tag, Tooltip } from "@/ui";
 
+interface Tag {
+  id: string;
+  label: string;
+}
 interface ModelProps {
-  type?: string;
   name?: string;
+  logo?: string;
+  version?: string;
+  descr?: string;
+  tags?: Tag[];
   children?: ModelProps[];
+  config?: Record<string, any>;
 }
 
 interface ModelSelectProps {
@@ -23,14 +31,14 @@ export const ModelSelect: FC<ModelSelectProps> = ({
   prefix,
   suffix,
   allowClear,
-  onSelect
+  onSelect,
 }) => {
   const [selectedVariable, setSelectedVariable] = useState<any>();
   const [open, setOpen] = useState(false);
   const [clearVisible, setClearVisible] = useState(false);
   const [searchKey, setSearchKey] = useState("");
 
-  const variables = useMemo(() => {
+  const models = useMemo(() => {
     if (!searchKey.trim()) return options;
 
     const filteredOptions = options
@@ -55,8 +63,8 @@ export const ModelSelect: FC<ModelSelectProps> = ({
   };
 
   const handleSelect = (item: any, parent?: any) => {
-    const data = { ...item, parentName: parent?.name }
-    onSelect?.(data)
+    const data = { ...item, parentName: parent?.name };
+    onSelect?.(data);
     setSelectedVariable(data);
     setOpen(false);
   };
@@ -94,11 +102,16 @@ export const ModelSelect: FC<ModelSelectProps> = ({
           )}
           <div className="flex-1 flex items-center overflow-hidden">
             {selectedVariable ? (
-              <Tag className="bg-bg-base truncate">
-                <span>{selectedVariable.parentName}</span>
-                {selectedVariable.parentName ? <span>/</span> : null}
+              <div className="flex gap-1 items-center">
+                <Avatar
+                  className="bg-primary"
+                  src="https://api.dicebear.com/7.x/miniavs/svg?seed=1"
+                  fallback="M"
+                  shape="square"
+                  size={16}
+                />
                 <span className="text-primary">{selectedVariable.name}</span>
-              </Tag>
+              </div>
             ) : (
               <div className="text-text-disabled truncate">请选择变量</div>
             )}
@@ -125,36 +138,67 @@ export const ModelSelect: FC<ModelSelectProps> = ({
       }
     >
       <div className="rounded-lg text-xs w-[300px]">
-        {!hideSearch ? (
+        {!hideSearch && (
           <div className="mb-4">
             <Input
               type="text"
               size="sm"
-              placeholder="搜索变量"
+              placeholder="搜索模型"
               onChange={(e) => handleSearch(e.target.value)}
             />
           </div>
-        ) : null}
+        )}
 
         <div className="space-y-2 max-h-[300px] overflow-auto">
-          {variables.map((item, index) => {
+          {models.map((item, index) => {
             if (item.children) {
               return (
                 <Fragment key={index}>
-                  <div className="text-gray-500">{item.name}</div>
+                  <div className="flex gap-1 text-gray-500">
+                    <Avatar
+                      className="border-1 border-border"
+                      src={item.logo}
+                      fallback="C"
+                      shape="square"
+                      size={16}
+                    />
+                    <span>{item.name}</span>
+                  </div>
                   {item.children.map((child, i) => (
                     <div
                       key={`${item.name}-${child.name}`}
-                      className="grid grid-cols-2 py-2 cursor-pointer hover:bg-gray-100 rounded px-1"
+                      className="py-2 cursor-pointer hover:bg-gray-100 rounded px-1"
                       onClick={() => handleSelect(child, item)}
                     >
-                      <div className="flex items-center">
-                        <span className="text-gray-500 mr-1">{"{x}"}</span>
-                        <span className="font-mono">{child.name}</span>
+                      <div className="flex gap-3 items-center ">
+                        <Avatar
+                          className="border-1 border-border"
+                          src={child.logo}
+                          fallback="M"
+                          shape="square"
+                          size="large"
+                        />
+                        <div className="flex flex-col gap-1 overflow-hidden">
+                          <span className="font-bold truncate text-sm">
+                            {child.name}
+                          </span>
+                          <div className="w-fit flex gap-1">
+                            {child.tags?.map((tag) => (
+                              <Tag
+                                key={tag.id}
+                                className="bg-bg-base text-[10px] !py-0 !px-1 text-secondary"
+                              >
+                                {tag.label}
+                              </Tag>
+                            ))}
+                          </div>
+                          <Tooltip content={child.descr}>
+                            <p className="text-[12px] text-gray-600 text-left line-clamp-1 break-words">
+                              {child.descr}
+                            </p>
+                          </Tooltip>
+                        </div>
                       </div>
-                      <span className="font-mono text-gray-600 text-right">
-                        {child.type}
-                      </span>
                     </div>
                   ))}
                 </Fragment>
@@ -166,8 +210,8 @@ export const ModelSelect: FC<ModelSelectProps> = ({
                 className="grid grid-cols-2 py-2 cursor-pointer hover:bg-gray-100 rounded px-1"
                 onClick={() => handleSelect(item)}
               >
-                <div className="flex items-center">
-                  <span className="text-gray-500 mr-1">{"{x}"}</span>
+                <div className="flex items-center gap-1">
+                  <Icon name="variable" width="14" />
                   <span className="font-mono">{item.name}</span>
                 </div>
                 <span className="font-mono text-gray-600 text-right">
