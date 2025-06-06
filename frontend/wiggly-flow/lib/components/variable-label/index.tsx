@@ -37,7 +37,7 @@ export const VariableLabel: FC<VariableLabelProps> = ({
       )}
     >
       <span className="text-gray-800">
-        <span className="text-gray-500 rounded">{renderIcon()}</span>
+        <span className="text-gray-500 rounded mr-0.5">{renderIcon()}</span>
         {label ?? "未定义"}
       </span>
 

@@ -64,6 +64,7 @@ export const ModelSelect: FC<ModelSelectProps> = ({
 
   const handleSelect = (item: any, parent?: any) => {
     const data = { ...item, parentName: parent?.name };
+    console.log(data)
     onSelect?.(data);
     setSelectedVariable(data);
     setOpen(false);
@@ -104,8 +105,7 @@ export const ModelSelect: FC<ModelSelectProps> = ({
             {selectedVariable ? (
               <div className="flex gap-1 items-center">
                 <Avatar
-                  className="bg-primary"
-                  src="https://api.dicebear.com/7.x/miniavs/svg?seed=1"
+                  src={selectedVariable.logo}
                   fallback="M"
                   shape="square"
                   size={16}
