@@ -65,7 +65,7 @@ function Flow() {
         onNodeClick={handleNodeClick}
       >
         <Background />
-        <Controls />
+        <Controls orientation="horizontal" />
 
         <Panel
           position="bottom-right"

@@ -64,7 +64,6 @@ export const ModelSelect: FC<ModelSelectProps> = ({
 
   const handleSelect = (item: any, parent?: any) => {
     const data = { ...item, parentName: parent?.name };
-    console.log(data)
     onSelect?.(data);
     setSelectedVariable(data);
     setOpen(false);
