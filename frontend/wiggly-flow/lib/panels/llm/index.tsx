@@ -1,20 +1,35 @@
 import { FC, memo, useEffect, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { Accordion, AccordionItem } from "@/ui";
-import { VariableProps, ModelSelect } from "@/lib/components";
+import { ModelSelect, ModelProps } from "@/lib/components";
 import { PanelProps } from "../base-panel";
 
 const LLMPanel: FC<PanelProps> = ({ node }) => {
   const { updateNodeData } = useReactFlow();
-  const [variables, setVariables] = useState<VariableProps[]>([]);
+  const [model, setModel] = useState<ModelProps>();
+
+  useEffect(() => {
+    if (node) {
+      setModel(node.data.model ?? {});
+    }
+  }, [node?.id]);
+
+  useEffect(() => {
+    if (node) {
+      updateNodeData(node.id, {
+        model,
+      });
+    }
+  }, [model?.name]);
+
   const options = [
     {
       name: "热门模型",
       children: [
         {
-          logo:"https://api.dicebear.com/7.x/miniavs/svg?seed=1",
+          logo: "https://api.dicebear.com/7.x/miniavs/svg?seed=1",
           name: "deepseek1",
-          descr:"大模型描述",
+          descr: "大模型描述",
           tags: [
             { id: "1", label: "图片理解" },
             { id: "2", label: "智能识别" },
@@ -24,12 +39,21 @@ const LLMPanel: FC<PanelProps> = ({ node }) => {
       ],
     },
   ];
+
+  const handleModelChange = (data: ModelProps) => {
+    setModel(data);
+  };
+
   return (
     <>
       <Accordion type="multiple" bordered={false} defaultValue={["input"]}>
         <AccordionItem value="input" header="模型">
           <div className="grid gap-1">
-            <ModelSelect options={options} />
+            <ModelSelect
+              value={model}
+              options={options}
+              onSelect={handleModelChange}
+            />
           </div>
         </AccordionItem>
       </Accordion>

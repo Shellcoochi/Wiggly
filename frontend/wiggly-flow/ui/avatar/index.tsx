@@ -44,13 +44,11 @@ export const Avatar = ({
         fontSize: `calc(${resolvedSize} * 0.4)`,
       }}
     >
-      {src && (
-        <Primitive.Image
-          className="size-full rounded-[inherit] object-cover"
-          src={src}
-          alt={alt}
-        />
-      )}
+      <Primitive.Image
+        className="size-full rounded-[inherit] object-cover"
+        src={src}
+        alt={alt}
+      />
       <Primitive.Fallback
         className="flex size-full items-center justify-center"
         delayMs={src ? 600 : 0}

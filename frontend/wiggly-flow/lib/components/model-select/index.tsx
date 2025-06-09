@@ -1,4 +1,4 @@
-import { useState, Fragment, useMemo, FC } from "react";
+import { useState, Fragment, useMemo, FC, useEffect } from "react";
 import clsx from "clsx";
 import { Avatar, Icon, Input, Popover, Tag, Tooltip } from "@/ui";
 
@@ -6,7 +6,7 @@ interface Tag {
   id: string;
   label: string;
 }
-interface ModelProps {
+export interface ModelProps {
   name?: string;
   logo?: string;
   version?: string;
@@ -17,6 +17,7 @@ interface ModelProps {
 }
 
 interface ModelSelectProps {
+  value?: ModelProps;
   hideSearch?: boolean;
   options: ModelProps[];
   prefix?: React.ReactNode;
@@ -32,11 +33,16 @@ export const ModelSelect: FC<ModelSelectProps> = ({
   suffix,
   allowClear,
   onSelect,
+  value,
 }) => {
-  const [selectedVariable, setSelectedVariable] = useState<any>();
+  const [selectedVariable, setSelectedVariable] = useState<ModelProps>();
   const [open, setOpen] = useState(false);
   const [clearVisible, setClearVisible] = useState(false);
   const [searchKey, setSearchKey] = useState("");
+
+  useEffect(() => {
+    setSelectedVariable(value);
+  }, [value?.name]);
 
   const models = useMemo(() => {
     if (!searchKey.trim()) return options;
@@ -166,7 +172,13 @@ export const ModelSelect: FC<ModelSelectProps> = ({
                   {item.children.map((child, i) => (
                     <div
                       key={`${item.name}-${child.name}`}
-                      className="py-2 cursor-pointer hover:bg-gray-100 rounded px-1"
+                      className={clsx(
+                        "py-2 cursor-pointer rounded px-1",
+                        selectedVariable?.name === child.name
+                          ? "hover:bg-blue-200"
+                          : "hover:bg-gray-100",
+                        { "bg-blue-100": selectedVariable?.name === child.name }
+                      )}
                       onClick={() => handleSelect(child, item)}
                     >
                       <div className="flex gap-3 items-center ">

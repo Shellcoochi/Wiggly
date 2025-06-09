@@ -16,7 +16,7 @@ const COLOR_MAP: Record<string, string> = {
   [NodeType.LoopStart]: "bg-blue-500",
 };
 
-export const NodeIcon: FC<NodeIconProps> = ({ type }) => {
+export const NodeIcon: FC<NodeIconProps> = ({ type = NodeType.Start }) => {
   return (
     <Icon
       name={type}

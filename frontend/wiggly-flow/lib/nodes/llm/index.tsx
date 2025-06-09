@@ -2,11 +2,10 @@ import React, { memo } from "react";
 import BaseNode from "../base-node/node";
 import { FlowNodeProps } from "@/lib/types";
 import { Avatar, Icon } from "@/ui";
+import { ModelProps } from "@/lib/components";
 
 export default memo((props: FlowNodeProps) => {
-  const {
-    data: { variables },
-  } = props;
+  const model: ModelProps = props.data.model;
 
   return (
     <BaseNode node={props}>
@@ -28,13 +27,8 @@ export default memo((props: FlowNodeProps) => {
         <div className="flex items-center px-1 rounded-md h-6  bg-gray-100 text-xs">
           <label className="mr-2">模型</label>
           <div className="flex gap-0.5 items-center">
-            <Avatar
-              src={"https://api.dicebear.com/7.x/miniavs/svg?seed=1"}
-              fallback="M"
-              shape="square"
-              size={16}
-            />
-            <span className="text-primary">Deepseek</span>
+            <Avatar src={model?.logo} fallback="M" shape="square" size={16} />
+            <span className="text-primary">{model?.name}</span>
           </div>
         </div>
       </div>
