@@ -26,7 +26,7 @@ export function Card({
       <div className="flex flex-col items-start">
         <div className="flex items-center gap-2">
           {icon && <div className="text-gray-500">{icon}</div>}
-          <h2 className="text-lg text-black font-semibold">{title}</h2>
+          <h2 className="text-black font-semibold text-base">{title}</h2>
         </div>
         {subtitle && (
           <p className="text-sm text-gray-500 mt-1 break-words w-full">{subtitle}</p>
