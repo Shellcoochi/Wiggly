@@ -21,7 +21,7 @@ export const Dialog: FC<DialogProps> = ({
     <Primitive.Trigger asChild>{trigger}</Primitive.Trigger>
     <Primitive.Portal>
       <Primitive.Overlay className="fixed inset-0 bg-black/40 data-[state=open]:animate-overlayShow" />
-      <Primitive.Content className="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-[500px] max-h-[85vh] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl focus:outline-none origin-center data-[state=open]:animate-contentShow">
+      <Primitive.Content className="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-[500px]  -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl focus:outline-none origin-center data-[state=open]:animate-contentShow">
         <Primitive.Title className="m-0 text-[17px] font-medium text-gray-900">
           {title}
         </Primitive.Title>

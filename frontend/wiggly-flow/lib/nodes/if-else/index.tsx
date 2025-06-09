@@ -24,7 +24,7 @@ export default memo(function ConditionNode(props: FlowNodeProps) {
               className={clsx(
                 "flex flex-col gap-0 px-2 w-full border-solid border-gray-200 rounded-l-md rounded-r-md",
                 {
-                  "border-l-2 border-r-2": item.conditions.length,
+                  "border-l-2": item.conditions.length > 1,
                 }
               )}
             >

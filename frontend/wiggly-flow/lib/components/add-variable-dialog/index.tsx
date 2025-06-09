@@ -1,5 +1,5 @@
 import { FC, memo, useState } from "react";
-import { Dialog, Input } from "@/ui";
+import { Dialog, Icon, Input } from "@/ui";
 
 type VariableType =
   | "string"
@@ -105,8 +105,8 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
       <Dialog
         title="添加变量"
         trigger={
-          <div className="cursor-pointer text-blue-600 hover:underline">
-            添加变量
+          <div className="cursor-pointer text-blue-600">
+            <Icon name="ri-add-line"/>
           </div>
         }
         onOk={handleSubmit}

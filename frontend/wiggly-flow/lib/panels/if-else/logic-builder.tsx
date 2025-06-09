@@ -188,7 +188,7 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
                   </div>
                 </DropdownMenu>
               </div>
-              <div className="flex flex-col gap-1.5 px-2 w-full border-l-2 border-r-2 border-solid border-gray-200 rounded-l-md rounded-r-md">
+              <div className="flex flex-col gap-1.5 px-2 w-full border-l-2 border-solid border-gray-200 rounded-l-md rounded-r-md">
                 {group.conditions.map((condition) => (
                   <div
                     key={condition.id}
