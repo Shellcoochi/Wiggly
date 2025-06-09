@@ -1,6 +1,7 @@
 import { FC } from "react";
-import { Icon, Tabs } from "@/ui";
+import { Tabs } from "@/ui";
 import { NodeType } from "@/lib/const";
+import { NodeIcon } from "@/lib/components/node-icon";
 
 export interface SectionItemProps {
   label: string;
@@ -19,7 +20,7 @@ interface SectionProps {
 
 const Selector: FC<SelectorProps> = ({ onChange }) => {
   return (
-    <div className="w-64 bg-white border-gray-200 flex flex-col p-2 text-sm">
+    <div className="w-40 bg-white border-gray-200 flex flex-col p-2 text-sm">
       <div className="relative mb-2">
         <i className="ri-add-line absolute left-2.5 top-2.5 text-gray-400" />
         <input
@@ -42,31 +43,31 @@ const Selector: FC<SelectorProps> = ({ onChange }) => {
                       label: "开始",
                       type: NodeType.Start,
                       color: "text-indigo-600",
-                      icon: <Icon name="start" />,
+                      icon: <NodeIcon type={NodeType.Start} />,
                     },
                     {
                       label: "结束",
                       type: NodeType.End,
                       color: "text-indigo-600",
-                      icon: <Icon name="end" />,
+                      icon: <NodeIcon type={NodeType.End} />,
                     },
                     {
                       label: "LLM",
                       color: "text-indigo-600",
                       type: NodeType.LLM,
-                      icon: <Icon name="llm" />,
+                      icon: <NodeIcon type={NodeType.LLM} />,
                     },
                     {
                       label: "条件",
                       color: "text-indigo-600",
                       type: NodeType.IfElse,
-                      icon: <Icon name="if-else" />,
+                      icon: <NodeIcon type={NodeType.IfElse} />,
                     },
                     {
                       label: "循环",
                       color: "text-indigo-600",
                       type: NodeType.Loop,
-                      icon: <Icon name="loop" />,
+                      icon: <NodeIcon type={NodeType.Loop} />,
                     },
                   ]}
                 />

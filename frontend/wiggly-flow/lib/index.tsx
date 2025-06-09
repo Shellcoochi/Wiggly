@@ -72,13 +72,16 @@ function Flow() {
         <Background />
         <Controls orientation="horizontal" />
 
-        <Panel
-          position="bottom-right"
-          className="h-[calc(100%-50px-2rem)] overflow-hidden"
-        >
-          <BasePanel key={currentNode?.id} node={currentNode} />
-        </Panel>
+        {currentNode ? (
+          <Panel
+            position="bottom-right"
+            className="h-[calc(100%-50px-2rem)] overflow-hidden"
+          >
+            <BasePanel key={currentNode.id} node={currentNode} />
+          </Panel>
+        ) : null}
       </ReactFlow>
+
       <div className="absolute top-2 right-2 h-[50px] p-2 rounded-lg">
         <Toolbar />
       </div>

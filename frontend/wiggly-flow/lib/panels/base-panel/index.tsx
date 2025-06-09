@@ -4,6 +4,7 @@ import { FlowNodeProps } from "@/lib/types";
 import { useReactFlow } from "@xyflow/react";
 import { NodeLabel } from "@/lib/const";
 import { PanelTypes } from "../";
+import { NodeIcon } from "@/lib/components/node-icon";
 
 export interface PanelProps {
   node?: FlowNodeProps;
@@ -59,7 +60,7 @@ const Panel: FC<PanelProps> = ({ node }) => {
       <div>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-md flex items-center justify-center text-indigo-600 text-lg">
-            <Icon name={node?.type}/>
+            <NodeIcon type={node?.type} />
           </div>
           <div className="text-base font-semibold">
             <Input

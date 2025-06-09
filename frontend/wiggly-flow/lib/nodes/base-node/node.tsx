@@ -5,6 +5,7 @@ import { Card, Icon } from "@/ui";
 import { NodeLabel } from "@/lib/const";
 import { FlowNodeProps } from "@/lib/types";
 import clsx from "clsx";
+import { NodeIcon } from "@/lib/components/node-icon";
 
 type NodeHandleProps = {
   targetId?: string;
@@ -68,7 +69,7 @@ export default memo(
           )}
           title={data?.label || NodeLabel[type]}
           subtitle={data?.description}
-          icon={<Icon name={node?.type} />}
+          icon={<NodeIcon type={node?.type} />}
         >
           {primaryHandle ? (
             <div className="absolute w-full top-6 left-0 ">

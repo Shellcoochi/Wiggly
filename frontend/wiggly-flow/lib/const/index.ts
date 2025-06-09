@@ -33,27 +33,27 @@ export enum EdgeType {
 export enum NodeLabel {
   start = "开始",
   end = "结束",
-  Answer = "answer",
-  LLM = "llm",
-  KnowledgeRetrieval = "knowledge-retrieval",
-  QuestionClassifier = "question-classifier",
-  IfElse = "条件",
-  Code = "code",
-  TemplateTransform = "template-transform",
-  HttpRequest = "http-request",
-  VariableAssigner = "variable-assigner",
-  VariableAggregator = "variable-aggregator",
-  Tool = "tool",
-  ParameterExtractor = "parameter-extractor",
-  Iteration = "iteration",
-  DocExtractor = "document-extractor",
-  ListFilter = "list-operator",
-  IterationStart = "iteration-start",
-  Assigner = "assigner",
-  Agent = "agent",
-  Loop = "loop",
-  LoopStart = "loop-start",
-  LoopEnd = "loop-end",
+  answer = "answer",
+  llm = "llm",
+  "knowledge-retrieval" = "knowledge-retrieval",
+  "question-classifier" = "question-classifier",
+  "if-else" = "条件",
+  code = "code",
+  "template-transform" = "template-transform",
+  "http-request" = "http-request",
+  "variable-assigner" = "variable-assigner",
+  "variable-aggregator" = "variable-aggregator",
+  tool = "tool",
+  "parameter-extractor" = "parameter-extractor",
+  iteration = "iteration",
+  "document-extractor" = "document-extractor",
+  "list-operator" = "list-operator",
+  "iteration-start" = "iteration-start",
+  assigner = "assigner",
+  agent = "agent",
+  loop = "循环",
+  "loop-start" = "",
+  "loop-end" = "loop-end",
 }
 
 export enum NodeGroup {}
@@ -69,16 +69,16 @@ export const NodeConfig: any = {
     width: 255,
     data: { label: NodeLabel.end, description: "" },
   },
-   [NodeType.LLM]: {
+  [NodeType.LLM]: {
     type: NodeType.LLM,
     width: 255,
-    data: { label: NodeLabel.LLM, description: "" },
+    data: { label: NodeLabel.llm, description: "" },
   },
   [NodeType.IfElse]: {
     type: NodeType.IfElse,
     width: 255,
     data: {
-      label: NodeLabel.IfElse,
+      label: NodeLabel["if-else"],
       description: "",
       cases: [
         {
@@ -97,12 +97,12 @@ export const NodeConfig: any = {
   [NodeType.Loop]: {
     type: NodeType.Loop,
     width: 255,
-    data: { label: NodeLabel.Loop, description: "" },
+    data: { label: NodeLabel.loop, description: "" },
   },
   [NodeType.LoopStart]: {
     type: NodeType.LoopStart,
     width: 50,
-    height:50,
+    height: 50,
     data: { label: "", description: "" },
   },
 };

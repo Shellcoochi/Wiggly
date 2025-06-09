@@ -1,6 +1,6 @@
 import { type NodeProps } from "@xyflow/react";
+import { NodeType } from "../const";
 
-type NodeType = "start" | "end";
 
 export interface FlowNodeProps extends NodeProps {
   type: NodeType;
