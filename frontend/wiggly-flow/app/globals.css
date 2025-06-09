@@ -6,11 +6,12 @@
 }
 
 @theme {
-  --color-primary: #1677ff;
-  --color-primary-hover: #4096ff;
-  --color-primary-active: #0958d9;
-  --color-primary-disabled: #91caff;
+  --color-primary: #1890ff;
+  --color-primary-hover: #40a9ff;
+  --color-primary-active: #096dd9;
   --color-primary-light: #e6f4ff;
+  --color-disabled: #0000000A;
+
 
   --color-secondary:#8c8c8c;
 
