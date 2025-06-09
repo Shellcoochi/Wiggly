@@ -9,6 +9,7 @@ import {
   type Node,
   ReactFlowProvider,
   Panel,
+  useOnSelectionChange,
 } from "@xyflow/react";
 import { NodeTypes } from "./nodes";
 import { EdgeTypes } from "./edges";
@@ -47,9 +48,14 @@ function Flow() {
       setEdges((eds) => addEdge({ ...params, type: "base" }, eds)),
     [setEdges]
   );
-  const handleNodeClick = (_: unknown, node: Node) => {
-    setCurrentNode(node as unknown as FlowNodeProps);
-  };
+  const onChange = useCallback(({ nodes }: any) => {
+    const [node] = nodes;
+    setCurrentNode(node);
+  }, []);
+
+  useOnSelectionChange({
+    onChange,
+  });
 
   return (
     <div className="h-full relative">
@@ -62,7 +68,6 @@ function Flow() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onNodeClick={handleNodeClick}
       >
         <Background />
         <Controls orientation="horizontal" />
