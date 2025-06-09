@@ -64,7 +64,7 @@ const Panel: FC<PanelProps> = ({ node }) => {
           </div>
           <div className="text-base font-semibold">
             <Input
-              className="pl-0 border-none focus-within:!ring-0"
+              className="pl-0 border-none focus-within:!ring-0 text-big"
               value={label}
               onChange={handleLabelChange}
               onBlur={handleLabelBlur}

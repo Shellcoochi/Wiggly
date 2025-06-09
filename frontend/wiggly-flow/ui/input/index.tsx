@@ -86,7 +86,8 @@ export const Input = React.forwardRef<
 
     const sharedInputClass = clsx(
       "w-full bg-transparent outline-none resize-none placeholder:text-[#bfbfbf]",
-      "disabled:cursor-not-allowed"
+      "disabled:cursor-not-allowed",
+      className
     );
 
     return (
