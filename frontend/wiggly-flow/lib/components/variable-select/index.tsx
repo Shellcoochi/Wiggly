@@ -1,14 +1,17 @@
-import { useState, Fragment, useMemo, FC } from "react";
+import { useState, Fragment, useMemo, FC, useEffect } from "react";
 import clsx from "clsx";
 import { Icon, Input, Popover, Tag } from "@/ui";
+import { useReactFlow } from "@xyflow/react";
 
-interface VariableProps {
+export interface VariableProps {
   type?: string;
   name?: string;
+  parentId?: string;
   children?: VariableProps[];
 }
 
 interface VariableSelectProps {
+  value?: VariableProps;
   hideSearch?: boolean;
   options: VariableProps[];
   prefix?: React.ReactNode;
@@ -18,17 +21,23 @@ interface VariableSelectProps {
 }
 
 export const VariableSelect: FC<VariableSelectProps> = ({
+  value,
   hideSearch,
   options,
   prefix,
   suffix,
   allowClear,
-  onSelect
+  onSelect,
 }) => {
-  const [selectedVariable, setSelectedVariable] = useState<any>();
+  const { getNode } = useReactFlow();
+  const [selectedVariable, setSelectedVariable] = useState<VariableProps>();
   const [open, setOpen] = useState(false);
   const [clearVisible, setClearVisible] = useState(false);
   const [searchKey, setSearchKey] = useState("");
+
+  useEffect(() => {
+    setSelectedVariable(value);
+  }, [value]);
 
   const variables = useMemo(() => {
     if (!searchKey.trim()) return options;
@@ -50,13 +59,20 @@ export const VariableSelect: FC<VariableSelectProps> = ({
     return filteredOptions;
   }, [options, searchKey]);
 
+  const renderNodeLabel = (id?: string) => {
+    if (id) {
+      const node = getNode(id);
+      return node?.data.label as string;
+    }
+  };
+
   const handleSearch = (val: string) => {
     setSearchKey(val);
   };
 
   const handleSelect = (item: any, parent?: any) => {
-    const data = { ...item, parentName: parent?.name }
-    onSelect?.(data)
+    const data = { ...item, parentId: parent?.id };
+    onSelect?.(data);
     setSelectedVariable(data);
     setOpen(false);
   };
@@ -93,10 +109,10 @@ export const VariableSelect: FC<VariableSelectProps> = ({
             </div>
           )}
           <div className="flex-1 flex items-center overflow-hidden">
-            {selectedVariable ? (
+            {selectedVariable?.name ? (
               <Tag className="bg-bg-base truncate">
-                <span>{selectedVariable.parentName}</span>
-                {selectedVariable.parentName ? <span>/</span> : null}
+                <span>{renderNodeLabel(selectedVariable.parentId)}</span>
+                {selectedVariable.parentId ? <span>/</span> : null}
                 <span className="text-primary">{selectedVariable.name}</span>
               </Tag>
             ) : (

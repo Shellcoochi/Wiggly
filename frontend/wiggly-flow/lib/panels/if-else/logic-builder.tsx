@@ -1,4 +1,4 @@
-import { VariableSelect } from "@/lib/components";
+import { VariableProps, VariableSelect } from "@/lib/components";
 import { ComparisonOperator, ComparisonOperatorName } from "@/lib/const";
 import { FlowNodeProps } from "@/lib/types";
 import { newId } from "@/lib/utils/flowHelper";
@@ -14,7 +14,7 @@ export type ConditionGroup = {
 
 type Condition = {
   id: string;
-  variable: string;
+  variable: string | VariableProps;
   operator: ComparisonOperator;
   value: string;
 };
@@ -30,7 +30,7 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
     node?.data.cases
   );
 
-   /** @todo 改为动态，不同类型变量对应的可选操作符不同 */
+  /** @todo 改为动态，不同类型变量对应的可选操作符不同 */
   const comparisonOperators: DropdownOption[] = [
     { type: "radio", label: "包含", value: "contains" },
     {
@@ -56,6 +56,7 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
   const options2 = [
     {
       name: "开始",
+      id: "1",
       children: [
         { name: "sdf233", type: "String" },
         { name: "eeeee", type: "String" },
@@ -198,12 +199,13 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
                   >
                     <VariableSelect
                       options={options2}
+                      value={condition.variable as VariableProps}
                       onSelect={(val) => {
                         updateCondition(
                           group.id,
                           condition.id,
                           "variable",
-                          val.name ?? ""
+                          val
                         );
                       }}
                       suffix={
@@ -221,7 +223,8 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
                           <div className="flex items-center space-x-2">
                             <Separator orientation="vertical" />
                             <span>
-                              {ComparisonOperatorName[condition.operator] || "选择操作"}{" "}
+                              {ComparisonOperatorName[condition.operator] ||
+                                "选择操作"}{" "}
                               <Icon name="ri-arrow-down-s-line" />
                             </span>
                           </div>

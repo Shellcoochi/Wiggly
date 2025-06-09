@@ -32,7 +32,7 @@ export default memo(function ConditionNode(props: FlowNodeProps) {
                 <React.Fragment key={condition.id}>
                   <ComparisonOperatorLabel
                     className="w-full"
-                    field={condition.variable}
+                    field={condition.variable.name}
                     operator={condition.operator}
                     value={condition.value}
                   />
