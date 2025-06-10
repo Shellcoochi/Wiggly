@@ -5,10 +5,11 @@ import {
   OnConnect,
   useNodeId,
   useReactFlow,
+  useNodes,
 } from "@xyflow/react";
 import { Popover } from "@/ui";
 import Selector, { SectionItemProps } from "./selector";
-import { numericId } from "@/lib/utils/flowHelper";
+import { layoutNewNode, numericId } from "@/lib/utils/flowHelper";
 import { EdgeType, NodeConfig } from "@/lib/const";
 import clsx from "clsx";
 
@@ -35,15 +36,15 @@ export default memo(
     const { getNode, addNodes, addEdges } = useReactFlow();
     const [open, setOpen] = useState(false);
     const nodeId = useNodeId();
+    const nodes = useNodes();
 
     const isSource = useMemo(() => {
       return type === "source";
     }, [type]);
 
-    const handleSelectorChange = (selectedNode: SectionItemProps) => {
+    const handleSelectorChange = async (selectedNode: SectionItemProps) => {
       const newNodeId = numericId();
       const newEdgeId = numericId();
-
       if (!nodeId) return;
 
       const currentNode = getNode(nodeId);
@@ -68,7 +69,13 @@ export default memo(
         type: EdgeType.Base,
         zIndex: currentNode.parentId ? 1002 : 0,
       };
-      addNodes(newNode);
+
+      const { newNode: newNodePositioned }: any = await layoutNewNode({
+        existingNodes: nodes,
+        newNode,
+        newEdge,
+      });
+      addNodes(newNodePositioned);
       addEdges(newEdge);
       handleOpenChange();
     };
