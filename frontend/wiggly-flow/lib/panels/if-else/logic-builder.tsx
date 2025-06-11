@@ -1,4 +1,4 @@
-import { VariableProps, VariableSelect } from "@/lib/components";
+import { VariableItemProps, VariableSelect } from "@/lib/components";
 import { ComparisonOperator, ComparisonOperatorName } from "@/lib/const";
 import { FlowNodeProps } from "@/lib/types";
 import { newId } from "@/lib/utils/flowHelper";
@@ -14,7 +14,7 @@ export type ConditionGroup = {
 
 type Condition = {
   id: string;
-  variable: string | VariableProps;
+  variable: string | VariableItemProps;
   operator: ComparisonOperator;
   value: string;
 };
@@ -199,7 +199,7 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
                   >
                     <VariableSelect
                       options={options2}
-                      value={condition.variable as VariableProps}
+                      value={condition.variable as VariableItemProps}
                       onSelect={(val) => {
                         updateCondition(
                           group.id,

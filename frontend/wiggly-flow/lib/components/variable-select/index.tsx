@@ -3,17 +3,17 @@ import clsx from "clsx";
 import { Icon, Input, Popover, Tag } from "@/ui";
 import { useReactFlow } from "@xyflow/react";
 
-export interface VariableProps {
+export interface VariableItemProps {
   type?: string;
   name?: string;
   parentId?: string;
-  children?: VariableProps[];
+  children?: VariableItemProps[];
 }
 
 interface VariableSelectProps {
-  value?: VariableProps;
+  value?: VariableItemProps;
   hideSearch?: boolean;
-  options: VariableProps[];
+  options: VariableItemProps[];
   prefix?: React.ReactNode;
   suffix?: React.ReactNode;
   allowClear?: boolean;
@@ -30,7 +30,7 @@ export const VariableSelect: FC<VariableSelectProps> = ({
   onSelect,
 }) => {
   const { getNode } = useReactFlow();
-  const [selectedVariable, setSelectedVariable] = useState<VariableProps>();
+  const [selectedVariable, setSelectedVariable] = useState<VariableItemProps>();
   const [open, setOpen] = useState(false);
   const [clearVisible, setClearVisible] = useState(false);
   const [searchKey, setSearchKey] = useState("");
@@ -54,7 +54,7 @@ export const VariableSelect: FC<VariableSelectProps> = ({
           ? option
           : null;
       })
-      .filter(Boolean) as VariableProps[];
+      .filter(Boolean) as VariableItemProps[];
 
     return filteredOptions;
   }, [options, searchKey]);

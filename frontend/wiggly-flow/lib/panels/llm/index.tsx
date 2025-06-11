@@ -1,7 +1,7 @@
 import { FC, memo, useEffect, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { Accordion, AccordionItem } from "@/ui";
-import { ModelSelect, ModelProps } from "@/lib/components";
+import { ModelSelect, ModelProps, VariableInput } from "@/lib/components";
 import { PanelProps } from "../base-panel";
 
 const LLMPanel: FC<PanelProps> = ({ node }) => {
@@ -46,7 +46,11 @@ const LLMPanel: FC<PanelProps> = ({ node }) => {
 
   return (
     <>
-      <Accordion type="multiple" bordered={false} defaultValue={["input"]}>
+      <Accordion
+        type="multiple"
+        bordered={false}
+        defaultValue={["input", "system"]}
+      >
         <AccordionItem value="input" header="模型">
           <div className="grid gap-1">
             <ModelSelect
@@ -55,6 +59,9 @@ const LLMPanel: FC<PanelProps> = ({ node }) => {
               onSelect={handleModelChange}
             />
           </div>
+        </AccordionItem>
+        <AccordionItem value="system" header="提示词">
+          <VariableInput />
         </AccordionItem>
       </Accordion>
     </>
