@@ -48,7 +48,6 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
           return (
             <Input
               type="text"
-              className="w-full border rounded px-3 py-2"
               value={form.defaultValue}
               onChange={(e) => handleChange("defaultValue", e.target.value)}
             />
@@ -57,7 +56,6 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
           return (
             <Input
               type="number"
-              className="w-full border rounded px-3 py-2"
               value={form.defaultValue}
               onChange={(e) =>
                 handleChange("defaultValue", parseFloat(e.target.value))
@@ -69,7 +67,6 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
         case "object":
           return (
             <textarea
-              className="w-full border rounded px-3 py-2"
               rows={3}
               placeholder="请输入 JSON 格式"
               value={form.defaultValue}
@@ -80,7 +77,6 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
           return (
             <input
               type="date"
-              className="w-full border rounded px-3 py-2"
               value={form.defaultValue}
               onChange={(e) => handleChange("defaultValue", e.target.value)}
             />
@@ -90,7 +86,6 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             <input
               type="file"
               multiple
-              className="w-full border rounded px-3 py-2"
               onChange={(e) =>
                 handleChange("defaultValue", Array.from(e.target.files || []))
               }
@@ -118,7 +113,6 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             </label>
             <Input
               type="text"
-              className="w-full border rounded px-3 py-2"
               value={form.name}
               onChange={(e) => handleChange("name", e.target.value)}
             />
@@ -129,7 +123,6 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             </label>
             <Input
               type="text"
-              className="w-full border rounded px-3 py-2"
               value={form.description}
               onChange={(e) => handleChange("description", e.target.value)}
             />
