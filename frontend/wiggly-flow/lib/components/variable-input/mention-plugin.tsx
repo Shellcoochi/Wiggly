@@ -1,7 +1,14 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getSelection, $isRangeSelection, $isTextNode } from "lexical";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useLayoutEffect,
+  useCallback,
+} from "react";
+import { Popover  } from "radix-ui";
+import { useFloating, flip, offset, shift, autoUpdate } from "@floating-ui/react-dom";
 import { $createMentionNode } from "./mention-node";
 import { VariableList } from "..";
 
@@ -9,100 +16,54 @@ export const MentionPlugin = () => {
   const [editor] = useLexicalComposerContext();
   const [showTagTrigger, setShowTagTrigger] = useState(false);
   const [position, setPosition] = useState<DOMRect | null>(null);
-  const popupRef = useRef<HTMLDivElement>(null);
-  const [adjustedPos, setAdjustedPos] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
+  const virtualRef = useRef<{ getBoundingClientRect: () => DOMRect } | null>(null);
 
-  useEffect(() => {
-    return editor.registerUpdateListener(({ editorState }) => {
-      editorState.read(() => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) return;
+  const { refs, floatingStyles, update } = useFloating({
+    placement: "bottom-start",
+    middleware: [offset(4), flip(), shift()],
+    whileElementsMounted: autoUpdate,
+  });
 
-        const anchor = selection.anchor;
-        const anchorNode = anchor.getNode();
-        const anchorOffset = anchor.offset;
-        const textContent = anchorNode.getTextContent().slice(0, anchorOffset);
-        const lastAtPos = textContent.lastIndexOf("@");
-
-        const shouldShow =
-          lastAtPos !== -1 && !textContent.slice(lastAtPos + 1).includes(" ");
-
-        if (shouldShow) {
-          setShowTagTrigger(true);
-
-          const domRange =
-            window.getSelection()?.getRangeAt(0).getBoundingClientRect() ||
-            null;
-          setPosition(domRange);
-        } else {
-          setShowTagTrigger(false);
-        }
-      });
-    });
-  }, [editor]);
-
-  useEffect(() => {
-    return editor.registerUpdateListener(({ editorState }) => {
-      editorState.read(() => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) return;
-
-        const anchor = selection.anchor;
-        const anchorNode = anchor.getNode();
-        const anchorOffset = anchor.offset;
-        const textContent = anchorNode.getTextContent().slice(0, anchorOffset);
-
-        const lastAtPos = textContent.lastIndexOf("@");
-        const afterAtText =
-          lastAtPos !== -1 ? textContent.slice(lastAtPos + 1) : "";
-
-        const shouldShow = lastAtPos !== -1 && afterAtText.length === 0;
-
-        if (shouldShow) {
-          setShowTagTrigger(true);
-
-          const wSelection = window.getSelection();
-          const domRange =
-            wSelection && wSelection.rangeCount > 0
-              ? wSelection.getRangeAt(0).getBoundingClientRect()
-              : null;
-
-          setPosition(domRange);
-        } else {
-          setShowTagTrigger(false);
-        }
-      });
-    });
-  }, [editor]);
-
+  // Update virtual anchor whenever position changes
   useLayoutEffect(() => {
-    if (!position || !popupRef.current) {
-      setAdjustedPos(null);
-      return;
+    if (position) {
+      virtualRef.current = {
+        getBoundingClientRect: () => position,
+      };
+      refs.setReference(virtualRef.current);
+      update();
     }
-    const popup = popupRef.current;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const popupRect = popup.getBoundingClientRect();
+  }, [position, refs, update]);
 
-    let left = position.left + window.scrollX;
-    let top = position.bottom + window.scrollY + 4;
+  // Track selection and trigger display
+  const updateMentionTrigger = useCallback(() => {
+    editor.getEditorState().read(() => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) return;
 
-    if (left + popupRect.width > viewportWidth + window.scrollX) {
-      left = Math.max(
-        window.scrollX,
-        viewportWidth + window.scrollX - popupRect.width - 8
-      );
-    }
-    if (top + popupRect.height > viewportHeight + window.scrollY) {
-      top = position.top + window.scrollY - popupRect.height - 4;
-    }
+      const anchor = selection.anchor;
+      const anchorNode = anchor.getNode();
+      const anchorOffset = anchor.offset;
+      const textContent = anchorNode.getTextContent().slice(0, anchorOffset);
+      const lastAtPos = textContent.lastIndexOf("@");
 
-    setAdjustedPos({ top, left });
-  }, [position]);
+      const shouldShow =
+        lastAtPos !== -1 && !textContent.slice(lastAtPos + 1).includes(" ");
+
+      if (shouldShow) {
+        setShowTagTrigger(true);
+        const domRange =
+          window.getSelection()?.getRangeAt(0).getBoundingClientRect() || null;
+        setPosition(domRange);
+      } else {
+        setShowTagTrigger(false);
+      }
+    });
+  }, [editor]);
+
+  useEffect(() => {
+    return editor.registerUpdateListener(() => updateMentionTrigger());
+  }, [editor, updateMentionTrigger]);
 
   const insertMention = (name: string) => {
     editor.update(() => {
@@ -129,23 +90,14 @@ export const MentionPlugin = () => {
         const parent = mentionNode.getParent();
         if (parent) {
           const mentionIndex = parent.getChildren().indexOf(mentionNode);
-          if (mentionIndex !== -1) {
-            const nextNode = parent.getChildren()[mentionIndex + 1];
-            if (nextNode && $isTextNode(nextNode)) {
-              newSelection.anchor.set(nextNode.getKey(), 0, "text");
-              newSelection.focus.set(nextNode.getKey(), 0, "text");
-            } else {
-              newSelection.anchor.set(
-                parent.getKey(),
-                parent.getChildrenSize(),
-                "element"
-              );
-              newSelection.focus.set(
-                parent.getKey(),
-                parent.getChildrenSize(),
-                "element"
-              );
-            }
+          const nextNode = parent.getChildren()[mentionIndex + 1];
+
+          if (nextNode && $isTextNode(nextNode)) {
+            newSelection.anchor.set(nextNode.getKey(), 0, "text");
+            newSelection.focus.set(nextNode.getKey(), 0, "text");
+          } else {
+            newSelection.anchor.set(parent.getKey(), parent.getChildrenSize(), "element");
+            newSelection.focus.set(parent.getKey(), parent.getChildrenSize(), "element");
           }
         }
       }
@@ -154,23 +106,36 @@ export const MentionPlugin = () => {
     });
   };
 
-  return showTagTrigger && position
-    ? createPortal(
-        <div
-          ref={popupRef}
-          className="absolute z-50 w-[300px] rounded-md bg-white shadow-md border border-gray-200 p-2 text-sm"
+  return (
+    <Popover.Root open={showTagTrigger}>
+      <Popover.Anchor asChild>
+        {/* 虚拟锚点，Radix 需要一个真实 DOM 元素 */}
+        <span
           style={{
-            top: adjustedPos
-              ? adjustedPos.top
-              : position.bottom + window.scrollY + 4,
-            left: adjustedPos
-              ? adjustedPos.left
-              : position.left + window.scrollX,
+            position: "absolute",
+            width: 0,
+            height: 0,
+            top: 0,
+            left: 0,
           }}
+          ref={(node) => {
+            if (node && position) {
+              node.getBoundingClientRect = () => position;
+              refs.setReference(node);
+            }
+          }}
+        />
+      </Popover.Anchor>
+      <Popover.Portal>
+        <Popover.Content
+          ref={refs.setFloating}
+          style={floatingStyles}
+          sideOffset={4}
+          className="z-50 w-[300px] rounded-md bg-white shadow-md border border-gray-200 p-2 text-sm"
         >
           <VariableList onItemClick={(item) => insertMention(item.name)} />
-        </div>,
-        document.body
-      )
-    : null;
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
 };
