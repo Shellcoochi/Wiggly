@@ -1,171 +1,217 @@
-import React, { useState, useRef, useEffect, ReactNode } from "react";
+import { $getSelection, $isRangeSelection, $isTextNode } from "lexical";
+import { useEffect, useState } from "react";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { $createMentionNode, MentionNode } from "./MentionNode";
+import { Popover } from "@/ui";
+import { createPortal } from "react-dom";
 
-type ContentPart = {
-  type: "text" | "tag";
-  content: string;
-  id: string;
+const theme = {
+  text: {
+    bold: "font-bold",
+    italic: "italic",
+    underline: "underline",
+  },
 };
 
-export const VariableInput = () => {
-  const [content, setContent] = useState<ContentPart[]>([]);
-  const [contentT, setContentT] = useState<ContentPart[]>([]);
+function onError(error: Error) {
+  console.error(error);
+}
+
+function MentionPlugin() {
+  const [editor] = useLexicalComposerContext();
   const [showTagTrigger, setShowTagTrigger] = useState(false);
-  const inputRef = useRef<HTMLDivElement>(null);
-  const selectionRef = useRef<Range | null>(null);
+  const [query, setQuery] = useState("");
+  const [position, setPosition] = useState<DOMRect | null>(null);
 
-  const generateId = () => crypto.randomUUID();
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) return;
 
-  const updateContent = () => {
-    const newContent: any = [];
-    inputRef.current?.childNodes.forEach((node) => {
-      if (node.nodeName === "#text") {
-        newContent.push({
-          type: "text",
-          content: node.nodeValue || "", 
-          id: generateId(),
-        });
-      }
-      else if (node instanceof HTMLElement) {
-        if (node.dataset.type === "text") {
-          newContent.push({
-            type: "text",
-            content: node.dataset.content || "",
-            id: generateId(),
-          });
+        const anchor = selection.anchor;
+        const anchorNode = anchor.getNode();
+        const anchorOffset = anchor.offset;
+        const textContent = anchorNode.getTextContent().slice(0, anchorOffset);
+        const lastAtPos = textContent.lastIndexOf("@");
+
+        const shouldShow =
+          lastAtPos !== -1 && !textContent.slice(lastAtPos + 1).includes(" ");
+
+        if (shouldShow) {
+          setShowTagTrigger(true);
+          setQuery("");
+
+          const domRange =
+            window.getSelection()?.getRangeAt(0).getBoundingClientRect() ||
+            null;
+          setPosition(domRange);
         } else {
-          newContent.push({
-            type: "tag",
-            content: node.dataset.content || "",
-            id: generateId(),
-          });
-        }
-      }
-    });
-    setContentT(newContent);
-    console.log(newContent);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    setShowTagTrigger(e.key === "@");
-    setTimeout(() => {
-      updateContent();
-    });
-  };
-
-  const insertContentAtCursor = (content: Node) => {
-    const selection = window.getSelection();
-    if (selection?.rangeCount === 0) return;
-    const range = selection?.getRangeAt(0);
-    if (range) {
-      range.deleteContents();
-      range.insertNode(content);
-      range.setStartAfter(content);
-      range.collapse(true);
-      selection?.removeAllRanges();
-      selection?.addRange(range);
-
-      const parent = inputRef.current;
-      Array.from(parent?.childNodes ?? []).forEach((node) => {
-        if (node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) {
-          parent?.removeChild(node);
+          setShowTagTrigger(false);
         }
       });
-    }
-  };
-
-  const createTag = (label: string) => {
-    const tag = document.createElement("span");
-    tag.className =
-      "inline-flex items-center bg-blue-100 text-blue-800 px-2 py-0.5 rounded mx-1";
-    tag.textContent = label;
-    tag.contentEditable = "false";
-    tag.dataset.content = label;
-    tag.dataset.type = "tag";
-    return tag;
-  };
-
-  const mentionTag = (label: string) => {
-    const tag = createTag(label);
-    const selection = window.getSelection();
-    if (selection?.rangeCount === 0) return;
-    const range = selection?.getRangeAt(0);
-    const textBeforeCursor = range?.startContainer.textContent?.slice(
-      0,
-      range.startOffset
-    );
-    const hasAtSymbol = textBeforeCursor?.endsWith("@");
-
-    if (hasAtSymbol && range) {
-      const newRange = document.createRange();
-      newRange.setStart(range.startContainer, range.startOffset - 1);
-      newRange.setEnd(range.startContainer, range.startOffset);
-      newRange.deleteContents();
-      range.setStart(newRange.startContainer, newRange.startOffset);
-    }
-    insertContentAtCursor(tag);
-    updateContent();
-    setShowTagTrigger(false);
-  };
-
-  const renderContent = () =>
-    content.map((part) => {
-      if (part.type === "tag") {
-        return (
-          <span
-            key={part.id}
-            contentEditable={false}
-            data-content={part.content}
-            data-type={part.type}
-            className="inline-flex items-center bg-blue-100 text-blue-800 px-2 py-0.5 rounded mx-1"
-          >
-            {part.content}
-          </span>
-        );
-      }
-      return (
-        <span
-          key={part.id}
-          data-id={part.id}
-          data-type={part.type}
-          data-content={part.content}
-        >
-          {part.content}
-        </span>
-      );
     });
+  }, [editor]);
 
-  return (
-    <div className="max-w-xl mx-auto p-4">
-      <div className="mb-2 text-sm text-gray-500">
-        提示：输入 @ 可插入标签，标签不可编辑，Backspace 可整体删除标签
-      </div>
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) return;
 
-      <div
-        ref={inputRef}
-        contentEditable
-        onKeyDown={handleKeyDown}
-        className="min-h-[100px] p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 whitespace-pre-wrap break-words"
-        suppressContentEditableWarning
-      >
-        {renderContent()}
-      </div>
+        const anchor = selection.anchor;
+        const anchorNode = anchor.getNode();
+        const anchorOffset = anchor.offset;
+        const textContent = anchorNode.getTextContent().slice(0, anchorOffset);
 
-      {showTagTrigger && (
-        <div className="mt-2 p-2 border border-gray-200 rounded-lg shadow-sm">
-          <div className="text-sm text-gray-500 mb-1">选择标签：</div>
-          <div className="flex flex-wrap gap-2">
-            {["张三三", "李四", "王五", "赵六"].map((name) => (
-              <button
+        const lastAtPos = textContent.lastIndexOf("@");
+        const afterAtText =
+          lastAtPos !== -1 ? textContent.slice(lastAtPos + 1) : "";
+
+        const shouldShow = lastAtPos !== -1 && afterAtText.length === 0;
+
+        if (shouldShow) {
+          setShowTagTrigger(true);
+          setQuery("");
+
+          const wSelection = window.getSelection();
+          const domRange =
+            wSelection && wSelection.rangeCount > 0
+              ? wSelection.getRangeAt(0).getBoundingClientRect()
+              : null;
+
+          setPosition(domRange);
+        } else {
+          setShowTagTrigger(false);
+        }
+      });
+    });
+  }, [editor]);
+
+  const insertMention = (name: string) => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection) || !selection.isCollapsed()) return;
+
+      const anchorNode = selection.anchor.getNode();
+      const anchorOffset = selection.anchor.offset;
+      const textContent = anchorNode.getTextContent();
+      const lastAtPos = textContent.lastIndexOf("@", anchorOffset - 1);
+
+      if (lastAtPos !== -1 && $isTextNode(anchorNode)) {
+        anchorNode.spliceText(lastAtPos, anchorOffset - lastAtPos, "");
+
+        const newSelection = $getSelection();
+        if (!$isRangeSelection(newSelection)) return;
+
+        newSelection.anchor.set(anchorNode.getKey(), lastAtPos, "text");
+        newSelection.focus.set(anchorNode.getKey(), lastAtPos, "text");
+
+        const mentionNode = $createMentionNode(name);
+        newSelection.insertNodes([mentionNode]);
+
+        const parent = mentionNode.getParent();
+        if (parent) {
+          const mentionIndex = parent.getChildren().indexOf(mentionNode);
+          if (mentionIndex !== -1) {
+            const nextNode = parent.getChildren()[mentionIndex + 1];
+            if (nextNode && $isTextNode(nextNode)) {
+              newSelection.anchor.set(nextNode.getKey(), 0, "text");
+              newSelection.focus.set(nextNode.getKey(), 0, "text");
+            } else {
+              newSelection.anchor.set(
+                parent.getKey(),
+                parent.getChildrenSize(),
+                "element"
+              );
+              newSelection.focus.set(
+                parent.getKey(),
+                parent.getChildrenSize(),
+                "element"
+              );
+            }
+          }
+        }
+      }
+
+      setShowTagTrigger(false);
+    });
+  };
+
+  const filteredList = ["张三三", "李四", "王五", "赵六"].filter((name) =>
+    name.includes(query)
+  );
+
+  return showTagTrigger && position
+    ? createPortal(
+        <div
+          className="absolute z-50 w-52 rounded-md bg-white shadow-md border border-gray-200 p-2 text-sm"
+          style={{
+            top: position.bottom + window.scrollY + 4,
+            left: position.left + window.scrollX,
+          }}
+        >
+          <div className="text-xs text-gray-500 mb-1">搜索标签：</div>
+          <input
+            type="text"
+            className="w-full border px-2 py-1 mb-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {filteredList.length > 0 ? (
+            filteredList.map((name) => (
+              <div
                 key={name}
-                onClick={() => mentionTag(name)}
-                className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-sm"
+                className="cursor-pointer px-2 py-1 hover:bg-blue-50 rounded"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  insertMention(name);
+                }}
               >
                 {name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+              </div>
+            ))
+          ) : (
+            <div className="text-gray-400 text-xs px-2">无匹配项</div>
+          )}
+        </div>,
+        document.body
+      )
+    : null;
+}
+
+export const VariableInput = () => {
+  const initialConfig = {
+    namespace: "MyEditor",
+    theme,
+    onError,
+    nodes: [MentionNode],
+  };
+
+  return (
+    <div className="relative">
+      <LexicalComposer initialConfig={initialConfig}>
+        <RichTextPlugin
+          contentEditable={
+            <ContentEditable className="min-h-[100px] p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
+          }
+          placeholder={
+            <div className="absolute top-3 left-3 text-gray-400 pointer-events-none">
+              输入@插入标签...
+            </div>
+          }
+          ErrorBoundary={LexicalErrorBoundary}
+        />
+        <HistoryPlugin />
+        <OnChangePlugin onChange={() => {}} />
+        <MentionPlugin />
+      </LexicalComposer>
     </div>
   );
 };

@@ -61,7 +61,18 @@ const LLMPanel: FC<PanelProps> = ({ node }) => {
           </div>
         </AccordionItem>
         <AccordionItem value="system" header="提示词">
-          <VariableInput />
+          <VariableInput
+            value={[
+              {
+                type: "text",
+                content: "hello",
+              },
+              {
+                type: "tag",
+                content: "tag",
+              },
+            ]}
+          />
         </AccordionItem>
       </Accordion>
     </>

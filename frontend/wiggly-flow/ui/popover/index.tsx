@@ -5,7 +5,7 @@ import { Popover as RadixPopover } from "radix-ui";
 import { clsx } from "clsx";
 
 interface PopoverProps {
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
   children: React.ReactNode;
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
