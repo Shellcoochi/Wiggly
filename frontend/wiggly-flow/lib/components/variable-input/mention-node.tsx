@@ -1,7 +1,7 @@
 import React from "react";
 import { DecoratorNode, LexicalNode, NodeKey } from "lexical";
 import { ReactNode } from "react";
-import { useMentionSelection } from "./useMentionSelection";
+import { useMentionSelection } from "./use-mention-selection";
 
 function MentionComponent({
   name,
