@@ -1,15 +1,5 @@
 import { FC } from "react";
-import {
-  Avatar,
-  Button,
-  DropdownMenu,
-  Icon,
-  Select,
-  SelectOptionItemProps,
-  Switch,
-  Tag,
-  Tooltip,
-} from "@/ui";
+import { Avatar, Button, DropdownMenu, SelectOptionItemProps } from "@/ui";
 
 export interface ToolbarProps {
   run?: () => void;

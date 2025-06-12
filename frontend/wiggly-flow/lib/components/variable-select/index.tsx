@@ -1,7 +1,8 @@
-import { useState, Fragment, useMemo, FC, useEffect } from "react";
+import { useState, useMemo, FC, useEffect } from "react";
 import clsx from "clsx";
-import { Icon, Input, Popover, Tag } from "@/ui";
+import { Icon, Popover, Tag } from "@/ui";
 import { useReactFlow } from "@xyflow/react";
+import { VariableList } from "..";
 
 export interface VariableItemProps {
   type?: string;
@@ -64,10 +65,6 @@ export const VariableSelect: FC<VariableSelectProps> = ({
       const node = getNode(id);
       return node?.data.label as string;
     }
-  };
-
-  const handleSearch = (val: string) => {
-    setSearchKey(val);
   };
 
   const handleSelect = (item: any, parent?: any) => {
@@ -140,60 +137,10 @@ export const VariableSelect: FC<VariableSelectProps> = ({
         </div>
       }
     >
-      <div className="rounded-lg text-xs w-[300px]">
-        {!hideSearch ? (
-          <div className="mb-4">
-            <Input
-              type="text"
-              size="sm"
-              placeholder="搜索变量"
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-          </div>
-        ) : null}
-
-        <div className="space-y-2 max-h-[300px] overflow-auto">
-          {variables.map((item, index) => {
-            if (item.children) {
-              return (
-                <Fragment key={index}>
-                  <div className="text-gray-500">{item.name}</div>
-                  {item.children.map((child, i) => (
-                    <div
-                      key={`${item.name}-${child.name}`}
-                      className="grid grid-cols-2 py-2 cursor-pointer hover:bg-gray-100 rounded px-1"
-                      onClick={() => handleSelect(child, item)}
-                    >
-                      <div className="flex items-center">
-                        <span className="text-gray-500 mr-1">{"{x}"}</span>
-                        <span className="font-mono">{child.name}</span>
-                      </div>
-                      <span className="font-mono text-gray-600 text-right">
-                        {child.type}
-                      </span>
-                    </div>
-                  ))}
-                </Fragment>
-              );
-            }
-            return (
-              <div
-                key={item.name}
-                className="grid grid-cols-2 py-2 cursor-pointer hover:bg-gray-100 rounded px-1"
-                onClick={() => handleSelect(item)}
-              >
-                <div className="flex items-center">
-                  <span className="text-gray-500 mr-1">{"{x}"}</span>
-                  <span className="font-mono">{item.name}</span>
-                </div>
-                <span className="font-mono text-gray-600 text-right">
-                  {item.type}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <VariableList
+        hideSearch={hideSearch}
+        onItemClick={(item, parent) => handleSelect(item, parent)}
+      />
     </Popover>
   );
 };

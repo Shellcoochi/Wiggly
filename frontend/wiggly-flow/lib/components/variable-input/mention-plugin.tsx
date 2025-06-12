@@ -3,11 +3,11 @@ import { $getSelection, $isRangeSelection, $isTextNode } from "lexical";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { $createMentionNode } from "./mention-node";
+import { VariableList } from "..";
 
 export const MentionPlugin = () => {
   const [editor] = useLexicalComposerContext();
   const [showTagTrigger, setShowTagTrigger] = useState(false);
-  const [query, setQuery] = useState("");
   const [position, setPosition] = useState<DOMRect | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const [adjustedPos, setAdjustedPos] = useState<{
@@ -32,7 +32,6 @@ export const MentionPlugin = () => {
 
         if (shouldShow) {
           setShowTagTrigger(true);
-          setQuery("");
 
           const domRange =
             window.getSelection()?.getRangeAt(0).getBoundingClientRect() ||
@@ -64,7 +63,6 @@ export const MentionPlugin = () => {
 
         if (shouldShow) {
           setShowTagTrigger(true);
-          setQuery("");
 
           const wSelection = window.getSelection();
           const domRange =
@@ -156,15 +154,11 @@ export const MentionPlugin = () => {
     });
   };
 
-  const filteredList = ["张三三", "李四", "王五", "赵六"].filter((name) =>
-    name.includes(query)
-  );
-
   return showTagTrigger && position
     ? createPortal(
         <div
           ref={popupRef}
-          className="absolute z-50 w-52 rounded-md bg-white shadow-md border border-gray-200 p-2 text-sm"
+          className="absolute z-50 w-[300px] rounded-md bg-white shadow-md border border-gray-200 p-2 text-sm"
           style={{
             top: adjustedPos
               ? adjustedPos.top
@@ -174,29 +168,7 @@ export const MentionPlugin = () => {
               : position.left + window.scrollX,
           }}
         >
-          <div className="text-xs text-gray-500 mb-1">搜索标签：</div>
-          <input
-            type="text"
-            className="w-full border px-2 py-1 mb-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {filteredList.length > 0 ? (
-            filteredList.map((name) => (
-              <div
-                key={name}
-                className="cursor-pointer px-2 py-1 hover:bg-blue-50 rounded"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  insertMention(name);
-                }}
-              >
-                {name}
-              </div>
-            ))
-          ) : (
-            <div className="text-gray-400 text-xs px-2">无匹配项</div>
-          )}
+          <VariableList onItemClick={(item) => insertMention(item.name)} />
         </div>,
         document.body
       )
