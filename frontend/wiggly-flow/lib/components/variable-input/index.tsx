@@ -5,7 +5,19 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { MentionPlugin } from "./mention-plugin";
-import { MentionNode } from "./mention-node";
+import {
+  $createMentionNode,
+  $isMentionNode,
+  MentionNode,
+} from "./mention-node";
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $isTextNode,
+  EditorState,
+  LexicalNode,
+} from "lexical";
 
 const theme = {
   text: {
@@ -25,6 +37,40 @@ export const VariableInput = () => {
     theme,
     onError,
     nodes: [MentionNode],
+    editorState: () => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      paragraph.append(
+        $createTextNode("你好，"),
+        $createMentionNode("张三"),
+        $createTextNode("，请填写表单。")
+      );
+      root.append(paragraph);
+    },
+  };
+
+  const handleChange = (editorState: EditorState) => {
+    editorState.read(() => {
+      const root = $getRoot();
+      const result: (string | { name: string })[] = [];
+
+      const extractFromNode = (node: LexicalNode) => {
+        if ($isTextNode(node)) {
+          result.push(node.getTextContent());
+        } else if ($isMentionNode(node)) {
+          result.push({ name: (node as MentionNode).__name });
+        } else if (
+          "getChildren" in node &&
+          typeof node.getChildren === "function"
+        ) {
+          node.getChildren().forEach(extractFromNode);
+        }
+      };
+
+      root.getChildren().forEach(extractFromNode);
+
+      console.log("最终内容：", result);
+    });
   };
 
   return (
@@ -42,7 +88,7 @@ export const VariableInput = () => {
           ErrorBoundary={LexicalErrorBoundary}
         />
         <HistoryPlugin />
-        <OnChangePlugin onChange={() => {}} />
+        <OnChangePlugin onChange={handleChange} />
         <MentionPlugin />
       </LexicalComposer>
     </div>
