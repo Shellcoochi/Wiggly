@@ -75,7 +75,7 @@ function Flow() {
       >
         <Background />
         <Controls orientation="horizontal" />
-        <Guideline guides={guides} />
+        <Guideline guides={guides} currentNode={currentNode} />
         {currentNode ? (
           <Panel
             position="bottom-right"
