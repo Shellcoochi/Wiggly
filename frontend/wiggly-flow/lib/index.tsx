@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useMemo } from "react";
 import {
   ReactFlow,
   Controls,
@@ -10,15 +10,17 @@ import {
   ReactFlowProvider,
   Panel,
   useOnSelectionChange,
+  useReactFlow,
 } from "@xyflow/react";
 import { NodeTypes } from "./nodes";
 import { EdgeTypes } from "./edges";
 import BasePanel from "./panels/base-panel";
-
 import "@xyflow/react/dist/style.css";
 import "remixicon/fonts/remixicon.css";
 import { FlowNodeProps } from "./types";
 import Toolbar from "./toolbar";
+import { useAlignGuides } from "./hooks";
+import { Guideline } from "./components";
 
 const initialNodes = [
   {
@@ -42,12 +44,14 @@ function Flow() {
   const [currentNode, setCurrentNode] = useState<FlowNodeProps>();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const { guides, handleNodesChange } = useAlignGuides(onNodesChange);
 
   const onConnect = useCallback(
     (params: any) =>
       setEdges((eds) => addEdge({ ...params, type: "base" }, eds)),
     [setEdges]
   );
+
   const onChange = useCallback(({ nodes }: any) => {
     const [node] = nodes;
     setCurrentNode(node);
@@ -65,13 +69,13 @@ function Flow() {
         edges={edges}
         nodeTypes={NodeTypes}
         edgeTypes={EdgeTypes}
-        onNodesChange={onNodesChange}
+        onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
       >
         <Background />
         <Controls orientation="horizontal" />
-
+        <Guideline guides={guides} />
         {currentNode ? (
           <Panel
             position="bottom-right"
