@@ -37,38 +37,41 @@ export const MentionPlugin = () => {
   }, [position, refs, update]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(({ editorState }) => {
-      editorState.read(() => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) return;
+  return editor.registerUpdateListener(({ editorState }) => {
+    editorState.read(() => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) return;
 
-        const anchor = selection.anchor;
-        const anchorNode = anchor.getNode();
-        const anchorOffset = anchor.offset;
-        const textContent = anchorNode.getTextContent().slice(0, anchorOffset);
+      const anchor = selection.anchor;
+      const anchorNode = anchor.getNode();
+      const anchorOffset = anchor.offset;
+      const textContent = anchorNode.getTextContent().slice(0, anchorOffset);
 
-        const lastAtPos = textContent.lastIndexOf("@");
-        const afterAtText =
-          lastAtPos !== -1 ? textContent.slice(lastAtPos + 1) : "";
+      const lastAtPos = textContent.lastIndexOf("@");
+      const afterAtText =
+        lastAtPos !== -1 ? textContent.slice(lastAtPos + 1) : "";
 
-        const shouldShow = lastAtPos !== -1 && afterAtText.length === 0;
+      const shouldShow = lastAtPos !== -1 && afterAtText.length === 0;
 
-        if (shouldShow) {
-          setShowTagTrigger(true);
+      if (shouldShow) {
+        setShowTagTrigger(true);
 
-          const wSelection = window.getSelection();
-          const domRange =
-            wSelection && wSelection.rangeCount > 0
-              ? wSelection.getRangeAt(0).getBoundingClientRect()
-              : null;
+        const domSelection = window.getSelection();
+        const domRange =
+          domSelection &&
+          domSelection.rangeCount > 0 &&
+          editor.getRootElement()?.contains(domSelection.anchorNode)
+            ? domSelection.getRangeAt(0).getBoundingClientRect()
+            : null;
 
-          setPosition(domRange);
-        } else {
-          setShowTagTrigger(false);
-        }
-      });
+        setPosition(domRange);
+      } else {
+        setShowTagTrigger(false);
+      }
     });
-  }, [editor]);
+  });
+}, [editor]);
+
 
   const insertMention = (name: string) => {
     editor.update(() => {
