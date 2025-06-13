@@ -15,6 +15,9 @@ interface PopoverProps {
   onOpenChange?: (open: boolean) => void;
   modal?: boolean;
   showArrow?: boolean;
+  contentRef?: React.Ref<HTMLDivElement>;
+  contentStyle?: React.CSSProperties;
+  onOpenAutoFocus?: (event: Event) => void;
 }
 
 export function Popover({
@@ -28,6 +31,9 @@ export function Popover({
   onOpenChange,
   modal,
   showArrow = true,
+  contentRef,
+  contentStyle,
+  onOpenAutoFocus
 }: PopoverProps) {
   return (
     <RadixPopover.Root
@@ -42,6 +48,9 @@ export function Popover({
           side={side}
           align={align}
           sideOffset={8}
+          ref={contentRef}
+          style={contentStyle}
+          onOpenAutoFocus={onOpenAutoFocus}
           className={clsx("rounded-md bg-white p-4 shadow-md z-50", className)}
         >
           {children}

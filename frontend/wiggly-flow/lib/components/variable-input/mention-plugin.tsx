@@ -1,22 +1,24 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getSelection, $isRangeSelection, $isTextNode } from "lexical";
+import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import {
-  useEffect,
-  useRef,
-  useState,
-  useLayoutEffect,
-  useCallback,
-} from "react";
-import { Popover  } from "radix-ui";
-import { useFloating, flip, offset, shift, autoUpdate } from "@floating-ui/react-dom";
+  useFloating,
+  flip,
+  offset,
+  shift,
+  autoUpdate,
+} from "@floating-ui/react-dom";
 import { $createMentionNode } from "./mention-node";
 import { VariableList } from "..";
+import { Popover } from "@/ui";
 
 export const MentionPlugin = () => {
   const [editor] = useLexicalComposerContext();
   const [showTagTrigger, setShowTagTrigger] = useState(false);
   const [position, setPosition] = useState<DOMRect | null>(null);
-  const virtualRef = useRef<{ getBoundingClientRect: () => DOMRect } | null>(null);
+  const virtualRef = useRef<{ getBoundingClientRect: () => DOMRect } | null>(
+    null
+  );
 
   const { refs, floatingStyles, update } = useFloating({
     placement: "bottom-start",
@@ -24,7 +26,6 @@ export const MentionPlugin = () => {
     whileElementsMounted: autoUpdate,
   });
 
-  // Update virtual anchor whenever position changes
   useLayoutEffect(() => {
     if (position) {
       virtualRef.current = {
@@ -35,35 +36,39 @@ export const MentionPlugin = () => {
     }
   }, [position, refs, update]);
 
-  // Track selection and trigger display
-  const updateMentionTrigger = useCallback(() => {
-    editor.getEditorState().read(() => {
-      const selection = $getSelection();
-      if (!$isRangeSelection(selection)) return;
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) return;
 
-      const anchor = selection.anchor;
-      const anchorNode = anchor.getNode();
-      const anchorOffset = anchor.offset;
-      const textContent = anchorNode.getTextContent().slice(0, anchorOffset);
-      const lastAtPos = textContent.lastIndexOf("@");
+        const anchor = selection.anchor;
+        const anchorNode = anchor.getNode();
+        const anchorOffset = anchor.offset;
+        const textContent = anchorNode.getTextContent().slice(0, anchorOffset);
 
-      const shouldShow =
-        lastAtPos !== -1 && !textContent.slice(lastAtPos + 1).includes(" ");
+        const lastAtPos = textContent.lastIndexOf("@");
+        const afterAtText =
+          lastAtPos !== -1 ? textContent.slice(lastAtPos + 1) : "";
 
-      if (shouldShow) {
-        setShowTagTrigger(true);
-        const domRange =
-          window.getSelection()?.getRangeAt(0).getBoundingClientRect() || null;
-        setPosition(domRange);
-      } else {
-        setShowTagTrigger(false);
-      }
+        const shouldShow = lastAtPos !== -1 && afterAtText.length === 0;
+
+        if (shouldShow) {
+          setShowTagTrigger(true);
+
+          const wSelection = window.getSelection();
+          const domRange =
+            wSelection && wSelection.rangeCount > 0
+              ? wSelection.getRangeAt(0).getBoundingClientRect()
+              : null;
+
+          setPosition(domRange);
+        } else {
+          setShowTagTrigger(false);
+        }
+      });
     });
   }, [editor]);
-
-  useEffect(() => {
-    return editor.registerUpdateListener(() => updateMentionTrigger());
-  }, [editor, updateMentionTrigger]);
 
   const insertMention = (name: string) => {
     editor.update(() => {
@@ -96,20 +101,30 @@ export const MentionPlugin = () => {
             newSelection.anchor.set(nextNode.getKey(), 0, "text");
             newSelection.focus.set(nextNode.getKey(), 0, "text");
           } else {
-            newSelection.anchor.set(parent.getKey(), parent.getChildrenSize(), "element");
-            newSelection.focus.set(parent.getKey(), parent.getChildrenSize(), "element");
+            newSelection.anchor.set(
+              parent.getKey(),
+              parent.getChildrenSize(),
+              "element"
+            );
+            newSelection.focus.set(
+              parent.getKey(),
+              parent.getChildrenSize(),
+              "element"
+            );
           }
         }
       }
-
       setShowTagTrigger(false);
     });
   };
 
   return (
-    <Popover.Root open={showTagTrigger}>
-      <Popover.Anchor asChild>
-        {/* 虚拟锚点，Radix 需要一个真实 DOM 元素 */}
+    <Popover
+      open={showTagTrigger}
+      contentRef={refs.setFloating}
+      contentStyle={floatingStyles}
+      onOpenAutoFocus={(e) => e.preventDefault()}
+      trigger={
         <span
           style={{
             position: "absolute",
@@ -125,17 +140,9 @@ export const MentionPlugin = () => {
             }
           }}
         />
-      </Popover.Anchor>
-      <Popover.Portal>
-        <Popover.Content
-          ref={refs.setFloating}
-          style={floatingStyles}
-          sideOffset={4}
-          className="z-50 w-[300px] rounded-md bg-white shadow-md border border-gray-200 p-2 text-sm"
-        >
-          <VariableList onItemClick={(item) => insertMention(item.name)} />
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+      }
+    >
+      <VariableList onItemClick={(item) => insertMention(item.name)} />
+    </Popover>
   );
 };
