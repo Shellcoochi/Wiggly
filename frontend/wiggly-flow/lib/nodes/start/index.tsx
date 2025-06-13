@@ -7,7 +7,7 @@ export default memo((props: FlowNodeProps) => {
   const {
     data: { variables },
   } = props;
-
+// OutputVars
   return (
     <BaseNode
       node={props}

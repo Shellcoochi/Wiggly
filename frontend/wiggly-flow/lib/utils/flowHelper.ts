@@ -1,5 +1,5 @@
 import { customAlphabet, nanoid } from "nanoid";
-import { type Node, type Edge } from "@xyflow/react";
+import { type Node, type Edge, getIncomers } from "@xyflow/react";
 import ELK from "elkjs";
 const elk = new ELK();
 
@@ -63,4 +63,35 @@ export async function layoutNewNode({
   };
 
   return { newNode: positionedNode };
+}
+
+export function getNestedPredecessors(
+  targetNodeId: string,
+  nodes: Node[],
+  edges: Edge[],
+  visited = new Set<string>()
+): Node[] {
+  const targetNode = nodes.find((n) => n.id === targetNodeId);
+  if (!targetNode || visited.has(targetNodeId)) return [];
+  visited.add(targetNodeId);
+
+  const directPredecessors = getIncomers(targetNode, nodes, edges);
+
+  const nestedPredecessors = directPredecessors.flatMap((node) =>
+    getNestedPredecessors(node.id, nodes, edges, visited)
+  );
+
+  const parentPredecessors = targetNode.parentId
+    ? getNestedPredecessors(targetNode.parentId, nodes, edges, visited)
+    : [];
+
+  const allPredecessors = [
+    ...directPredecessors,
+    ...nestedPredecessors,
+    ...parentPredecessors,
+  ];
+  return allPredecessors.filter(
+    (node, index) =>
+      allPredecessors.findIndex((n) => n.id === node.id) === index
+  );
 }

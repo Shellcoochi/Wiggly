@@ -58,6 +58,24 @@ export enum NodeLabel {
 
 export enum NodeGroup {}
 
+export enum VariableType {
+  String = "string",
+  Number = "number",
+  Boolean = "boolean",
+}
+
+export const VariableTypes = {
+  string: {
+    label: "String",
+  },
+  number: {
+    label: "Number",
+  },
+  boolean: {
+    label: "Boolean",
+  },
+};
+
 export const NodeConfig: any = {
   [NodeType.Start]: {
     type: NodeType.Start,
@@ -72,7 +90,11 @@ export const NodeConfig: any = {
   [NodeType.LLM]: {
     type: NodeType.LLM,
     width: 255,
-    data: { label: NodeLabel.llm, description: "" },
+    data: {
+      label: NodeLabel.llm,
+      description: "",
+      outputVars: [{ name: "text", desrc: "生成内容", type: VariableType.String }],
+    },
   },
   [NodeType.IfElse]: {
     type: NodeType.IfElse,
@@ -104,24 +126,6 @@ export const NodeConfig: any = {
     width: 50,
     height: 50,
     data: { label: "", description: "" },
-  },
-};
-
-export enum VariableType {
-  String = "string",
-  Number = "number",
-  Boolean = "boolean",
-}
-
-export const VariableTypes = {
-  string: {
-    label: "String",
-  },
-  number: {
-    label: "Number",
-  },
-  boolean: {
-    label: "Boolean",
   },
 };
 
