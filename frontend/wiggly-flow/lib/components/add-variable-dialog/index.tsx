@@ -13,7 +13,7 @@ type VariableType =
 
 export interface VariableProps {
   name: string;
-  description: string;
+  desrc: string;
   type: VariableType;
   defaultValue: any;
 }
@@ -24,7 +24,7 @@ interface AddVariableDialogProps {
 
 const defaultForm: VariableProps = {
   name: "",
-  description: "",
+  desrc: "",
   type: "string",
   defaultValue: "",
 };
@@ -123,8 +123,8 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             </label>
             <Input
               type="text"
-              value={form.description}
-              onChange={(e) => handleChange("description", e.target.value)}
+              value={form.desrc}
+              onChange={(e) => handleChange("desrc", e.target.value)}
             />
           </div>
           <div>

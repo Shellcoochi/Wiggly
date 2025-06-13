@@ -2,7 +2,7 @@ import React, { memo, useEffect } from "react";
 import BaseNode from "../base-node/node";
 import { FlowNodeProps } from "@/lib/types";
 import { VariableProps, VariableLabel } from "@/lib/components";
-import { getNestedPredecessors } from "@/lib/utils/flowHelper";
+import { getPredVariables } from "@/lib/utils/flowHelper";
 import { useEdges, useNodes } from "@xyflow/react";
 
 export default memo((props: FlowNodeProps) => {
@@ -14,7 +14,7 @@ export default memo((props: FlowNodeProps) => {
   const edges = useEdges();
 
   useEffect(() => {
-    const predecessors = getNestedPredecessors(id, nodes, edges);
+    const predecessors = getPredVariables(id, nodes, edges);
   }, []);
 
   return (

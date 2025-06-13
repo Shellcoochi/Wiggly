@@ -1,6 +1,8 @@
 import { useState, Fragment, useMemo, FC } from "react";
 import clsx from "clsx";
 import { Input } from "@/ui";
+import { getPredVariables } from "@/lib/utils/flowHelper";
+import { useEdges, useNodes } from "@xyflow/react";
 
 export interface VariableListItemProps {
   type?: string;
@@ -24,28 +26,21 @@ export const VariableList: FC<VariableListProps> = ({
   onItemClick,
 }) => {
   const [searchKey, setSearchKey] = useState("");
+  const nodes = useNodes();
+  const edges = useEdges();
 
   const initOptions = () => {
-    return (
-      options || [
-        {
-          name: "开始",
-          id: "1",
-          children: [
-            { name: "sdf233", type: "String" },
-            { name: "eeeee", type: "String" },
-            { name: "aaasss", type: "String" },
-            { name: "nmn", type: "Number" },
-          ],
-        },
-        { name: "sys.user_id", type: "String" },
-        { name: "sys.files", type: "Array[File]" },
-        { name: "sys.app_id", type: "String" },
-        { name: "sys.workflow_id", type: "String" },
-        { name: "sys.workflow_run_id", type: "String" },
-        { name: "ENVIRONMENT", type: "String" },
-      ]
-    );
+    if (options) {
+      return options;
+    } else {
+      const [currentNode] = nodes.filter((node) => node.selected);
+      const predecessors = getPredVariables(
+        currentNode.id,
+        nodes,
+        edges
+      ) as VariableListItemProps[];
+      return predecessors;
+    }
   };
 
   const variables = useMemo(() => {
@@ -79,7 +74,9 @@ export const VariableList: FC<VariableListProps> = ({
   };
 
   return (
-    <div className={clsx("rounded-lg text-xs w-[300px] p-2 bg-[#fff]", className)}>
+    <div
+      className={clsx("rounded-lg text-xs w-[300px] p-2 bg-[#fff]", className)}
+    >
       {!hideSearch ? (
         <div className="mb-4">
           <Input

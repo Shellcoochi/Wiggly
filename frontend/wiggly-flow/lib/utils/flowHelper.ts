@@ -76,7 +76,6 @@ export function getNestedPredecessors(
   visited.add(targetNodeId);
 
   const directPredecessors = getIncomers(targetNode, nodes, edges);
-
   const nestedPredecessors = directPredecessors.flatMap((node) =>
     getNestedPredecessors(node.id, nodes, edges, visited)
   );
@@ -90,8 +89,34 @@ export function getNestedPredecessors(
     ...nestedPredecessors,
     ...parentPredecessors,
   ];
-  return allPredecessors.filter(
-    (node, index) =>
-      allPredecessors.findIndex((n) => n.id === node.id) === index
+
+  const uniquePredecessors = nodes.filter((node) =>
+    allPredecessors.some((n) => n.id === node.id)
   );
+
+  return uniquePredecessors;
+}
+
+export function getPredVariables(
+  targetNodeId: string,
+  nodes: Node[],
+  edges: Edge[]
+) {
+  const predecessors = getNestedPredecessors(targetNodeId, nodes, edges);
+  const variables =
+    predecessors
+      .map((node) => {
+        const data = node.data as any;
+        let group;
+        if (data.outputVars?.length || data.variables?.length) {
+          group = {
+            name: data.label,
+            id: node.id,
+            children: [...(data.variables ?? []), ...(data.outputVars ?? [])],
+          };
+          return group;
+        }
+      })
+      .filter((item) => item) ?? [];
+  return variables;
 }
