@@ -18,6 +18,7 @@ interface PopoverProps {
   contentRef?: React.Ref<HTMLDivElement>;
   contentStyle?: React.CSSProperties;
   onOpenAutoFocus?: (event: Event) => void;
+  sideOffset?: number;
 }
 
 export function Popover({
@@ -33,7 +34,8 @@ export function Popover({
   showArrow = true,
   contentRef,
   contentStyle,
-  onOpenAutoFocus
+  onOpenAutoFocus,
+  sideOffset = 0,
 }: PopoverProps) {
   return (
     <RadixPopover.Root
@@ -47,7 +49,7 @@ export function Popover({
         <RadixPopover.Content
           side={side}
           align={align}
-          sideOffset={8}
+          sideOffset={sideOffset}
           ref={contentRef}
           style={contentStyle}
           onOpenAutoFocus={onOpenAutoFocus}

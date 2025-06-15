@@ -15,3 +15,4 @@ export * from "./separator";
 export * from "./slider";
 export * from "./avatar";
 export * from "./scroll-area"
+export * from "./time-picker"
