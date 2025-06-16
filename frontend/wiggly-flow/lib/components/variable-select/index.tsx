@@ -61,6 +61,7 @@ export const VariableSelect: FC<VariableSelectProps> = ({
   }, [options, searchKey]);
 
   const renderNodeLabel = (id?: string) => {
+    if (id === "ENV") return "ENV";
     if (id) {
       const node = getNode(id);
       return node?.data.label as string;
