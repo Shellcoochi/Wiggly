@@ -85,7 +85,6 @@ function Flow() {
           </Panel>
         ) : null}
       </ReactFlow>
-
       <div className="absolute top-2 right-2 h-[50px] p-2 rounded-lg">
         <Toolbar />
       </div>

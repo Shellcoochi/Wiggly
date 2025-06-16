@@ -1,5 +1,6 @@
 import { FC } from "react";
 import { Avatar, Button, Icon } from "@/ui";
+import { EnvVariableTool } from "./env-variable-tool";
 
 export interface ToolbarProps {
   run?: () => void;
@@ -8,9 +9,7 @@ export interface ToolbarProps {
 const Toolbar: FC<ToolbarProps> = ({ run }) => {
   return (
     <div className="flex gap-2 items-center">
-      <Button variant="outline" className="!p-2">
-        <Icon name="env" />
-      </Button>
+      <EnvVariableTool />
       <Button variant="outline" onClick={run}>
         运行
       </Button>

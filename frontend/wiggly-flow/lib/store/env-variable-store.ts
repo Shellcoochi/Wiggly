@@ -9,7 +9,7 @@ interface EnvVariableStoreStateProps {
 const envVariableStoreState: StateCreator<EnvVariableStoreStateProps> = (
   set
 ) => ({
-  envVariables: [{ name: "test" }],
+  envVariables: [],
   setEnvVariables: (envVariables) =>
     set(() => ({
       envVariables,
