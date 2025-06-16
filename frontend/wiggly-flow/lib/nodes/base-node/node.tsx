@@ -6,6 +6,7 @@ import { NodeLabel } from "@/lib/const";
 import { FlowNodeProps } from "@/lib/types";
 import clsx from "clsx";
 import { NodeIcon } from "@/lib/components/node-icon";
+import NodeToolbar from "./node-tool-bar";
 
 type NodeHandleProps = {
   targetId?: string;
@@ -57,6 +58,7 @@ export default memo(
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
+        <NodeToolbar isVisible={data.forceToolbarVisible || undefined} />
         <Card
           className={clsx(
             "h-full px-3 py-2 rounded border-2 transition bg-white box-border",
