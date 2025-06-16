@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { Input } from "@/ui";
 import { getPredVariables } from "@/lib/utils/flowHelper";
 import { useEdges, useNodes } from "@xyflow/react";
+import { useEnvVariableStore } from "@/lib/store";
 
 export interface VariableListItemProps {
   type?: string;
@@ -28,20 +29,7 @@ export const VariableList: FC<VariableListProps> = ({
   const [searchKey, setSearchKey] = useState("");
   const nodes = useNodes();
   const edges = useEdges();
-
-  const initOptions = () => {
-    if (options) {
-      return options;
-    } else {
-      const [currentNode] = nodes.filter((node) => node.selected);
-      const predecessors = getPredVariables(
-        currentNode.id,
-        nodes,
-        edges
-      ) as VariableListItemProps[];
-      return predecessors;
-    }
-  };
+  const { envVariables } = useEnvVariableStore();
 
   const variables = useMemo(() => {
     const variableOptions = initOptions();
@@ -64,14 +52,33 @@ export const VariableList: FC<VariableListProps> = ({
     return filteredOptions;
   }, [options, searchKey]);
 
-  const handleSearch = (val: string) => {
-    setSearchKey(val);
-  };
+  function initOptions() {
+    if (options) {
+      return options;
+    } else {
+      const [currentNode] = nodes.filter((node) => node.selected);
+      const predecessors = getPredVariables(
+        currentNode.id,
+        nodes,
+        edges
+      ) as VariableListItemProps[];
+      predecessors.push({
+        name: "ENV",
+        id: "ENV",
+        children: envVariables,
+      });
+      return predecessors;
+    }
+  }
 
-  const handleItemClick = (item: any, parent?: any) => {
+  function handleSearch(val: string) {
+    setSearchKey(val);
+  }
+
+  function handleItemClick(item: any, parent?: any) {
     const data = { ...item, parentId: parent?.id };
     onItemClick?.(data, parent);
-  };
+  }
 
   return (
     <div

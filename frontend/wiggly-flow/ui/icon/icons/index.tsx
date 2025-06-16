@@ -19,11 +19,14 @@ import Time from "./time";
 import ArrayFile from "./array-file";
 import Variable from "./variable";
 import LLM from "./llm";
+import Env from "./env";
 
 const Icon = (props: any) => {
   switch (props.name) {
     case "llm":
       return <LLM {...props} />;
+    case "env":
+      return <Env {...props} />;
     case "variable":
       return <Variable {...props} />;
     case "array-file":

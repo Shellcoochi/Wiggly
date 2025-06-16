@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import type { Node, NodeChange, OnNodesChange } from "@xyflow/react";
 import { applyNodeChanges, useNodes, useReactFlow } from "@xyflow/react";
 
-const ALIGNMENT_THRESHOLD = 10;
+const ALIGNMENT_THRESHOLD = 5;
 
 export function useAlignGuides(onNodesChange: OnNodesChange<any>) {
   const [guides, setGuides] = useState<{
