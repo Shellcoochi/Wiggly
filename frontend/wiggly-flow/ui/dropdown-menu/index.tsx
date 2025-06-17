@@ -54,7 +54,9 @@ interface DropdownMenuProps<T> {
   dir?: "ltr" | "rtl";
   children?: React.ReactNode;
   options: DropdownOption<T>[];
+  showArrow?: boolean;
   onItemClick?: (val: DropdownOption<T>) => void;
+  sideOffset?: number;
   radioGroup?: {
     value: string;
     onValueChange: (val: string) => void;
@@ -71,6 +73,8 @@ export const DropdownMenu = <T,>({
   options,
   radioGroup,
   onItemClick,
+  showArrow = true,
+  sideOffset
 }: DropdownMenuProps<T>) => {
   const renderOption = (option: DropdownOption<T>, index: number) => {
     switch (option.type) {
@@ -177,7 +181,7 @@ export const DropdownMenu = <T,>({
       <Primitive.Portal>
         <Primitive.Content
           className="rounded-md bg-white p-1 shadow-lg ring-1 ring-black/10"
-          sideOffset={5}
+          sideOffset={sideOffset}
         >
           {radioGroup ? (
             <Primitive.RadioGroup
@@ -189,7 +193,7 @@ export const DropdownMenu = <T,>({
           ) : (
             options.map(renderOption)
           )}
-          <Primitive.Arrow className="fill-white" />
+          {showArrow && <Primitive.Arrow className="fill-white" />}
         </Primitive.Content>
       </Primitive.Portal>
     </Primitive.Root>

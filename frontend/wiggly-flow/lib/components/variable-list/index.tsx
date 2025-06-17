@@ -29,7 +29,7 @@ export const VariableList: FC<VariableListProps> = ({
   const [searchKey, setSearchKey] = useState("");
   const nodes = useNodes();
   const edges = useEdges();
-  const { envVariables } = useEnvVariableStore();
+  const { envVariables } = useEnvVariableStore() as any;
 
   const variables = useMemo(() => {
     const variableOptions = initOptions();

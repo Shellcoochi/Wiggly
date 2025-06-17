@@ -54,11 +54,10 @@ export default memo(
     const primaryHandle = handles.find((h) => h.isPrimary);
     return (
       <div
-        className="h-full"
+        className="h-full relative"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <NodeToolbar isVisible={data.forceToolbarVisible || undefined} />
         <Card
           className={clsx(
             "h-full px-3 py-2 rounded border-2 transition bg-white box-border",
@@ -69,7 +68,16 @@ export default memo(
             },
             className
           )}
-          title={data?.label || NodeLabel[type]}
+          title={
+            <div className="flex items-center justify-between w-full overflow-hidden">
+              <span className="truncate max-w-[calc(100%-40px)]">
+                {data?.label || NodeLabel[type]}
+              </span>
+              <div className="shrink-0">
+                <NodeToolbar nodeId={node.id} isVisible={selected || hovered} />
+              </div>
+            </div>
+          }
           subtitle={data?.description}
           icon={<NodeIcon type={node?.type} />}
         >

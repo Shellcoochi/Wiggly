@@ -2,7 +2,7 @@ import * as React from "react";
 import { clsx } from "clsx";
 
 interface CardProps {
-  title: string;
+  title: string | React.ReactNode;
   icon?: React.ReactNode;
   subtitle?: string;
   children?: React.ReactNode;
@@ -17,19 +17,20 @@ export function Card({
   className,
 }: CardProps) {
   return (
-      <div
-      className={clsx(
-        "rounded-xl shadow-sm bg-white p-2 w-full",
-        className
-      )}
+    <div
+      className={clsx("rounded-xl shadow-sm bg-white p-2 w-full", className)}
     >
       <div className="flex flex-col items-start">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full break-words">
           {icon && <div className="text-gray-500">{icon}</div>}
-          <h2 className="text-black font-semibold text-base">{title}</h2>
+          <h2 className="text-black font-semibold text-base w-full overflow-hidden">
+            {title}
+          </h2>
         </div>
         {subtitle && (
-          <p className="text-sm text-gray-500 mt-1 break-words w-full">{subtitle}</p>
+          <p className="text-sm text-gray-500 mt-1 break-words w-full">
+            {subtitle}
+          </p>
         )}
       </div>
       <div className="text-sm text-gray-700">{children}</div>
