@@ -52,10 +52,10 @@ export const Select: FC<SelectProps> = ({
   >
     <Primitive.Trigger
       className={clsx(
-        "inline-flex h-9 items-center justify-between gap-2",
+        "inline-flex h-8 items-center justify-between gap-2",
         "px-3 rounded border border-border bg-white",
         "text-sm text-text-primary placeholder:text-text-disabled",
-        "shadow-sm hover:border-border-hover hover:shadow focus:outline-none focus:border-border-focus focus:ring-1 focus:ring-ring",
+        "hover:border-border-hover hover:shadow-sm focus:outline-none focus:border-primary-active",
         "transition-all",
         className
       )}

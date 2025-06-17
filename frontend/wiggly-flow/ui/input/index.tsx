@@ -72,8 +72,8 @@ export const Input = React.forwardRef<
 
     const baseWrapperClass = clsx(
       "flex items-center border rounded-md bg-white transition",
-      "focus-within:ring-1 focus-within:ring-[#1677ff] focus-within:border-[#1677ff]",
-      "border-[#d9d9d9] hover:border-[#4096ff]",
+      "hover:border-border-hover hover:shadow-sm focus:outline-none focus:border-primary-active",
+      "border border-border bg-white",
       "disabled:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60",
       {
         "h-8 text-sm px-2": size === "sm" && type !== "textarea",

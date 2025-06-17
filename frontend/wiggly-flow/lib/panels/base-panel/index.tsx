@@ -64,7 +64,7 @@ const Panel: FC<PanelProps> = ({ node }) => {
           </div>
           <div className="text-base font-semibold">
             <Input
-              className="pl-0 border-none focus-within:!ring-0 text-big"
+              className="hover:!shadow-none pl-0 border-none focus-within:!ring-0 text-big"
               value={label}
               onChange={handleLabelChange}
               onBlur={handleLabelBlur}
@@ -73,7 +73,7 @@ const Panel: FC<PanelProps> = ({ node }) => {
         </div>
         <div className="mt-1 text-sm text-gray-400">
           <Input
-            className="pl-0 border-none focus-within:!ring-0"
+            className="hover:!shadow-none pl-0 border-none focus-within:!ring-0"
             value={description}
             type="textarea"
             placeholder="请添加描述..."

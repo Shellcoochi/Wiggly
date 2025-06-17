@@ -1,5 +1,6 @@
 import { FC, memo, useState } from "react";
-import { Dialog, Icon, Input } from "@/ui";
+import { Dialog, Icon, Input, Select } from "@/ui";
+import { WigglyEditor } from "../editor";
 
 type VariableType =
   | "string"
@@ -29,6 +30,16 @@ const defaultForm: VariableProps = {
   defaultValue: "",
 };
 
+const variableTypeOptions = [
+  { value: "string", label: "String" },
+  { value: "number", label: "Number" },
+  { value: "boolean", label: "Boolean" },
+  { value: "object", label: "Object" },
+  { value: "array", label: "Array" },
+  { value: "json", label: "Json" },
+  { value: "files", label: "Files" },
+];
+
 export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
   ({ onSubmit }) => {
     const [form, setForm] = useState<VariableProps>(defaultForm);
@@ -48,6 +59,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
           return (
             <Input
               type="text"
+              size="sm"
               value={form.defaultValue}
               onChange={(e) => handleChange("defaultValue", e.target.value)}
             />
@@ -56,9 +68,24 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
           return (
             <Input
               type="number"
+              size="sm"
               value={form.defaultValue}
               onChange={(e) =>
                 handleChange("defaultValue", parseFloat(e.target.value))
+              }
+            />
+          );
+        case "boolean":
+          return (
+            <Select
+              className="w-full"
+              value={form.defaultValue}
+              options={[
+                { value: "true", label: "true" },
+                { value: "false", label: "false" },
+              ]}
+              onValueChange={(val) =>
+                handleChange("defaultValue", val as VariableType)
               }
             />
           );
@@ -66,11 +93,10 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
         case "json":
         case "object":
           return (
-            <textarea
-              rows={3}
-              placeholder="请输入 JSON 格式"
+            <WigglyEditor
+              type={form.type}
               value={form.defaultValue}
-              onChange={(e) => handleChange("defaultValue", e.target.value)}
+              onChange={(val) => handleChange("defaultValue", val)}
             />
           );
         case "date":
@@ -101,7 +127,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
         title="添加变量"
         trigger={
           <div className="cursor-pointer text-blue-600">
-            <Icon name="ri-add-line"/>
+            <Icon name="ri-add-line" />
           </div>
         }
         onOk={handleSubmit}
@@ -113,6 +139,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             </label>
             <Input
               type="text"
+              size="sm"
               value={form.name}
               onChange={(e) => handleChange("name", e.target.value)}
             />
@@ -123,6 +150,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             </label>
             <Input
               type="text"
+              size="sm"
               value={form.desrc}
               onChange={(e) => handleChange("desrc", e.target.value)}
             />
@@ -131,21 +159,12 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             <label className="block mb-1 text-sm font-medium text-gray-700">
               变量类型
             </label>
-            <select
-              className="w-full border rounded px-3 py-2"
+            <Select
+              className="w-full"
               value={form.type}
-              onChange={(e) =>
-                handleChange("type", e.target.value as VariableType)
-              }
-            >
-              <option value="string">String</option>
-              <option value="number">Number</option>
-              <option value="array">Array</option>
-              <option value="json">JSON</option>
-              <option value="date">Date</option>
-              <option value="object">Object</option>
-              <option value="files">Files</option>
-            </select>
+              options={variableTypeOptions}
+              onValueChange={(val) => handleChange("type", val as VariableType)}
+            />
           </div>
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">

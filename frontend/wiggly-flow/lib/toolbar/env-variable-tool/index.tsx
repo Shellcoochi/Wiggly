@@ -46,6 +46,7 @@ const ValueInput = ({
   }
   return (
     <Input
+      size="sm"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="输入字符串值"
@@ -54,7 +55,7 @@ const ValueInput = ({
 };
 
 export const EnvVariableTool = () => {
-  const { envVariables, setEnvVariables } = useEnvVariableStore();
+  const { envVariables, setEnvVariables } = useEnvVariableStore() as any;
   const [formState, setFormState] = useState<Partial<Variable>>({
     name: "",
     type: "string",
@@ -134,6 +135,7 @@ export const EnvVariableTool = () => {
           <div className="space-y-3 mb-4">
             <div className="flex items-center space-x-2">
               <Input
+                size="sm"
                 value={formState.name}
                 onChange={(e) =>
                   setFormState({ ...formState, name: e.target.value })
@@ -166,17 +168,17 @@ export const EnvVariableTool = () => {
               onChange={(val) => setFormState({ ...formState, value: val })}
             />
             <div className="flex space-x-2">
-              <Button onClick={submitVariable}>
+              <Button onClick={submitVariable} size="sm">
                 {editingIndex !== null ? "保存修改" : "确认添加"}
               </Button>
-              <Button onClick={resetForm} variant="outline">
+              <Button onClick={resetForm} variant="outline" size="sm">
                 取消
               </Button>
             </div>
           </div>
         ) : (
           <>
-            <Button onClick={() => setIsAdding(true)} className="w-full mb-4">
+            <Button onClick={() => setIsAdding(true)}  size="sm" className="w-full mb-4">
               添加变量
             </Button>
             <div className="space-y-3 max-h-60 overflow-y-auto">
