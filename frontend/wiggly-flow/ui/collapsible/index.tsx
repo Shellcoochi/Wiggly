@@ -33,9 +33,9 @@ export const Collapsible: FC<CollapsibleProps> = ({
               className="text-blue-500 hover:text-blue-700"
             >
               {open ? (
-                <Icon name="ri-contract-up-down-fill" />
+                <Icon name="ri-skip-up-line" />
               ) : (
-                <Icon name="ri-expand-up-down-fill" />
+                <Icon name="ri-skip-down-line" />
               )}
             </Button>
           )}

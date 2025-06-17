@@ -100,11 +100,23 @@ const StartPanel: FC<PanelProps> = ({ node }) => {
                 className="flex items-center justify-between p-2 bg-gray-50 rounded"
               >
                 <div className="flex-1">
-                  <Collapsible content={123}>
+                  <Collapsible
+                    content={
+                      <div className="flex flex-col gap-1 text-small text-gray-600">
+                        {variable.desrc && <div>描述：{variable.desrc}</div>}
+                        <div>
+                          默认值：
+                          <pre className="bg-gray-50 rounded px-2 py-1 overflow-auto">
+                            {variable.defaultValue}
+                          </pre>
+                        </div>
+                      </div>
+                    }
+                  >
                     <VariableLabel type={variable.type} label={variable.name} />
                   </Collapsible>
                 </div>
-                <div className="flex gap-1 ml-1">
+                <div className="flex gap-1 ml-1 items-start h-full">
                   <Button
                     variant="ghost"
                     size="sm"
