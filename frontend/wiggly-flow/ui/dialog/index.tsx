@@ -2,12 +2,14 @@ import { ReactNode, FC } from "react";
 import { Dialog as Primitive } from "radix-ui";
 import { Icon } from "../icon";
 
-interface DialogProps {
+export interface DialogProps {
   title?: ReactNode;
   descr?: ReactNode;
   children?: ReactNode;
   trigger: ReactNode;
   onOk?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const Dialog: FC<DialogProps> = ({
@@ -16,8 +18,10 @@ export const Dialog: FC<DialogProps> = ({
   descr,
   children,
   onOk,
+  open,
+  onOpenChange,
 }) => (
-  <Primitive.Root>
+  <Primitive.Root open={open} onOpenChange={onOpenChange}>
     <Primitive.Trigger asChild>{trigger}</Primitive.Trigger>
     <Primitive.Portal>
       <Primitive.Overlay className="fixed inset-0 bg-black/40 data-[state=open]:animate-overlayShow" />

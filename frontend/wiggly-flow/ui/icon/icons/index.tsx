@@ -20,11 +20,14 @@ import ArrayFile from "./array-file";
 import Variable from "./variable";
 import LLM from "./llm";
 import Env from "./env";
+import Json from "./json";
 
 const Icon = (props: any) => {
   switch (props.name) {
     case "llm":
       return <LLM {...props} />;
+    case "json":
+      return <Json {...props} />;
     case "env":
       return <Env {...props} />;
     case "variable":

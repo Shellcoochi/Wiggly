@@ -1,5 +1,5 @@
-import { FC, memo, useState } from "react";
-import { Dialog, Icon, Input, Select } from "@/ui";
+import { FC, memo, ReactNode, useState } from "react";
+import { Dialog, DialogProps, Icon, Input, Select } from "@/ui";
 import { WigglyEditor } from "../editor";
 
 type VariableType =
@@ -13,22 +13,18 @@ type VariableType =
   | "files";
 
 export interface VariableProps {
+  id: string;
   name: string;
   desrc: string;
   type: VariableType;
   defaultValue: any;
 }
 
-interface AddVariableDialogProps {
+interface AddVariableDialogProps extends DialogProps {
+  value: VariableProps;
+  onChange?: (val: VariableProps) => void;
   onSubmit?: (variable: VariableProps) => void;
 }
-
-const defaultForm: VariableProps = {
-  name: "",
-  desrc: "",
-  type: "string",
-  defaultValue: "",
-};
 
 const variableTypeOptions = [
   { value: "string", label: "String" },
@@ -39,28 +35,24 @@ const variableTypeOptions = [
   { value: "json", label: "Json" },
   { value: "files", label: "Files" },
 ];
-
 export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
-  ({ onSubmit }) => {
-    const [form, setForm] = useState<VariableProps>(defaultForm);
-
-    const handleChange = (key: keyof VariableProps, value: any) => {
-      setForm((prev) => ({ ...prev, [key]: value }));
+  ({ value, onChange, onSubmit, ...restProps }) => {
+    const handleChange = (key: keyof VariableProps, val: any) => {
+      onChange?.({ ...value, [key]: val });
     };
 
     const handleSubmit = () => {
-      if (onSubmit) onSubmit(form);
-      setForm(defaultForm);
+      onSubmit?.(value);
     };
 
     const renderDefaultValueInput = () => {
-      switch (form.type) {
+      switch (value.type) {
         case "string":
           return (
             <Input
               type="text"
               size="sm"
-              value={form.defaultValue}
+              value={value.defaultValue}
               onChange={(e) => handleChange("defaultValue", e.target.value)}
             />
           );
@@ -69,7 +61,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             <Input
               type="number"
               size="sm"
-              value={form.defaultValue}
+              value={value.defaultValue}
               onChange={(e) =>
                 handleChange("defaultValue", parseFloat(e.target.value))
               }
@@ -79,7 +71,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
           return (
             <Select
               className="w-full"
-              value={form.defaultValue}
+              value={value.defaultValue}
               options={[
                 { value: "true", label: "true" },
                 { value: "false", label: "false" },
@@ -94,8 +86,8 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
         case "object":
           return (
             <WigglyEditor
-              type={form.type}
-              value={form.defaultValue}
+              type={value.type}
+              value={value.defaultValue}
               onChange={(val) => handleChange("defaultValue", val)}
             />
           );
@@ -103,7 +95,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
           return (
             <input
               type="date"
-              value={form.defaultValue}
+              value={value.defaultValue}
               onChange={(e) => handleChange("defaultValue", e.target.value)}
             />
           );
@@ -123,15 +115,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
     };
 
     return (
-      <Dialog
-        title="添加变量"
-        trigger={
-          <div className="cursor-pointer text-blue-600">
-            <Icon name="ri-add-line" />
-          </div>
-        }
-        onOk={handleSubmit}
-      >
+      <Dialog {...restProps} onOk={handleSubmit}>
         <div className="space-y-4">
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">
@@ -140,7 +124,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             <Input
               type="text"
               size="sm"
-              value={form.name}
+              value={value.name}
               onChange={(e) => handleChange("name", e.target.value)}
             />
           </div>
@@ -151,7 +135,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             <Input
               type="text"
               size="sm"
-              value={form.desrc}
+              value={value.desrc}
               onChange={(e) => handleChange("desrc", e.target.value)}
             />
           </div>
@@ -161,7 +145,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
             </label>
             <Select
               className="w-full"
-              value={form.type}
+              value={value.type}
               options={variableTypeOptions}
               onValueChange={(val) => handleChange("type", val as VariableType)}
             />

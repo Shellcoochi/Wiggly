@@ -17,15 +17,17 @@ export const VariableLabel: FC<VariableLabelProps> = ({
 }) => {
   const renderIcon = () => {
     if (type == "string") {
-      return <Icon name="string" width={16} />;
+      return <Icon name="string" width={14} />;
     } else if (type == "number") {
-      return <Icon name="number" width={16} />;
+      return <Icon name="number" width={14} />;
     } else if (type == "boolean") {
-      return <Icon name="boolean" width={16} />;
+      return <Icon name="boolean" width={14} />;
     } else if (type == "array") {
-      return <Icon name="array" width={16} />;
+      return <Icon name="array" width={14} />;
+    } else if (type == "json") {
+      return <Icon name="json" width={14} />;
     } else {
-      return <Icon name="variable" width={16} />;
+      return <Icon name="variable" width={14} />;
     }
   };
 

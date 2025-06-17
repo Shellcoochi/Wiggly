@@ -3,6 +3,7 @@
 import Editor from "@monaco-editor/react";
 import { useState } from "react";
 import { clsx } from "clsx";
+import { Button } from "@/ui";
 
 const languageMap: Record<string, string> = {
   string: "plaintext",
@@ -31,6 +32,7 @@ type WigglyEditorProps = {
   onChange?: (val: string) => void;
   value?: string;
   className?: string;
+  height?: string | number;
 };
 
 export const WigglyEditor = ({
@@ -38,6 +40,7 @@ export const WigglyEditor = ({
   value,
   onChange,
   className,
+  height = 80,
 }: WigglyEditorProps) => {
   const [code, setCode] = useState(value ?? defaultValueMap[type]);
   const language = languageMap[type];
@@ -56,20 +59,21 @@ export const WigglyEditor = ({
     >
       <div className="flex items-center justify-between text-xs text-text-secondary">
         <span className="capitalize">{type}</span>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           className="text-xs text-text-disabled hover:text-primary transition"
           onClick={() => navigator.clipboard.writeText(code)}
         >
           复制
-        </button>
+        </Button>
       </div>
       <div>
         <Editor
-          height="80px"
+          height={height}
           language={language}
           value={code}
           theme="vs"
-          className="border-none"
           onChange={(val) => {
             const newVal = val ?? "";
             setCode(newVal);
