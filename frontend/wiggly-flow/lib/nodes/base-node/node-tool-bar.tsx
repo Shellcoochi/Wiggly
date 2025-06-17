@@ -50,12 +50,19 @@ export default memo(({ isVisible, nodeId }: NodeToolbarProps) => {
     }
   };
 
+  const deleteAction = () => {
+    setTimeout(() => {
+      setNodes((nodes) => nodes.filter((node) => node.id !== nodeId));
+    }, 0);
+  };
+
   const handleAction = ({ value: action }: DropdownOption) => {
     switch (action) {
       case "duplicate":
         duplicateAction();
         break;
-      case "删除":
+      case "delete":
+        deleteAction();
         break;
     }
   };
