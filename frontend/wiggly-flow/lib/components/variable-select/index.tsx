@@ -14,7 +14,7 @@ export interface VariableItemProps {
 interface VariableSelectProps {
   value?: VariableItemProps;
   hideSearch?: boolean;
-  options: VariableItemProps[];
+  options?: VariableItemProps[];
   prefix?: React.ReactNode;
   suffix?: React.ReactNode;
   allowClear?: boolean;
@@ -39,26 +39,6 @@ export const VariableSelect: FC<VariableSelectProps> = ({
   useEffect(() => {
     setSelectedVariable(value);
   }, [value]);
-
-  const variables = useMemo(() => {
-    if (!searchKey.trim()) return options;
-
-    const filteredOptions = options
-      .map((option) => {
-        if (option.children) {
-          const filteredChildren = option.children.filter((child) =>
-            child?.name?.toLowerCase().includes(searchKey.toLowerCase())
-          );
-          return { ...option, children: filteredChildren };
-        }
-        return option?.name?.toLowerCase().includes(searchKey.toLowerCase())
-          ? option
-          : null;
-      })
-      .filter(Boolean) as VariableItemProps[];
-
-    return filteredOptions;
-  }, [options, searchKey]);
 
   const renderNodeLabel = (id?: string) => {
     if (id === "ENV") return "ENV";
@@ -140,6 +120,7 @@ export const VariableSelect: FC<VariableSelectProps> = ({
     >
       <VariableList
         hideSearch={hideSearch}
+        options={options}
         onItemClick={(item, parent) => handleSelect(item, parent)}
       />
     </Popover>

@@ -52,26 +52,6 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
     { type: "radio", label: "小于", value: "less than" },
   ];
 
-  /** @todo 从前置节点和全局获取变量 */
-  const options2 = [
-    {
-      name: "开始",
-      id: "1",
-      children: [
-        { name: "sdf233", type: "String" },
-        { name: "eeeee", type: "String" },
-        { name: "aaasss", type: "String" },
-        { name: "nmn", type: "Number" },
-      ],
-    },
-    { name: "sys.user_id", type: "String" },
-    { name: "sys.files", type: "Array[File]" },
-    { name: "sys.app_id", type: "String" },
-    { name: "sys.workflow_id", type: "String" },
-    { name: "sys.workflow_run_id", type: "String" },
-    { name: "ENVIRONMENT", type: "String" },
-  ];
-
   useEffect(() => {
     if (node) {
       updateNodeData(node.id, {
@@ -198,7 +178,6 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
                     className="bg-gray-100 rounded-md relative"
                   >
                     <VariableSelect
-                      options={options2}
                       value={condition.variable as VariableItemProps}
                       onSelect={(val) => {
                         updateCondition(
