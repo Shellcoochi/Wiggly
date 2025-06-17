@@ -1,6 +1,6 @@
 import { FC, memo, useEffect, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { Accordion, AccordionItem, Button, Icon } from "@/ui";
+import { Accordion, AccordionItem, Button, Collapsible, Icon } from "@/ui";
 import {
   AddVariableDialog,
   VariableProps,
@@ -100,7 +100,9 @@ const StartPanel: FC<PanelProps> = ({ node }) => {
                 className="flex items-center justify-between p-2 bg-gray-50 rounded"
               >
                 <div className="flex-1">
-                  <VariableLabel type={variable.type} label={variable.name} />
+                  <Collapsible content={123}>
+                    <VariableLabel type={variable.type} label={variable.name} />
+                  </Collapsible>
                 </div>
                 <div className="flex gap-1 ml-1">
                   <Button

@@ -17,3 +17,4 @@ export * from "./avatar";
 export * from "./scroll-area";
 export * from "./time-picker";
 export * from "./toggle";
+export * from "./collapsible";
