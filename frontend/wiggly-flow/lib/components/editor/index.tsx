@@ -63,7 +63,7 @@ export const WigglyEditor = ({
           复制
         </button>
       </div>
-      <div className="border-1 border-border">
+      <div>
         <Editor
           height="80px"
           language={language}
@@ -88,6 +88,7 @@ export const WigglyEditor = ({
               vertical: "hidden",
               horizontal: "auto",
             },
+            cursorWidth: 1,
             renderLineHighlight: "none",
             tabSize: 2,
           }}
