@@ -97,17 +97,23 @@ const StartPanel: FC<PanelProps> = ({ node }) => {
             {variables?.map((variable) => (
               <div
                 key={variable.id}
-                className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                className="flex w-full items-center justify-between p-2 bg-gray-50 rounded"
               >
-                <div className="flex-1">
+                <div className="flex-1 min-w-0 break-all overflow-hidden">
                   <Collapsible
                     content={
-                      <div className="flex flex-col gap-1 text-small text-gray-600">
-                        {variable.desrc && <div>描述：{variable.desrc}</div>}
-                        <div>
+                      <div className="flex flex-col gap-1 text-sm text-gray-600 min-w-0 break-all">
+                        {variable.desrc && (
+                          <div className="whitespace-pre-wrap break-all min-w-0">
+                            描述：<div>{variable.desrc}</div>
+                          </div>
+                        )}
+                        <div className="min-w-0">
                           默认值：
-                          <pre className="bg-gray-50 rounded px-2 py-1 overflow-auto">
-                            {variable.defaultValue}
+                          <pre className="rounded px-2 py-1 overflow-auto break-all whitespace-pre-wrap max-w-full">
+                            {typeof variable.defaultValue === "object"
+                              ? JSON.stringify(variable.defaultValue, null, 2)
+                              : String(variable.defaultValue)}
                           </pre>
                         </div>
                       </div>
@@ -116,7 +122,8 @@ const StartPanel: FC<PanelProps> = ({ node }) => {
                     <VariableLabel type={variable.type} label={variable.name} />
                   </Collapsible>
                 </div>
-                <div className="flex gap-1 ml-1 items-start h-full">
+
+                <div className="flex gap-1 ml-1 items-start h-full shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
