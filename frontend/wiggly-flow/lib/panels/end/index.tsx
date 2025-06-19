@@ -1,6 +1,6 @@
 import { FC, memo, useEffect, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { Accordion, AccordionItem } from "@/ui";
+import { Accordion, AccordionItem, Button, Icon } from "@/ui";
 import {
   AddVariableDialog,
   VariableProps,
@@ -8,8 +8,17 @@ import {
 } from "@/lib/components";
 import { PanelProps } from "../base-panel";
 
+const defaultForm: VariableProps = {
+  id: "",
+  name: "",
+  desrc: "",
+  type: "string",
+  defaultValue: "",
+};
+
 const EndPanel: FC<PanelProps> = ({ node }) => {
   const { updateNodeData } = useReactFlow();
+  const [variable, setVariable] = useState<VariableProps>(defaultForm);
   const [outputs, setOutputs] = useState<VariableProps[]>([]);
 
   useEffect(() => {
@@ -35,7 +44,22 @@ const EndPanel: FC<PanelProps> = ({ node }) => {
         <AccordionItem
           value="input"
           header="输出"
-          actions={<AddVariableDialog onSubmit={handleAddVariable} />}
+          actions={
+            <AddVariableDialog
+              value={variable}
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-blue-500 hover:text-blue-700"
+                >
+                  <Icon name="ri-add-line" />
+                </Button>
+              }
+              onChange={setVariable}
+              onSubmit={handleAddVariable}
+            />
+          }
         >
           <div className="grid gap-1">
             {outputs?.map((variable) => (
