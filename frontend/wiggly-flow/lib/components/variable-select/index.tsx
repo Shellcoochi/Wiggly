@@ -19,6 +19,7 @@ interface VariableSelectProps {
   suffix?: React.ReactNode;
   allowClear?: boolean;
   onSelect?: (value: any) => void;
+  className?: string;
 }
 
 export const VariableSelect: FC<VariableSelectProps> = ({
@@ -29,6 +30,7 @@ export const VariableSelect: FC<VariableSelectProps> = ({
   suffix,
   allowClear,
   onSelect,
+  className,
 }) => {
   const { getNode } = useReactFlow();
   const [selectedVariable, setSelectedVariable] = useState<VariableItemProps>();
@@ -70,7 +72,8 @@ export const VariableSelect: FC<VariableSelectProps> = ({
         <div
           className={clsx(
             "flex items-center cursor-pointer rounded-md bg-gray-100 h-8 px-2 space-x-1",
-            "hover:border-gray-300"
+            "hover:border-gray-300",
+            className
           )}
           onMouseEnter={() => setClearVisible(true)}
           onMouseLeave={() => setClearVisible(false)}
