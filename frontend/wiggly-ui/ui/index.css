@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@source  "../../wiggly-ui/ui";
 
 :root {
   --background: #ffffff;
