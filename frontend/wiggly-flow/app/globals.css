@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import "wiggly-theme";
+/* @import "wiggly-ui/dist/styles.css"; */
+/* @todo ui 打包配置 宿主包区分pro、dev的引用 */
 @source  "../../wiggly-ui/ui";
 
 :root {
@@ -6,76 +9,6 @@
   --foreground: #171717;
 }
 
-@theme {
-  --color-primary: #1890ff;
-  --color-primary-hover: #40a9ff;
-  --color-primary-active: #096dd9;
-  --color-primary-light: #e6f4ff;
-  --color-disabled: #0000000a;
-
-  --color-secondary: #8c8c8c;
-
-  --color-text-primary: #1f1f1f;
-  --color-text-secondary: #595959;
-  --color-text-disabled: #bfbfbf;
-
-  --color-border: #d9d9d9;
-  --color-border-secondary: #f0f0f0;
-  --color-border-focus: #4096ff;
-  --color-border-hover: #4096ff;
-  --color-border-shadow: #155aef24;
-
-  --color-ring: #91caff;
-
-  --color-success: #52c41a;
-  --color-warning: #faad14;
-  --color-error: #ff4d4f;
-  --color-danger: #ff4d4f;
-
-  --color-bg-base: #ffffff;
-  --color-bg-secondary: #fafafa;
-  --color-bg-hover: #f5f5f5;
-
-  --color-danger-hover: #ff7875;
-
-  --text-small: 12px;
-  --text-small--line-height: 20px;
-
-  --text-base: 14px;
-  --text-base--line-height: 22px;
-
-  --text-big: 16px;
-  --text-big--line-height: 24px;
-
-  --text-large: 20px;
-  --text-large--line-height: 28px;
-
-  --radius: 6px;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-
-  --animate-overlayShow: overlayShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-contentShow: contentShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
-
-  @keyframes overlayShow {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes contentShow {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-}
 
 @media (prefers-color-scheme: dark) {
   :root {

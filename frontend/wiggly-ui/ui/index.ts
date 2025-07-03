@@ -1,4 +1,4 @@
-import "./index.css"
+// import "./index.css"
 export * from "./card";
 export * from "./dialog";
 export * from "./button";

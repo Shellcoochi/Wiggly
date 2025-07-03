@@ -31,7 +31,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={clsx(
           "cursor-pointer inline-flex items-center justify-center font-medium transition-all select-none whitespace-nowrap outline-none disabled:opacity-60 disabled:cursor-not-allowed rounded-md",
           {
-            "bg-[#1677ff] text-white hover:bg-[#4096ff] active:bg-[#0958d9]":
+            "bg-primary text-white hover:bg-[#4096ff] active:bg-[#0958d9]":
               variant === "default",
             "border border-[#d9d9d9] bg-white text-black hover:border-[#4096ff] hover:text-[#1677ff] hover:bg-[#e6f4ff]":
               variant === "outline",

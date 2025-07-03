@@ -1,0 +1,9 @@
+{
+  "name": "wiggly-theme",
+  "version": "0.0.1",
+  "exports": {
+    ".": {
+      "style": "./styles.css"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "wiggly-ui",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -14,7 +14,8 @@
     "next": "15.3.2",
     "radix-ui": "^1.4.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "wiggly-theme": "workspace:*"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
