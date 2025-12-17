@@ -560,7 +560,7 @@ export default function AppsPage() {
                   value={selectedCategory}
                   onValueChange={setSelectedCategory}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-45">
                     <div className="flex items-center gap-2">
                       {getCategoryIcon(selectedCategory)}
                       <SelectValue placeholder="选择分类" />

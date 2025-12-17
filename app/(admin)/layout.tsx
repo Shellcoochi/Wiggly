@@ -19,7 +19,7 @@ export default function AdminLayout({
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="p-4 lg:p-6">{children}</div>
+        <div className="flex p-4 lg:p-6 flex-1">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

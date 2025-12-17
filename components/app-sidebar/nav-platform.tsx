@@ -1,7 +1,7 @@
 "use client"
 
 import {
-  Collapsible,
+  CollapsibleRoot,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
@@ -37,7 +37,7 @@ export function NavPlatform({
       <SidebarGroupLabel>工作室</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
-          <Collapsible
+          <CollapsibleRoot
             key={item.title}
             asChild
             defaultOpen={item.isActive}
@@ -65,7 +65,7 @@ export function NavPlatform({
                 </SidebarMenuSub>
               </CollapsibleContent>
             </SidebarMenuItem>
-          </Collapsible>
+          </CollapsibleRoot>
         ))}
       </SidebarMenu>
     </SidebarGroup>

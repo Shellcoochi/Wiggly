@@ -79,6 +79,10 @@ const data = {
           url: "/apps",
         },
         {
+          title: "workflow",
+          url: "/workflow",
+        },
+        {
           title: "Starred",
           url: "#",
         },
