@@ -19,7 +19,7 @@ export const Guideline: FC<GuidelineProps> = ({ guides, currentNode }) => {
           const hNodes = guides.horizontal.nodes;
           const [baseNode] = hNodes;
           const allNodes = nodes.filter((node) =>
-            [...hNodes, currentNode].some((n) => n?.id === node.id)
+            [...hNodes, currentNode].some((n) => n.id === node.id)
           );
           const minX = Math.min(...allNodes.map((n) => n.position.x));
           const maxX = Math.max(
@@ -29,7 +29,7 @@ export const Guideline: FC<GuidelineProps> = ({ guides, currentNode }) => {
 
           return (
             <div
-              className="bg-primary-hover"
+              className="bg-primary/70"
               style={{
                 position: "absolute",
                 top: y * zoom + offsetY - OFFSET,
@@ -45,9 +45,6 @@ export const Guideline: FC<GuidelineProps> = ({ guides, currentNode }) => {
         (() => {
           const vNodes = guides.vertical.nodes;
           const [baseNode] = vNodes;
-          const allNodes = nodes.filter((node) =>
-            [...vNodes, currentNode].some((n) => n.id === node.id)
-          );
           const minY = Math.min(...nodes.map((n) => n.position.y));
           const maxY = Math.max(
             ...nodes.map(
@@ -62,7 +59,7 @@ export const Guideline: FC<GuidelineProps> = ({ guides, currentNode }) => {
 
           return (
             <div
-              className="bg-primary-hover"
+              className="bg-primary/70"
               style={{
                 position: "absolute",
                 left: x * zoom + offsetX - OFFSET,
