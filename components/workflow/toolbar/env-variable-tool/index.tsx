@@ -2,7 +2,7 @@ import { useState } from "react";
 import { VariableLabel } from "../../components/variable-label";
 import { useEnvVariableStore } from "../../store/env-variable-store";
 import { Button } from "@/components/ui/button";
-import { IconX } from "@tabler/icons-react";
+import { IconEdit, IconTrash } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -104,7 +104,8 @@ export const EnvVariableTool = () => {
     };
 
     if (editingIndex !== null) {
-      envVariables[editingIndex] = newVar;
+      const newEnvVariables = [...envVariables];
+      newEnvVariables[editingIndex] = newVar;
       setEnvVariables(envVariables);
     } else {
       setEnvVariables([newVar, ...envVariables]);
@@ -139,7 +140,7 @@ export const EnvVariableTool = () => {
         </Toggle>
       }
     >
-      <div className="w-[320px]">
+      <div>
         {isAdding ? (
           <div className="space-y-3 mb-4">
             <div className="flex items-center space-x-2">
@@ -198,14 +199,14 @@ export const EnvVariableTool = () => {
             </Button>
             <div className="space-y-3 max-h-60 overflow-y-auto">
               {envVariables.length === 0 ? (
-                <div className="text-center text-sm text-gray-400">
+                <div className="text-center text-sm text-muted-foreground">
                   暂无变量，请先添加。
                 </div>
               ) : (
                 envVariables?.map((variable: any, index: number) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                    className="flex items-center justify-between px-2 rounded"
                   >
                     <div className="flex-1">
                       <VariableLabel
@@ -213,23 +214,23 @@ export const EnvVariableTool = () => {
                         label={variable.name}
                       />
                     </div>
-                    <div className="flex gap-2 ml-2">
+                    <div className="flex gap-1 ml-2">
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon-xs"
                         onClick={() => startEditing(index)}
-                        className="text-blue-500 hover:text-blue-700"
+                        className="text-primary hover:text-primary/90"
                       >
-                        <IconX name="ri-edit-2-line" />
+                        <IconEdit />
                       </Button>
 
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon-xs"
                         onClick={() => removeVariable(index)}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-destructive hover:text-destructive/90"
                       >
-                        <IconX name="ri-delete-bin-line" />
+                        <IconTrash />
                       </Button>
                     </div>
                   </div>
