@@ -56,10 +56,10 @@ const Panel: FC<PanelProps> = ({ node }) => {
   };
 
   return (
-    <div className="w-105 flex flex-col h-full rounded-xl bg-white border border-gray-200 p-5 text-sm shadow-sm">
+    <div className="w-105 flex flex-col h-full rounded-xl bg-card border border-border p-5 text-sm shadow-sm">
       <div>
         <div className="flex items-center gap-1">
-          <div className="w-8 h-8 rounded-md flex items-center justify-center text-indigo-600 text-lg">
+          <div className="w-8 h-8 rounded-md flex items-center justify-center text-lg">
             <NodeIcon type={node?.type} />
           </div>
           <div className="text-base font-semibold">
@@ -71,7 +71,7 @@ const Panel: FC<PanelProps> = ({ node }) => {
             />
           </div>
         </div>
-        <div className="mt-1 text-sm text-gray-400">
+        <div className="mt-1 text-sm">
           <Input
             className="hover:shadow-none! pl-0 border-none focus-within:ring-0!"
             value={description}

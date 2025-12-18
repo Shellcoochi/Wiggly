@@ -1,14 +1,10 @@
 import { useState, Fragment, useMemo, FC, useEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Avatar from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { IconX } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import Popover from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -22,6 +18,7 @@ interface Tag {
 export interface ModelProps {
   name?: string;
   logo?: string;
+  type?: string;
   version?: string;
   descr?: string;
   tags?: Tag[];
@@ -55,7 +52,7 @@ export const ModelSelect: FC<ModelSelectProps> = ({
 
   useEffect(() => {
     setSelectedVariable(value);
-  }, [value?.name]);
+  }, [value, value?.name]);
 
   const models = useMemo(() => {
     if (!searchKey.trim()) return options;
@@ -94,12 +91,18 @@ export const ModelSelect: FC<ModelSelectProps> = ({
   };
 
   return (
-    <Popover open={open} onOpenChange={() => setOpen(!open)}>
-      <PopoverTrigger asChild>
+    /** 使用select 组件替换 Popover */
+    <Popover
+      open={open}
+      showArrow={false}
+      align="start"
+      className="bg-card"
+      onOpenChange={() => setOpen(!open)}
+      trigger={
         <div
           className={cn(
-            "flex items-center cursor-pointer rounded-md bg-gray-100 h-8 px-2 space-x-1",
-            "hover:border-gray-300"
+            "flex items-center cursor-pointer rounded-md bg-input h-8 px-2 space-x-1",
+            "hover:border-border"
           )}
           onMouseEnter={() => setClearVisible(true)}
           onMouseLeave={() => setClearVisible(false)}
@@ -107,7 +110,7 @@ export const ModelSelect: FC<ModelSelectProps> = ({
         >
           {prefix && (
             <div
-              className="text-gray-500"
+              className="text-muted-foreground"
               onClick={(e) => {
                 e.stopPropagation();
               }}
@@ -118,11 +121,13 @@ export const ModelSelect: FC<ModelSelectProps> = ({
           <div className="flex-1 flex items-center overflow-hidden">
             {selectedVariable ? (
               <div className="flex gap-1 items-center">
-                <Avatar>
-                  <AvatarImage src={selectedVariable.logo} />
-                  <AvatarFallback className="rounded-lg">M</AvatarFallback>
-                </Avatar>
-                <span className="text-primary">{selectedVariable.name}</span>
+                <Avatar
+                  src={selectedVariable.logo}
+                  size="small"
+                  alt={selectedVariable.name}
+                  fallback="M"
+                />
+                <span>{selectedVariable.name}</span>
               </div>
             ) : (
               <div className="text-text-disabled truncate">请选择变量</div>
@@ -130,15 +135,15 @@ export const ModelSelect: FC<ModelSelectProps> = ({
           </div>
           {allowClear && clearVisible && selectedVariable && (
             <IconX
-              name="ri-close-circle-fill"
-              className="text-gray-500"
+              size={14}
+              className="text-muted-foreground"
               onClick={handleClear}
             />
           )}
 
           {suffix && (
             <div
-              className="text-gray-500"
+              className="text-muted-foreground"
               onClick={(e) => {
                 e.stopPropagation();
               }}
@@ -147,103 +152,124 @@ export const ModelSelect: FC<ModelSelectProps> = ({
             </div>
           )}
         </div>
-      </PopoverTrigger>
-      <PopoverContent>
-        <div className="rounded-lg text-xs w-75">
-          {!hideSearch && (
-            <div className="mb-4">
-              <Input
-                type="text"
-                placeholder="搜索模型"
-                onChange={(e) => handleSearch(e.target.value)}
-              />
-            </div>
-          )}
+      }
+    >
+      <div className="rounded-lg text-xs">
+        {!hideSearch && (
+          <div className="mb-4">
+            <Input
+              type="text"
+              placeholder="搜索模型"
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+          </div>
+        )}
 
-          <div className="space-y-2 max-h-75 overflow-auto">
-            {models.map((item, index) => {
-              if (item.children) {
-                return (
-                  <Fragment key={index}>
-                    <div className="flex gap-1 text-gray-500">
-                      <Avatar className="border border-border">
-                        <AvatarImage src={item.logo} />
-                        <AvatarFallback className="rounded-lg">
-                          C
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{item.name}</span>
-                    </div>
-                    {item.children.map((child, i) => (
-                      <div
-                        key={`${item.name}-${child.name}`}
-                        className={cn(
-                          "py-2 cursor-pointer rounded px-1",
-                          selectedVariable?.name === child.name
-                            ? "hover:bg-blue-200"
-                            : "hover:bg-gray-100",
-                          {
-                            "bg-blue-100":
-                              selectedVariable?.name === child.name,
-                          }
-                        )}
-                        onClick={() => handleSelect(child, item)}
-                      >
-                        <div className="flex gap-3 items-center ">
-                          <Avatar className="border border-border">
-                            <AvatarImage src={child.logo} />
-                            <AvatarFallback className="rounded-lg">
-                              M
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col gap-1 overflow-hidden">
-                            <span className="font-bold truncate text-sm">
-                              {child.name}
-                            </span>
-                            <div className="w-fit flex gap-1">
-                              {child.tags?.map((tag) => (
-                                <Tag
-                                  key={tag.id}
-                                  className="bg-bg-base text-[10px] py-0! px-1! text-secondary"
-                                >
-                                  {tag.label}
-                                </Tag>
-                              ))}
-                            </div>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <p className="text-[12px] text-gray-600 text-left line-clamp-1 wrap-break-word">
-                                  {child.descr}
-                                </p>
-                              </TooltipTrigger>
-                              <TooltipContent>{child.descr}</TooltipContent>
-                            </Tooltip>
+        <div className="space-y-2 max-h-75 overflow-auto">
+          {models.map((item, index) => {
+            if (item.children) {
+              return (
+                <Fragment key={index}>
+                  <div className="flex gap-1 text-muted-foreground">
+                    <Avatar
+                      className="border border-border"
+                      src={item.logo}
+                      alt={item.name}
+                      size={16}
+                      fallback="C"
+                      shape="square"
+                    />
+                    <span>{item.name}</span>
+                  </div>
+                  {item.children.map((child) => (
+                    <div
+                      key={`${item.name}-${child.name}`}
+                      data-selected={selectedVariable?.name === child.name}
+                      className={cn(
+                        "group",
+                        "py-2 cursor-pointer rounded px-1",
+                        selectedVariable?.name === child.name
+                          ? "hover:bg-primary/90"
+                          : "hover:bg-accent",
+                        {
+                          "bg-primary": selectedVariable?.name === child.name,
+                        }
+                      )}
+                      onClick={() => handleSelect(child, item)}
+                    >
+                      <div className="flex gap-3 items-center">
+                        <Avatar
+                          className="border border-border bg-muted"
+                          src={child.logo}
+                          alt={child.name}
+                          fallback="M"
+                          shape="square"
+                        />
+                        <div className="flex flex-col gap-1 overflow-hidden">
+                          <span className="font-bold truncate text-sm group-data-[selected=true]:text-primary-foreground">
+                            {child.name}
+                          </span>
+                          <div className="w-fit flex gap-1">
+                            {child.tags?.map((tag) => (
+                              <Tag
+                                key={tag.id}
+                                className="bg-bg-base text-[10px] py-0! px-1! group-data-[selected=true]:text-primary-foreground"
+                              >
+                                {tag.label}
+                              </Tag>
+                            ))}
                           </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="text-[12px] group-data-[selected=true]:text-primary-foreground/90 text-left line-clamp-1 wrap-break-word">
+                                {child.descr}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent>{child.descr}</TooltipContent>
+                          </Tooltip>
                         </div>
                       </div>
-                    ))}
-                  </Fragment>
-                );
-              }
-              return (
-                <div
-                  key={item.name}
-                  className="grid grid-cols-2 py-2 cursor-pointer hover:bg-gray-100 rounded px-1"
-                  onClick={() => handleSelect(item)}
-                >
-                  <div className="flex items-center gap-1">
-                    <IconX name="variable" width="14" />
-                    <span className="font-mono">{item.name}</span>
-                  </div>
-                  <span className="font-mono text-gray-600 text-right">
-                    {item.type}
+                    </div>
+                  ))}
+                </Fragment>
+              );
+            }
+            return (
+              <div
+                key={item.name}
+                data-selected={selectedVariable?.name === item.name}
+                className={cn(
+                  "group",
+                  "grid items-center grid-cols-2 py-2 cursor-pointer rounded px-1",
+                  selectedVariable?.name === item.name
+                    ? "hover:bg-primary/90"
+                    : "hover:bg-accent",
+                  {
+                    "bg-primary": selectedVariable?.name === item.name,
+                  }
+                )}
+                onClick={() => handleSelect(item)}
+              >
+                <div className="flex items-center gap-1">
+                  <Avatar
+                    className="border border-border bg-muted"
+                    src={item.logo}
+                    alt={item.name}
+                    fallback="M"
+                    shape="square"
+                  />
+                  <span className="group-data-[selected=true]:text-primary-foreground">
+                    {item.name}
                   </span>
                 </div>
-              );
-            })}
-          </div>
+                <span className="group-data-[selected=true]:text-primary-foreground/90 text-right">
+                  {item.type}
+                </span>
+              </div>
+            );
+          })}
         </div>
-      </PopoverContent>
+      </div>
     </Popover>
   );
 };

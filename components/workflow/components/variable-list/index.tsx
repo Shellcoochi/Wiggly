@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { getPredVariables } from "../../utils/flowHelper";
 import { useEnvVariableStore } from "../../store/env-variable-store";
+import { IconVariable } from "@tabler/icons-react";
 
 export interface VariableListItemProps {
   type?: string;
@@ -32,6 +33,24 @@ export const VariableList: FC<VariableListProps> = ({
   const { envVariables } = useEnvVariableStore() as any;
 
   const variables = useMemo(() => {
+    function initOptions() {
+      if (options) {
+        return options;
+      } else {
+        const [currentNode] = nodes.filter((node) => node.selected);
+        const predecessors = getPredVariables(
+          currentNode.id,
+          nodes,
+          edges
+        ) as VariableListItemProps[];
+        predecessors.push({
+          name: "ENV",
+          id: "ENV",
+          children: envVariables,
+        });
+        return predecessors;
+      }
+    }
     const variableOptions = initOptions();
     if (!searchKey.trim()) return variableOptions;
 
@@ -50,26 +69,7 @@ export const VariableList: FC<VariableListProps> = ({
       .filter(Boolean) as VariableListItemProps[];
 
     return filteredOptions;
-  }, [initOptions, searchKey]);
-
-  function initOptions() {
-    if (options) {
-      return options;
-    } else {
-      const [currentNode] = nodes.filter((node) => node.selected);
-      const predecessors = getPredVariables(
-        currentNode.id,
-        nodes,
-        edges
-      ) as VariableListItemProps[];
-      predecessors.push({
-        name: "ENV",
-        id: "ENV",
-        children: envVariables,
-      });
-      return predecessors;
-    }
-  }
+  }, [searchKey, options, nodes, edges, envVariables]);
 
   function handleSearch(val: string) {
     setSearchKey(val);
@@ -81,9 +81,7 @@ export const VariableList: FC<VariableListProps> = ({
   }
 
   return (
-    <div
-      className={cn("rounded-lg text-xs w-[300px] p-2 bg-[#fff]", className)}
-    >
+    <div className={cn("rounded-lg text-xs p-2 bg-card", className)}>
       {!hideSearch ? (
         <div className="mb-4">
           <Input
@@ -94,23 +92,26 @@ export const VariableList: FC<VariableListProps> = ({
         </div>
       ) : null}
 
-      <div className="space-y-2 max-h-[300px] overflow-auto">
+      <div className="space-y-2 max-h-75 overflow-auto">
         {variables.map((item, index) => {
           if (item.children) {
             return (
               <Fragment key={index}>
-                <div className="text-gray-500">{item.name}</div>
-                {item.children.map((child, i) => (
+                <div className="text-muted-foreground">{item.name}</div>
+                {item.children.map((child) => (
                   <div
                     key={`${item.name}-${child.name}`}
-                    className="grid grid-cols-2 py-2 cursor-pointer hover:bg-gray-100 rounded px-1"
+                    className="grid grid-cols-2 py-2 cursor-pointer hover:bg-accent rounded px-1"
                     onClick={() => handleItemClick(child, item)}
                   >
                     <div className="flex items-center">
-                      <span className="text-gray-500 mr-1">{"{x}"}</span>
-                      <span className="font-mono">{child.name}</span>
+                      <IconVariable
+                        className="text-muted-foreground mr-1"
+                        size={14}
+                      />
+                      <span>{child.name}</span>
                     </div>
-                    <span className="font-mono text-gray-600 text-right">
+                    <span className="text-muted-foreground text-right">
                       {child.type}
                     </span>
                   </div>
@@ -121,14 +122,17 @@ export const VariableList: FC<VariableListProps> = ({
           return (
             <div
               key={item.name}
-              className="grid grid-cols-2 py-2 cursor-pointer hover:bg-gray-100 rounded px-1"
+              className="grid grid-cols-2 py-2 cursor-pointer hover:bg-accent rounded px-1"
               onClick={() => handleItemClick(item)}
             >
               <div className="flex items-center">
-                <span className="text-gray-500 mr-1">{"{x}"}</span>
+                <IconVariable
+                  className="text-muted-foreground mr-1"
+                  size={14}
+                />
                 <span className="font-mono">{item.name}</span>
               </div>
-              <span className="font-mono text-gray-600 text-right">
+              <span className="text-muted-foreground text-right">
                 {item.type}
               </span>
             </div>

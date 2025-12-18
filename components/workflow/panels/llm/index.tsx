@@ -18,7 +18,7 @@ const LLMPanel: FC<PanelProps> = ({ node }) => {
     if (node) {
       setModel(node.data.model ?? {});
     }
-  }, [node?.id]);
+  }, [node, node?.id]);
 
   useEffect(() => {
     if (node) {
@@ -26,14 +26,14 @@ const LLMPanel: FC<PanelProps> = ({ node }) => {
         model,
       });
     }
-  }, [model?.name]);
+  }, [model, model?.name, node, updateNodeData]);
 
   const options = [
     {
       name: "热门模型",
       children: [
         {
-          logo: "https://api.dicebear.com/7.x/miniavs/svg?seed=1",
+          logo: "/next.svg",
           name: "deepseek1",
           descr: "大模型描述",
           tags: [
@@ -59,6 +59,7 @@ const LLMPanel: FC<PanelProps> = ({ node }) => {
             <div className="grid gap-1">
               <ModelSelect
                 value={model}
+                allowClear
                 options={options}
                 onSelect={handleModelChange}
               />

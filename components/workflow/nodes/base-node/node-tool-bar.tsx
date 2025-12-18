@@ -80,7 +80,7 @@ export default memo(function NodeTollBar({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button hidden={!isVisible} variant="ghost" size="icon-sm">
+        <Button hidden={!isVisible} variant="ghost" size="icon-xs">
           <IconDots />
         </Button>
       </DropdownMenuTrigger>

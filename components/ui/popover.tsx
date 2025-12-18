@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as PopoverPrimitive from "@radix-ui/react-popover"
+import * as React from "react";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-function Popover({
+function PopoverRoot({
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />
+  return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
 function PopoverTrigger({
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 
 function PopoverContent({
@@ -36,13 +36,73 @@ function PopoverContent({
         {...props}
       />
     </PopoverPrimitive.Portal>
-  )
+  );
 }
 
 function PopoverAnchor({
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
-  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />
+  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
 }
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor }
+interface PopoverProps {
+  trigger?: React.ReactNode;
+  children: React.ReactNode;
+  side?: "top" | "right" | "bottom" | "left";
+  align?: "start" | "center" | "end";
+  className?: string;
+  defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  modal?: boolean;
+  showArrow?: boolean;
+  contentRef?: React.Ref<HTMLDivElement>;
+  contentStyle?: React.CSSProperties;
+  onOpenAutoFocus?: (event: Event) => void;
+  sideOffset?: number;
+}
+
+function Popover({
+  trigger,
+  children,
+  side,
+  align = "center",
+  className,
+  defaultOpen,
+  open,
+  onOpenChange,
+  modal,
+  showArrow = true,
+  contentRef,
+  contentStyle,
+  onOpenAutoFocus,
+  sideOffset = 0,
+}: PopoverProps) {
+  return (
+    <PopoverRoot
+      defaultOpen={defaultOpen}
+      open={open}
+      onOpenChange={onOpenChange}
+      modal={modal}
+    >
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverPrimitive.Portal>
+        <PopoverContent
+          side={side}
+          align={align}
+          sideOffset={sideOffset}
+          ref={contentRef}
+          style={contentStyle}
+          onOpenAutoFocus={onOpenAutoFocus}
+          className={cn("rounded-md bg-white p-4 shadow-md z-50", className)}
+        >
+          {children}
+          {showArrow ? <PopoverPrimitive.Arrow className="fill-white" /> : null}
+        </PopoverContent>
+      </PopoverPrimitive.Portal>
+    </PopoverRoot>
+  );
+}
+
+export { PopoverRoot, PopoverTrigger, PopoverContent, PopoverAnchor };
+export default Popover

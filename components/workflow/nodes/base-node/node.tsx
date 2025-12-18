@@ -67,7 +67,7 @@ export default memo(function Node({
     >
       <Card
         className={cn(
-          "h-full px-3 py-2 rounded-xl transition bg-white box-border gap-0",
+          "h-full px-3 py-2 rounded-xl transition bg-card box-border gap-0",
           {
             "ring-1 ring-border shadow-md": hovered,
             "border-primary border": selected,

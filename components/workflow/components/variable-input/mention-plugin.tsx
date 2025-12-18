@@ -10,11 +10,7 @@ import {
 } from "@floating-ui/react-dom";
 import { $createMentionNode } from "./mention-node";
 import { VariableList } from "../variable-list";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import Popover from "@/components/ui/popover";
 
 export const MentionPlugin = () => {
   const [editor] = useLexicalComposerContext();
@@ -125,8 +121,13 @@ export const MentionPlugin = () => {
   };
 
   return (
-    <Popover open={showTagTrigger}>
-      <PopoverTrigger asChild>
+    <Popover
+      open={showTagTrigger}
+      showArrow={false}
+      contentRef={refs.setFloating}
+      contentStyle={floatingStyles}
+      onOpenAutoFocus={(e) => e.preventDefault()}
+      trigger={
         <span
           style={{
             position: "absolute",
@@ -142,14 +143,9 @@ export const MentionPlugin = () => {
             }
           }}
         />
-      </PopoverTrigger>
-      <PopoverContent
-        ref={refs.setFloating}
-        style={floatingStyles}
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <VariableList onItemClick={(item) => insertMention(item.name)} />
-      </PopoverContent>
+      }
+    >
+      <VariableList onItemClick={(item) => insertMention(item.name)} />
     </Popover>
   );
 };

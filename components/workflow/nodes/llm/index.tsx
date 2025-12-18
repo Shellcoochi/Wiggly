@@ -1,8 +1,8 @@
 import { memo } from "react";
 import BaseNode from "../base-node/node";
 import { FlowNodeProps } from "../../types";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { IconX } from "@tabler/icons-react";
+import Avatar from "@/components/ui/avatar";
+import { VariableLabel } from "../../components/variable-label";
 
 type ModelProps = any;
 
@@ -12,27 +12,17 @@ export default memo(function Llm(props: FlowNodeProps) {
   return (
     <BaseNode node={props}>
       <div className="grid gap-1">
-        <div className="flex items-center px-1 rounded-md h-6  bg-gray-100 text-xs">
-          <label className="mr-2">输入</label>
-          <span>
-            <IconX name="string" width={16} className="mr-0.5" />
-            input
-          </span>
-        </div>
-        <div className="flex items-center px-1 rounded-md h-6  bg-gray-100 text-xs">
-          <label className="mr-2">输出</label>
-          <span>
-            <IconX name="boolean" width={16} className="mr-0.5" />
-            output
-          </span>
-        </div>
-        <div className="flex items-center px-1 rounded-md h-6  bg-gray-100 text-xs">
-          <label className="mr-2">模型</label>
+        <VariableLabel title="输入" type="string" label="input" />
+        <VariableLabel title="输出" type="boolean" label="output" />
+        <div className="flex items-center px-1 rounded-md h-6  bg-muted text-xs">
+          <label className="mr-2 text-muted-foreground">模型</label>
           <div className="flex gap-0.5 items-center">
-            <Avatar>
-              <AvatarImage src={model?.logo} />
-              <AvatarFallback className="rounded-lg">M</AvatarFallback>
-            </Avatar>
+            <Avatar
+              src={model?.logo}
+              alt={model?.name}
+              size="small"
+              fallback="M"
+            />
             <span className="text-primary">{model?.name}</span>
           </div>
         </div>

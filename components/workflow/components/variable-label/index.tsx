@@ -1,8 +1,16 @@
 import { FC } from "react";
-import { cn } from "@/lib/utils"
-import { IconNumber } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
+import {
+  IconAbc,
+  IconBracketsContain,
+  IconJson,
+  IconNumber,
+  IconToggleLeft,
+  IconVariable,
+} from "@tabler/icons-react";
 
 interface VariableLabelProps {
+  title?: string;
   type?: string;
   label?: string;
   isRequired?: boolean;
@@ -13,39 +21,43 @@ export const VariableLabel: FC<VariableLabelProps> = ({
   type,
   isRequired,
   label,
+  title,
   className,
 }) => {
   const renderIcon = () => {
-    const Icon = IconNumber
+    const size = 16;
     if (type == "string") {
-      return <Icon name="string" width={14} />;
+      return <IconAbc size={size} />;
     } else if (type == "number") {
-      return <IconNumber width={14} />;
+      return <IconNumber size={size} />;
     } else if (type == "boolean") {
-      return <Icon name="boolean" width={14} />;
+      return <IconToggleLeft size={size} />;
     } else if (type == "array") {
-      return <Icon name="array" width={14} />;
+      return <IconBracketsContain size={size} />;
     } else if (type == "json") {
-      return <Icon name="json" width={14} />;
+      return <IconJson size={size} />;
     } else {
-      return <Icon name="variable" width={14} />;
+      return <IconVariable size={size} />;
     }
   };
 
   return (
     <div
       className={cn(
-        "flex justify-between px-1 rounded-md items-center font-mono h-6  bg-gray-100 text-xs",
+        "flex justify-between px-1 rounded-md items-center h-6 bg-muted text-xs",
         className
       )}
     >
       <span className="text-gray-800 flex items-center gap-1">
-        <span className="text-gray-500 rounded mr-0.5">{renderIcon()}</span>
+        {title ? <span className="text-muted-foreground">{title}</span> : null}
+        <span className="text-muted-foreground rounded mr-0.5">
+          {renderIcon()}
+        </span>
         <span>{label ?? "未定义"}</span>
       </span>
 
       {isRequired && (
-        <span className="flex items-center text-gray-500">必填</span>
+        <span className="flex items-center text-muted-foreground">必填</span>
       )}
     </div>
   );

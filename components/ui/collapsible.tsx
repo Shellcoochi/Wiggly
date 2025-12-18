@@ -60,8 +60,8 @@ const Collapsible: FC<CollapsibleProps> = ({
           {trigger || (
             <Button
               variant="ghost"
-              size="icon-sm"
-              className="text-blue-500 hover:text-blue-700"
+              size="icon-xs"
+              className="text-primary hover:text-primary/90"
             >
               {open ? <IconArrowBarUp /> : <IconArrowBarDown />}
             </Button>

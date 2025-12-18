@@ -9,11 +9,7 @@ import { numericId } from "../../utils/flowHelper";
 import { EdgeType, NodeConfig } from "../../const";
 import { cn } from "@/lib/utils";
 import Selector, { SectionItemProps } from "../../nodes/base-node/selector";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import Popover from "@/components/ui/popover";
 
 /** @todo 增加鼠标悬浮显示 */
 export default function CustomEdge(props: EdgeProps) {
@@ -92,13 +88,12 @@ export default function CustomEdge(props: EdgeProps) {
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             }}
           >
-            <Popover>
-              <PopoverTrigger asChild>
+            <Popover
+              trigger={
                 <i className="ri-add-line w-5 h-5 flex items-center justify-center bg-blue-500 text-white rounded-full" />
-              </PopoverTrigger>
-              <PopoverContent>
-                <Selector onChange={handleSelectorChange} />
-              </PopoverContent>
+              }
+            >
+              <Selector onChange={handleSelectorChange} />
             </Popover>
           </div>
         </EdgeLabelRenderer>

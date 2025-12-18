@@ -48,7 +48,7 @@ export function Tag({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-[var(--radius)] border text-sm px-2 py-[2px] transition-all",
+        "inline-flex items-center gap-1 rounded-lg border text-sm px-2 py-0.5 transition-all",
         colorMap[color],
         borderColorMap[color],
         textColorMap[color],
@@ -63,7 +63,7 @@ export function Tag({
           className="ml-1 inline-flex items-center p-0.5 text-inherit hover:opacity-70 focus:outline-none"
           onClick={onClose}
         >
-          <IconX name="ri-close-line" className="h-[14px] w-[14px]" />
+          <IconX name="ri-close-line" className="h-3.5 w-3.5" />
         </button>
       )}
     </span>

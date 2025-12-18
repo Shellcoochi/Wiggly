@@ -2,11 +2,7 @@ import { useState, FC, useEffect } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { VariableList } from "../variable-list";
 import { IconX } from "@tabler/icons-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import Popover from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Tag } from "@/components/ui/tag";
 
@@ -69,8 +65,10 @@ export const VariableSelect: FC<VariableSelectProps> = ({
   };
 
   return (
-    <Popover open={open} onOpenChange={() => setOpen(!open)}>
-      <PopoverTrigger asChild>
+    <Popover
+      open={open}
+      onOpenChange={() => setOpen(!open)}
+      trigger={
         <div
           className={cn(
             "flex items-center cursor-pointer rounded-md bg-gray-100 h-8 px-2 space-x-1",
@@ -121,14 +119,13 @@ export const VariableSelect: FC<VariableSelectProps> = ({
             </div>
           )}
         </div>
-      </PopoverTrigger>
-      <PopoverContent>
-        <VariableList
-          hideSearch={hideSearch}
-          options={options}
-          onItemClick={(item, parent) => handleSelect(item, parent)}
-        />
-      </PopoverContent>
+      }
+    >
+      <VariableList
+        hideSearch={hideSearch}
+        options={options}
+        onItemClick={(item, parent) => handleSelect(item, parent)}
+      />
     </Popover>
   );
 };
