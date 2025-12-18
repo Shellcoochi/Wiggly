@@ -48,7 +48,7 @@ export function Tag({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-lg border text-sm px-2 py-0.5 transition-all",
+        "inline-flex items-center gap-1 rounded-lg border-border text-sm px-2 py-0.5 transition-all",
         colorMap[color],
         borderColorMap[color],
         textColorMap[color],

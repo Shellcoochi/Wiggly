@@ -101,7 +101,7 @@ export const ModelSelect: FC<ModelSelectProps> = ({
       trigger={
         <div
           className={cn(
-            "flex items-center cursor-pointer rounded-md bg-input h-8 px-2 space-x-1",
+            "flex items-center cursor-pointer rounded-md bg-secondary h-8 px-2 space-x-1",
             "hover:border-border"
           )}
           onMouseEnter={() => setClearVisible(true)}
@@ -213,7 +213,7 @@ export const ModelSelect: FC<ModelSelectProps> = ({
                             {child.tags?.map((tag) => (
                               <Tag
                                 key={tag.id}
-                                className="bg-bg-base text-xs py-0! px-1! group-data-[selected=true]:text-primary-foreground"
+                                className="bg-background text-xs py-0! px-1! group-data-[selected=true]:text-primary-foreground"
                               >
                                 {tag.label}
                               </Tag>

@@ -19,7 +19,7 @@ export const Guideline: FC<GuidelineProps> = ({ guides, currentNode }) => {
           const hNodes = guides.horizontal.nodes;
           const [baseNode] = hNodes;
           const allNodes = nodes.filter((node) =>
-            [...hNodes, currentNode].some((n) => n.id === node.id)
+            [...hNodes, currentNode].some((n) => n?.id === node.id)
           );
           const minX = Math.min(...allNodes.map((n) => n.position.x));
           const maxX = Math.max(

@@ -5,7 +5,7 @@ import { charId } from "../../utils/flowHelper";
 import { VariableSelect } from "../../components/variable-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { IconX } from "@tabler/icons-react";
+import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import {
   Accordion,
   AccordionContent,
@@ -53,17 +53,20 @@ const EndPanel: FC<PanelProps> = ({ node }) => {
   return (
     <Accordion type="multiple" defaultValue={["output"]}>
       <AccordionItem value="output">
-        <AccordionTrigger>
-          输出
+        <div className="flex items-center justify-between">
+          <AccordionTrigger iconPosition="left">
+            <span className="flex-1">输出</span>
+          </AccordionTrigger>
           <Button
             variant="ghost"
-            size="sm"
-            className="text-blue-500 hover:text-blue-700"
+            size="icon-xs"
+            className="text-primary hover:text-primary/90"
             onClick={handleAddVariable}
           >
-            <IconX name="ri-add-line" />
+            <IconPlus />
           </Button>
-        </AccordionTrigger>
+        </div>
+
         <AccordionContent>
           <div className="grid gap-2">
             {outputs.map((output) => (
@@ -73,7 +76,7 @@ const EndPanel: FC<PanelProps> = ({ node }) => {
               >
                 <Input
                   value={output.name ?? ""}
-                  className="col-span-3"
+                  className="col-span-3 h-8 ring-0!"
                   placeholder="变量名"
                   onChange={(e: { target: { value: any } }) =>
                     handleUpdate(output.id, "name", e.target.value)
@@ -88,11 +91,11 @@ const EndPanel: FC<PanelProps> = ({ node }) => {
                 />
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="text-red-500 hover:text-red-700"
+                  size="icon-xs"
+                  className="text-destructive hover:text-destructive/90"
                   onClick={() => handleRemove(output.id)}
                 >
-                  <IconX name="ri-delete-bin-line" />
+                  <IconTrash/>
                 </Button>
               </div>
             ))}

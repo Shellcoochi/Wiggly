@@ -71,8 +71,8 @@ export const VariableSelect: FC<VariableSelectProps> = ({
       trigger={
         <div
           className={cn(
-            "flex items-center cursor-pointer rounded-md bg-gray-100 h-8 px-2 space-x-1",
-            "hover:border-gray-300",
+            "flex items-center cursor-pointer rounded-md bg-secondary h-8 px-2 space-x-1",
+            "hover:border-border",
             className
           )}
           onMouseEnter={() => setClearVisible(true)}
@@ -81,7 +81,7 @@ export const VariableSelect: FC<VariableSelectProps> = ({
         >
           {prefix && (
             <div
-              className="text-gray-500"
+              className="text-muted-foreground"
               onClick={(e) => {
                 e.stopPropagation();
               }}
@@ -91,26 +91,22 @@ export const VariableSelect: FC<VariableSelectProps> = ({
           )}
           <div className="flex-1 flex items-center overflow-hidden">
             {selectedVariable?.name ? (
-              <Tag className="bg-bg-base truncate">
+              <Tag className="bg-background truncate text-xs">
                 <span>{renderNodeLabel(selectedVariable.parentId)}</span>
                 {selectedVariable.parentId ? <span>/</span> : null}
                 <span className="text-primary">{selectedVariable.name}</span>
               </Tag>
             ) : (
-              <div className="text-text-disabled truncate">请选择变量</div>
+              <div className="text-muted-foreground truncate">请选择变量</div>
             )}
           </div>
           {allowClear && clearVisible && selectedVariable && (
-            <IconX
-              name="ri-close-circle-fill"
-              className="text-gray-500"
-              onClick={handleClear}
-            />
+            <IconX className="text-muted-foreground" onClick={handleClear} />
           )}
 
           {suffix && (
             <div
-              className="text-gray-500"
+              className="text-muted-foreground"
               onClick={(e) => {
                 e.stopPropagation();
               }}

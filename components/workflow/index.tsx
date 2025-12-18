@@ -31,12 +31,22 @@ const initialNodes = [
   {
     id: "2",
     type: "llm",
-    position: { x: 500, y: 100 },
+    position: { x: 400, y: 100 },
     width: 255,
     data: { label: "LLM" },
   },
+  {
+    id: "3",
+    type: "end",
+    position: { x: 700, y: 100 },
+    width: 255,
+    data: { label: "结束" },
+  },
 ];
-const initialEdges = [{ id: "e1-2", source: "1", target: "2", type: "base" }];
+const initialEdges = [
+  { id: "e1-1", source: "1", target: "2", type: "base" },
+  { id: "e1-2", source: "2", target: "3", type: "base" },
+];
 
 function Flow() {
   const [currentNode, setCurrentNode] = useState<FlowNodeProps>();

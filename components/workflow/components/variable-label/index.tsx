@@ -44,7 +44,7 @@ export const VariableLabel: FC<VariableLabelProps> = ({
   return (
     <div
       className={cn(
-        "flex justify-between px-1 rounded-md items-center h-6 bg-muted text-xs",
+        "flex justify-between px-1 rounded-md items-center h-6 bg-secondary text-xs",
         className
       )}
     >
