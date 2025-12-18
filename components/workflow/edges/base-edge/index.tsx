@@ -10,6 +10,7 @@ import { EdgeType, NodeConfig } from "../../const";
 import { cn } from "@/lib/utils";
 import Selector, { SectionItemProps } from "../../nodes/base-node/selector";
 import Popover from "@/components/ui/popover";
+import { IconPlus } from "@tabler/icons-react";
 
 /** @todo 增加鼠标悬浮显示 */
 export default function CustomEdge(props: EdgeProps) {
@@ -75,7 +76,7 @@ export default function CustomEdge(props: EdgeProps) {
         style={style}
         className={cn(
           "stroke-2!",
-          selected ? "stroke-blue-500! " : "stroke-blue-300! "
+          selected ? "stroke-primary! " : "stroke-border! "
         )}
       />
       {selected ? (
@@ -90,7 +91,12 @@ export default function CustomEdge(props: EdgeProps) {
           >
             <Popover
               trigger={
-                <i className="ri-add-line w-5 h-5 flex items-center justify-center bg-blue-500 text-white rounded-full" />
+                <div className="ri-add-line w-5 h-5 flex items-center justify-center bg-primary text-primary-foreground rounded-full">
+                  <IconPlus
+                    size="12"
+                    className="pointer-events-none text-primary-foreground"
+                  />
+                </div>
               }
             >
               <Selector onChange={handleSelectorChange} />
