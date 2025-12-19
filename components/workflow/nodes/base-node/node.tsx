@@ -87,75 +87,73 @@ export default memo(function Node({
             <NodeToolbar nodeId={node.id} isVisible={selected || hovered} />
           </CardAction>
         </CardHeader>
-         {data?.description && (
-            <CardDescription className="mt-2">
-              {data.description}
-            </CardDescription>
-          )}
+        {data?.description && (
+          <CardDescription className="mt-2">{data.description}</CardDescription>
+        )}
         <CardContent className="px-0 mt-2">{children}</CardContent>
-      </Card>
-      {primaryHandle ? (
-        <div className="absolute w-full top-6 left-0">
-          {primaryHandle.targetId ? (
-            <Handle
-              type="target"
-              id={`${node.id}-target-${primaryHandle.targetId}`}
-              hovered={hovered || selected}
-              position={Position.Left}
-              isConnectable={isConnectable}
-            />
-          ) : null}
-          {primaryHandle.sourceId ? (
-            <Handle
-              type="source"
-              id={`${node.id}-source-${primaryHandle.sourceId}`}
-              hovered={hovered || selected}
-              position={Position.Right}
-              isConnectable={isConnectable}
-            />
-          ) : null}
-        </div>
-      ) : null}
-      {showResizer && (hovered || selected) && (
-        <NodeResizeControl style={controlStyle}>
-          <IconRadiusBottomRight />
-        </NodeResizeControl>
-      )}
-
-      {handles
-        .filter((h) => !h.isPrimary)
-        .map((handle) => (
-          <div
-            key={`${handle.targetId}-${handle.sourceId}`}
-            className="flex justify-between min-h-6 my-1"
-          >
-            <div className="right-4.5 relative">
-              {handle.targetId ? (
-                <Handle
-                  type="target"
-                  id={`${node.id}-target-${handle.targetId}`}
-                  hovered={hovered || selected}
-                  position={Position.Left}
-                  isConnectable={isConnectable}
-                />
-              ) : null}
-            </div>
-            <div className="flex items-center overflow-hidden w-full">
-              {handle.content}
-            </div>
-            <div className="left-4.5 relative">
-              {handle.sourceId ? (
-                <Handle
-                  type="source"
-                  id={`${node.id}-source-${handle.sourceId}`}
-                  hovered={hovered || selected}
-                  position={Position.Right}
-                  isConnectable={isConnectable}
-                />
-              ) : null}
-            </div>
+        {primaryHandle ? (
+          <div className="absolute w-full top-6 left-0">
+            {primaryHandle.targetId ? (
+              <Handle
+                type="target"
+                id={`${node.id}-target-${primaryHandle.targetId}`}
+                hovered={hovered || selected}
+                position={Position.Left}
+                isConnectable={isConnectable}
+              />
+            ) : null}
+            {primaryHandle.sourceId ? (
+              <Handle
+                type="source"
+                id={`${node.id}-source-${primaryHandle.sourceId}`}
+                hovered={hovered || selected}
+                position={Position.Right}
+                isConnectable={isConnectable}
+              />
+            ) : null}
           </div>
-        ))}
+        ) : null}
+        {showResizer && (hovered || selected) && (
+          <NodeResizeControl style={controlStyle}>
+            <IconRadiusBottomRight />
+          </NodeResizeControl>
+        )}
+
+        {handles
+          .filter((h) => !h.isPrimary)
+          .map((handle) => (
+            <div
+              key={`${handle.targetId}-${handle.sourceId}`}
+              className="flex justify-between min-h-6 my-1"
+            >
+              <div className="right-3.25 relative">
+                {handle.targetId ? (
+                  <Handle
+                    type="target"
+                    id={`${node.id}-target-${handle.targetId}`}
+                    hovered={hovered || selected}
+                    position={Position.Left}
+                    isConnectable={isConnectable}
+                  />
+                ) : null}
+              </div>
+              <div className="flex items-center overflow-hidden w-full">
+                {handle.content}
+              </div>
+              <div className="left-3.25 relative">
+                {handle.sourceId ? (
+                  <Handle
+                    type="source"
+                    id={`${node.id}-source-${handle.sourceId}`}
+                    hovered={hovered || selected}
+                    position={Position.Right}
+                    isConnectable={isConnectable}
+                  />
+                ) : null}
+              </div>
+            </div>
+          ))}
+      </Card>
     </div>
   );
 });

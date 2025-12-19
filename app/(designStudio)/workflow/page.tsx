@@ -1,5 +1,3 @@
-"use client";
-
 import Flow from "@/components/workflow";
 
 export default function Workflow() {

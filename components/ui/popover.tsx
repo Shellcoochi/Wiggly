@@ -94,10 +94,10 @@ function Popover({
           ref={contentRef}
           style={contentStyle}
           onOpenAutoFocus={onOpenAutoFocus}
-          className={cn("rounded-md bg-white p-4 shadow-md z-50", className)}
+          className={cn("rounded-md bg-background p-4 shadow-md z-50", className)}
         >
           {children}
-          {showArrow ? <PopoverPrimitive.Arrow className="fill-white" /> : null}
+          {showArrow ? <PopoverPrimitive.Arrow className="fill-border" /> : null}
         </PopoverContent>
       </PopoverPrimitive.Portal>
     </PopoverRoot>

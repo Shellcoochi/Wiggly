@@ -53,7 +53,7 @@ export const VariableLabel: FC<VariableLabelProps> = ({
         <span className="text-muted-foreground rounded mr-0.5">
           {renderIcon()}
         </span>
-        <span>{label ?? "未定义"}</span>
+        <span className="text-secondary-foreground">{label ?? "未定义"}sdff</span>
       </span>
 
       {isRequired && (

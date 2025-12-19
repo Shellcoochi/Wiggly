@@ -8,7 +8,7 @@ import {
   VariableSelect,
 } from "../../components/variable-select";
 import { Button } from "@/components/ui/button";
-import { IconX } from "@tabler/icons-react";
+import { IconChevronRight, IconMinus, IconX } from "@tabler/icons-react";
 import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
@@ -151,7 +151,7 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
   };
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-4 pt-4">
       {conditionGroups?.map((group, groupIndex) => (
         <div key={group.id} className="grid gap-2">
           <div className="flex items-center justify-between">
@@ -159,16 +159,17 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
             {groupIndex > 0 && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon-xs"
                 onClick={() => removeGroup(group.id)}
+                className="text-muted-foreground hover:text-muted-foreground/90"
               >
-                <IconX name="ri-delete-bin-line" />
+                <IconX />
               </Button>
             )}
           </div>
           {group.conditions?.length > 0 ? (
             <div className="flex w-full my-1">
-              <div className="text-xs font-bold w-9.5 text-right pr-2 shrink-0 content-center">
+              <div className="text-xs font-bold text-right pr-2 shrink-0 content-center">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <div className="cursor-pointer text-right text-primary">
@@ -181,79 +182,94 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <div className="flex flex-col gap-1.5 px-2 w-full border-l-2 border-solid border-gray-200 rounded-l-md rounded-r-md">
+              <div className="flex flex-col gap-1.5 px-2 w-full border-l-2 border-solid border-border rounded-l-md rounded-r-md">
                 {group.conditions.map((condition) => (
                   <div
                     key={condition.id}
+                    className="flex items-center gap-1"
                     onMouseEnter={() => setClearVisible(condition.id)}
                     onMouseLeave={() => setClearVisible("")}
-                    className="bg-gray-100 rounded-md relative"
                   >
-                    <VariableSelect
-                      value={condition.variable as VariableItemProps}
-                      onSelect={(val) => {
-                        updateCondition(
-                          group.id,
-                          condition.id,
-                          "variable",
-                          val
-                        );
-                      }}
-                      suffix={
-                        <DropdownMenu
-                        // onItemClick={(val) => {
-                        //   updateCondition(
-                        //     group.id,
-                        //     condition.id,
-                        //     "operator",
-                        //     val.value ?? ""
-                        //   );
-                        // }}
-                        >
-                          <DropdownMenuTrigger asChild>
-                            <div className="flex items-center space-x-2">
-                              <Separator orientation="vertical" />
-                              <span>
-                                {ComparisonOperatorName[condition.operator] ||
-                                  "选择操作"}{" "}
-                                <IconX name="ri-arrow-down-s-line" />
-                              </span>
-                            </div>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            {comparisonOperators.map((comp) => (
-                              <DropdownMenuItem
-                                key={comp.value}
-                                textValue={comp.value}
-                              >
-                                {comp.label}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      }
-                    />
-                    <Separator className="bg-bg-secondary" />
-                    <input
-                      className="px-2 w-full h-8 border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-transparent"
-                      value={condition.value}
-                      onChange={(e) =>
-                        updateCondition(
-                          group.id,
-                          condition.id,
-                          "value",
-                          e.target.value
-                        )
-                      }
-                      placeholder="输入值"
-                    />
-                    {clearVisible === condition.id && (
-                      <IconX
-                        name="ri-close-circle-fill"
-                        className="cursor-pointer text-gray-500 absolute -right-2 -top-2"
-                        onClick={() => removeCondition(group.id, condition.id)}
+                    <div className="bg-secondary rounded-md flex-1">
+                      <VariableSelect
+                        value={condition.variable as VariableItemProps}
+                        onSelect={(val) => {
+                          updateCondition(
+                            group.id,
+                            condition.id,
+                            "variable",
+                            val
+                          );
+                        }}
+                        suffix={
+                          <DropdownMenu
+                          // onItemClick={(val) => {
+                          //   updateCondition(
+                          //     group.id,
+                          //     condition.id,
+                          //     "operator",
+                          //     val.value ?? ""
+                          //   );
+                          // }}
+                          >
+                            <DropdownMenuTrigger asChild>
+                              <div className="flex items-center space-x-2">
+                                <Separator
+                                  orientation="vertical"
+                                  className="h-3!"
+                                />
+                                <span className="flex items-center gap-1">
+                                  {ComparisonOperatorName[condition.operator] ||
+                                    "选择操作"}
+                                  <IconChevronRight
+                                    className="rotate-90"
+                                    size={12}
+                                  />
+                                </span>
+                              </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              {comparisonOperators.map((comp) => (
+                                <DropdownMenuItem
+                                  key={comp.value}
+                                  textValue={comp.value}
+                                >
+                                  {comp.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        }
                       />
-                    )}
+                      <Separator />
+                      <input
+                        className="px-2 w-full h-8 border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-transparent"
+                        value={condition.value}
+                        onChange={(e) =>
+                          updateCondition(
+                            group.id,
+                            condition.id,
+                            "value",
+                            e.target.value
+                          )
+                        }
+                        placeholder="输入值"
+                      />
+                    </div>
+                    <div className="w-4">
+                      {clearVisible === condition.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() =>
+                            removeCondition(group.id, condition.id)
+                          }
+                          className="text-muted-foreground hover:text-muted-foreground/90"
+                        >
+                          <IconMinus />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -262,14 +278,14 @@ const LogicBuilder: FC<LogicBuilder> = ({ node }) => {
 
           <div className="flex gap-2 flex-row-reverse">
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={() => addCondition(group.id)}
             >
               添加条件
             </Button>
           </div>
-          <Separator className="bg-text-disabled/30" />
+          <Separator />
           {groupIndex === conditionGroups.length - 1 && (
             <div className="mt-2 grid justify-items-center">
               <Button onClick={addElifGroup} size="sm" className="w-75">

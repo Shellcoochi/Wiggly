@@ -15,13 +15,13 @@ export default memo(function ConditionNode(props: FlowNodeProps) {
       cases.map((item: ConditionGroup, i: number) => ({
         sourceId: `source-${i + 1}`,
         content: (
-          <div className="flex w-full my-1">
+          <div className="flex w-full">
             <div className="text-xs font-bold w-9.5 text-right text-primary pr-2 shrink-0 content-center">
               {item.type}
             </div>
             <div
               className={cn(
-                "flex flex-col gap-0 px-2 w-full border-solid border-gray-200 rounded-l-md rounded-r-md",
+                "flex flex-col gap-0 px-2 w-full border-solid border-border rounded-l-md rounded-r-md",
                 {
                   "border-l-2": item.conditions.length > 1,
                 }

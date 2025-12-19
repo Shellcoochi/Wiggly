@@ -67,6 +67,7 @@ export const VariableSelect: FC<VariableSelectProps> = ({
   return (
     <Popover
       open={open}
+      className="bg-popover"
       onOpenChange={() => setOpen(!open)}
       trigger={
         <div

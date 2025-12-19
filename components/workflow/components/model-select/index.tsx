@@ -96,7 +96,7 @@ export const ModelSelect: FC<ModelSelectProps> = ({
       open={open}
       showArrow={false}
       align="start"
-      className="bg-card"
+      className="bg-popover"
       onOpenChange={() => setOpen(!open)}
       trigger={
         <div
@@ -213,7 +213,7 @@ export const ModelSelect: FC<ModelSelectProps> = ({
                             {child.tags?.map((tag) => (
                               <Tag
                                 key={tag.id}
-                                className="bg-background text-xs py-0! px-1! group-data-[selected=true]:text-primary-foreground"
+                                className="bg-background text-xs py-0! px-1!"
                               >
                                 {tag.label}
                               </Tag>

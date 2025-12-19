@@ -20,7 +20,7 @@ const IfElsePanel: FC<PanelProps> = ({ node }) => {
         outputs: outputs,
       });
     }
-  }, [outputs]);
+  }, [node, outputs, updateNodeData]);
 
   const handleAddVariable = (data: VariableProps) => {
     setOutputs((prev) => prev.concat(data));

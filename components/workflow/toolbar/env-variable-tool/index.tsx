@@ -134,6 +134,7 @@ export const EnvVariableTool = () => {
     <Popover
       open={open}
       onOpenChange={handleOpenChange}
+      className="bg-popover"
       trigger={
         <Toggle pressed={open} onPressedChange={(val) => setOpen(val)}>
           ENV
