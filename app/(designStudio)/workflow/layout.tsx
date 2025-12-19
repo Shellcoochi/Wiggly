@@ -1,5 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/header/site-header";
+import { WorkflowHeader } from "@/components/header/workflow-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function AdminLayout({
@@ -18,7 +18,8 @@ export default function AdminLayout({
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        {/* <SiteHeader /> */}
+        <WorkflowHeader/>
         <div className="flex p-0 flex-1">{children}</div>
       </SidebarInset>
     </SidebarProvider>

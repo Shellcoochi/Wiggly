@@ -74,7 +74,7 @@ const initialEdges = [
   { id: "e1-2", source: "2", target: "3", type: "base" },
   { id: "e1-3", source: "1", target: "4", type: "base" },
 ];
-
+/** @todo 使用到的 Tag 替换成 Badge 组件*/
 function Flow() {
   const [currentNode, setCurrentNode] = useState<FlowNodeProps>();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
