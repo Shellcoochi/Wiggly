@@ -83,8 +83,8 @@ const data = {
           url: "/workflow",
         },
         {
-          title: "Starred",
-          url: "#",
+          title: "web-designer",
+          url: "web-designer"
         },
         {
           title: "Settings",
