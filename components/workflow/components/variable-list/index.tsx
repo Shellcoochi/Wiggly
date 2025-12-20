@@ -39,7 +39,7 @@ export const VariableList: FC<VariableListProps> = ({
       } else {
         const [currentNode] = nodes.filter((node) => node.selected);
         const predecessors = getPredVariables(
-          currentNode.id,
+          currentNode?.id,
           nodes,
           edges
         ) as VariableListItemProps[];
