@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Icon, IconChevronRight } from "@tabler/icons-react"
 import Link from "next/link"
+import { useActive } from "./use-active"
 
 export function NavPlatform({
   items,
@@ -32,6 +33,8 @@ export function NavPlatform({
     }[]
   }[]
 }) {
+  const isActive = useActive();
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>工作室</SidebarGroupLabel>
@@ -55,7 +58,7 @@ export function NavPlatform({
                 <SidebarMenuSub>
                   {item.items?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
-                      <SidebarMenuSubButton asChild>
+                      <SidebarMenuSubButton asChild isActive={isActive(subItem.url)}>
                         <Link href={subItem.url}>
                           <span>{subItem.title}</span>
                         </Link>
