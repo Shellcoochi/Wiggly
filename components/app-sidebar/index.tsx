@@ -84,7 +84,7 @@ const data = {
         },
         {
           title: "web-designer",
-          url: "web-designer"
+          url: "/web-designer"
         },
         {
           title: "Settings",
