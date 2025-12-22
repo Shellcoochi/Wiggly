@@ -1,11 +1,13 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
+import { useEffect, useState } from "react";
 import {
   IconBox,
   IconTypography,
   IconHandClick,
 } from "@tabler/icons-react";
+import useMounted from "@/hooks/use-mounted";
 
 const materials = [
   { type: "container", label: "容器", icon: IconBox },
@@ -14,10 +16,16 @@ const materials = [
 ];
 
 function MaterialItem({ type, label, icon: Icon }: any) {
+  const isMounted = useMounted()
+
   const { setNodeRef, listeners, attributes } = useDraggable({
     id: `material-${type}`,
     data: { type },
   });
+
+  if (!isMounted) {
+    return null; // 在客户端渲染前不返回任何内容
+  }
 
   return (
     <div
