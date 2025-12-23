@@ -47,7 +47,6 @@ export const Container = forwardRef<HTMLDivElement, Props>(
         style={
           {
             ...style,
-            '--columns': columns,
           } as React.CSSProperties
         }
         className={cn(
@@ -95,7 +94,7 @@ export const Container = forwardRef<HTMLDivElement, Props>(
             'flex flex-col gap-2 p-0 m-0 list-none',
             horizontal && 'flex-row',
             scrollable && 'flex-1 overflow-auto',
-            'grid-cols-[--columns]',
+            `grid-cols-${columns}`,
             horizontal ? 'grid grid-rows-1 auto-cols-max' : 'grid',
             horizontal ? 'grid-flow-col' : 'grid-flow-row',
             horizontal && scrollable && 'overflow-x-auto',

@@ -6,6 +6,7 @@ import useMounted from "@/hooks/use-mounted";
 import { Droppable } from "./droppable";
 import { MaterialItem } from "./material-item";
 import { MultipleContainers } from "./designer";
+import { rectSortingStrategy } from "@dnd-kit/sortable";
 
 export function Designer() {
   const isMounted = useMounted();
@@ -15,7 +16,16 @@ export function Designer() {
     return null; // 在客户端渲染前不返回任何内容
   }
 
-  return <MultipleContainers/>
+  return (
+    <MultipleContainers
+      columns={2}
+      strategy={rectSortingStrategy}
+      wrapperStyle={() => ({
+        width: 150,
+        height: 150,
+      })}
+    />
+  );
 
   const draggable = <MaterialItem id="draggable" />;
 
