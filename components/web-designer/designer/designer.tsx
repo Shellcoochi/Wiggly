@@ -150,6 +150,7 @@ interface Props {
 
 export const TRASH_ID = "void";
 const PLACEHOLDER_ID = "placeholder";
+const MATERIALSPANEL_ID = "materials";
 const empty: UniqueIdentifier[] = [];
 
 export function MultipleContainers({
@@ -171,9 +172,15 @@ export function MultipleContainers({
   vertical = false,
   scrollable,
 }: Props) {
+  // 将材料数组转换为 UniqueIdentifier 类型
+  const initialMaterials = ["Text", "Input", "Button"];
+  const [materials, setMaterials] =
+    useState<UniqueIdentifier[]>(initialMaterials);
+
   const [items, setItems] = useState<Items>(
     () =>
       initialItems ?? {
+        [MATERIALSPANEL_ID]: materials, // 将材料面板添加到 items
         A: createRange(itemCount, (index) => `A${index + 1}`),
         B: createRange(itemCount, (index) => `B${index + 1}`),
         C: createRange(itemCount, (index) => `C${index + 1}`),
@@ -181,7 +188,9 @@ export function MultipleContainers({
       }
   );
   const [containers, setContainers] = useState(
-    Object.keys(items) as UniqueIdentifier[]
+    Object.keys(items).filter(
+      (id) => id !== MATERIALSPANEL_ID
+    ) as UniqueIdentifier[] // 排除材料面板
   );
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
@@ -189,14 +198,6 @@ export function MultipleContainers({
   const isSortingContainer =
     activeId != null ? containers.includes(activeId) : false;
 
-  /**
-   * Custom collision detection strategy optimized for multiple containers
-   *
-   * - First, find any droppable containers intersecting with the pointer.
-   * - If there are none, find intersecting containers with the active draggable.
-   * - If there are no intersecting containers, return the last matched intersection
-   *
-   */
   const collisionDetectionStrategy: CollisionDetection = useCallback(
     (args) => {
       if (activeId && activeId in items) {
@@ -314,20 +315,45 @@ export function MultipleContainers({
         },
       }}
       onDragStart={({ active }) => {
+        const container = findContainer(active.id);
+        if (container === MATERIALSPANEL_ID) {
+          const newM = initialMaterials.map((item) => {
+            if (item === "Input") {
+              return item + 1;
+            }
+            return item;
+          });
+
+          setItems((items) => {
+            items[MATERIALSPANEL_ID].push("Input1");
+            return items;
+          });
+          setMaterials(newM);
+        }
         setActiveId(active.id);
         setClonedItems(items);
       }}
       onDragOver={({ active, over }) => {
         const overId = over?.id;
 
-        if (overId == null || overId === TRASH_ID || active.id in items) {
+        if (overId == null || overId === TRASH_ID) {
           return;
+        }
+
+        // 允许从材料面板拖出，但不允许拖入材料面板
+        if (active.id in items) {
+          return; // 这是容器拖拽，不处理
         }
 
         const overContainer = findContainer(overId);
         const activeContainer = findContainer(active.id);
 
         if (!overContainer || !activeContainer) {
+          return;
+        }
+
+        // 不允许拖拽到材料面板
+        if (overContainer === MATERIALSPANEL_ID) {
           return;
         }
 
@@ -429,6 +455,12 @@ export function MultipleContainers({
         const overContainer = findContainer(overId);
 
         if (overContainer) {
+          // 不允许从材料面板拖出后再次拖回材料面板
+          if (overContainer === MATERIALSPANEL_ID) {
+            setActiveId(null);
+            return;
+          }
+
           const activeIndex = items[activeContainer].indexOf(active.id);
           const overIndex = items[overContainer].indexOf(overId);
 
@@ -458,6 +490,37 @@ export function MultipleContainers({
           gridAutoFlow: vertical ? "row" : "column",
         }}
       >
+        {/* 材料面板 - 始终显示在第一列 */}
+        <DroppableContainer
+          key={MATERIALSPANEL_ID}
+          id={MATERIALSPANEL_ID}
+          label={minimal ? undefined : "Materials Panel"}
+          columns={columns}
+          items={materials}
+          scrollable={scrollable}
+          style={containerStyle}
+          unstyled={minimal}
+          disabled // 禁用容器本身的拖拽
+        >
+          {materials.map((value, index) => {
+            return (
+              <SortableItem
+                disabled={isSortingContainer}
+                key={value}
+                id={value}
+                index={index}
+                handle={handle}
+                style={getItemStyles}
+                wrapperStyle={wrapperStyle}
+                renderItem={renderItem}
+                containerId={MATERIALSPANEL_ID}
+                getIndex={getIndex}
+              />
+            );
+          })}
+        </DroppableContainer>
+
+        {/* 可拖拽容器区域 */}
         <SortableContext
           items={[...containers, PLACEHOLDER_ID]}
           strategy={
@@ -514,14 +577,17 @@ export function MultipleContainers({
       {createPortal(
         <DragOverlay adjustScale={adjustScale} dropAnimation={dropAnimation}>
           {activeId
-            ? containers.includes(activeId)
+            ? containers.includes(activeId) || activeId === MATERIALSPANEL_ID
               ? renderContainerDragOverlay(activeId)
               : renderSortableItemDragOverlay(activeId)
             : null}
         </DragOverlay>,
         document.body
       )}
-      {trashable && activeId && !containers.includes(activeId) ? (
+      {trashable &&
+      activeId &&
+      !containers.includes(activeId) &&
+      activeId !== MATERIALSPANEL_ID ? (
         <Trash id={TRASH_ID} />
       ) : null}
     </DndContext>
@@ -552,7 +618,11 @@ export function MultipleContainers({
   function renderContainerDragOverlay(containerId: UniqueIdentifier) {
     return (
       <Container
-        label={`Column ${containerId}`}
+        label={`${
+          containerId === MATERIALSPANEL_ID
+            ? "Materials Panel"
+            : `Column ${containerId}`
+        }`}
         columns={columns}
         style={{
           height: "100%",
@@ -602,7 +672,9 @@ export function MultipleContainers({
   }
 
   function getNextContainerId() {
-    const containerIds = Object.keys(items);
+    const containerIds = Object.keys(items).filter(
+      (id) => id !== MATERIALSPANEL_ID
+    );
     const lastContainerId = containerIds[containerIds.length - 1];
 
     return String.fromCharCode(lastContainerId.charCodeAt(0) + 1);
@@ -610,7 +682,14 @@ export function MultipleContainers({
 }
 
 function getColor(id: UniqueIdentifier) {
-  switch (String(id)[0]) {
+  const idStr = String(id);
+
+  // 为材料面板中的项目设置特殊颜色
+  if (idStr === "Text") return "#4CAF50";
+  if (idStr === "Input") return "#2196F3";
+  if (idStr === "Button") return "#FF9800";
+
+  switch (idStr[0]) {
     case "A":
       return "#7193f1";
     case "B":

@@ -7,6 +7,7 @@ import { Droppable } from "./droppable";
 import { MaterialItem } from "./material-item";
 import { MultipleContainers } from "./designer";
 import { rectSortingStrategy } from "@dnd-kit/sortable";
+import { Button } from "@/components/ui/button";
 
 export function Designer() {
   const isMounted = useMounted();
@@ -20,10 +21,15 @@ export function Designer() {
     <MultipleContainers
       columns={2}
       strategy={rectSortingStrategy}
-      wrapperStyle={() => ({
-        width: 150,
-        height: 150,
-      })}
+      renderItem={({ listeners, ref, value }: any) => (
+        <Button ref={ref} {...listeners}>
+          {value}
+        </Button>
+      )}
+      // wrapperStyle={() => ({
+      //   width: 150,
+      //   height: 150,
+      // })}
     />
   );
 
