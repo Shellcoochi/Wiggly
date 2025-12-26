@@ -1,4 +1,4 @@
-import { Designer } from "@/components/web-designer/designer";
+import { Designer } from "@/components/web-designer";
 
 export default function Workflow() {
   return (
