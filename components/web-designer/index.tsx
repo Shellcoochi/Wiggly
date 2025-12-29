@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState, CSSProperties } from "react";
+import React, { useState, useMemo, useEffect, CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import {
   DndContext,
@@ -15,18 +15,10 @@ import {
   DragOverEvent,
   DragEndEvent,
   MeasuringStrategy,
-  defaultDropAnimation,
-  DropAnimation,
   UniqueIdentifier,
-  Modifier,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-  useSortable,
-} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 
 /** Types **/
 interface TreeItem {
@@ -68,11 +60,7 @@ const initialItems: TreeItem[] = [
 ];
 
 /** 工具函数 - 修改 flattenTree 考虑 collapsed 状态 **/
-function flattenTree(
-  items: TreeItem[], 
-  parentId: UniqueIdentifier | null = null, 
-  depth = 0
-): FlattenedItem[] {
+function flattenTree(items: TreeItem[], parentId: UniqueIdentifier | null = null, depth = 0): FlattenedItem[] {
   return items.reduce<FlattenedItem[]>((acc, item, index) => {
     const current: FlattenedItem = { ...item, parentId, depth, index };
     const children = item.collapsed ? [] : flattenTree(item.children, item.id, depth + 1);
@@ -80,7 +68,6 @@ function flattenTree(
   }, []);
 }
 
-// 其他工具函数保持不变...
 function buildTree(flattened: FlattenedItem[]): TreeItem[] {
   const root: { [key: string]: TreeItem & { parentId: string | null } } = {};
   flattened.forEach((item) => {
@@ -114,18 +101,7 @@ function findItemDeep(items: TreeItem[], id: UniqueIdentifier): TreeItem | undef
   return undefined;
 }
 
-// 修改 removeChildrenOf 函数，不隐藏有子节点的项本身
-function removeChildrenOf(items: FlattenedItem[], ids: UniqueIdentifier[]) {
-  const excludeParentIds = [...ids];
-  return items.filter((item) => {
-    if (item.parentId && excludeParentIds.includes(item.parentId)) {
-      excludeParentIds.push(item.id);
-      return false;
-    }
-    return true;
-  });
-}
-
+/** `getProjection` 函数实现 **/
 function getProjection(
   items: FlattenedItem[],
   activeId: UniqueIdentifier,
@@ -153,49 +129,29 @@ function getProjection(
   return { depth, parentId };
 }
 
-/** Tree Item 组件 - 修改点击处理 **/
+/** 树形渲染：递归渲染父子节点 **/
 interface SortableTreeItemProps {
-  id: UniqueIdentifier;
+  item: TreeItem;
   depth: number;
-  childCount?: number;
-  clone?: boolean;
-  value?: string;
-  onToggle?: (id: UniqueIdentifier) => void;
-  collapsed?: boolean;
+  onToggle: (id: UniqueIdentifier) => void;
+  collapsed: boolean;
   isDragging?: boolean;
 }
-function SortableTreeItem({ 
-  id, 
-  depth, 
-  childCount = 0, 
-  clone, 
-  value,
-  onToggle,
-  collapsed,
-  isDragging = false
-}: SortableTreeItemProps) {
-  const { 
-    attributes, 
-    listeners, 
-    setNodeRef, 
-    transform, 
-    transition, 
-    isDragging: isDndDragging
-  } = useSortable({ id });
+function SortableTreeItem({ item, depth, onToggle, collapsed, isDragging = false }: SortableTreeItemProps) {
+  const { id, children } = item;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging: isDndDragging } = useSortable({ id });
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    if (onToggle && childCount > 0) {
-      onToggle(id);
-    }
+    onToggle(id);
   };
 
   const style: CSSProperties = {
-    transform: CSS.Translate.toString(transform),
+    // transform: CSS.Translate.toString(transform),
     transition,
-    paddingLeft: depth * 40,
-    opacity: clone ? 0.8 : isDndDragging ? 0.5 : 1,
+    paddingLeft: depth * 40, // 控制缩进
+    opacity: isDndDragging ? 0.5 : 1,
     background: "#fafafa",
     border: "1px solid #ddd",
     margin: "4px 0",
@@ -206,14 +162,9 @@ function SortableTreeItem({
   };
 
   return (
-    <div 
-      ref={setNodeRef} 
-      style={style} 
-      {...attributes} 
-      {...listeners}
-    >
-      {childCount > 0 && !clone && (
-        <button 
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children.length > 0 && (
+        <button
           onClick={handleToggle}
           style={{
             marginRight: "8px",
@@ -226,19 +177,25 @@ function SortableTreeItem({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 1,
-            pointerEvents: isDndDragging ? "none" : "auto",
-            opacity: isDndDragging ? 0.5 : 1,
           }}
-          onMouseDown={(e) => e.stopPropagation()}
         >
           {collapsed ? "+" : "-"}
         </button>
       )}
-      {childCount > 0 && clone && (
-        <div style={{ width: "28px", marginRight: "8px" }}></div>
+      {item.id}
+      {children.length > 0 && !collapsed && (
+        <div style={{ marginLeft: 20 }}>
+          {children.map((child) => (
+            <SortableTreeItem
+              key={child.id}
+              item={child}
+              depth={depth + 1}
+              onToggle={onToggle}
+              collapsed={collapsed}
+            />
+          ))}
+        </div>
       )}
-      {value || id} {childCount > 0 && !clone ? `(${childCount})` : ""}
     </div>
   );
 }
@@ -250,10 +207,7 @@ export default function AliLowcodeTree() {
   const [overId, setOverId] = useState<UniqueIdentifier | null>(null);
   const [offsetLeft, setOffsetLeft] = useState(0);
 
-  // 修改：不隐藏 active item 的子节点，只隐藏子节点的子节点
-  const flattenedItems = useMemo(() => {
-    return flattenTree(items);
-  }, [items]);
+  const flattenedItems = useMemo(() => flattenTree(items), [items]);
 
   const projected = useMemo(() => {
     if (activeId && overId) return getProjection(flattenedItems, activeId, overId, offsetLeft, 40);
@@ -261,11 +215,7 @@ export default function AliLowcodeTree() {
   }, [activeId, overId, offsetLeft, flattenedItems]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5, // 需要移动5像素才开始拖拽
-      },
-    }),
+    useSensor(PointerSensor),
     useSensor(KeyboardSensor)
   );
 
@@ -273,7 +223,6 @@ export default function AliLowcodeTree() {
 
   const sortedIds = useMemo(() => flattenedItems.map((i) => i.id), [flattenedItems]);
 
-  // 切换展开/收起状态
   const handleToggle = (id: UniqueIdentifier) => {
     const toggleCollapsed = (items: TreeItem[]): TreeItem[] => {
       return items.map(item => {
@@ -287,21 +236,6 @@ export default function AliLowcodeTree() {
       });
     };
     setItems(prev => toggleCollapsed(prev));
-  };
-
-  // 获取某个节点的 collapsed 状态
-  const getCollapsedState = (id: UniqueIdentifier): boolean => {
-    const findCollapsed = (items: TreeItem[]): boolean | undefined => {
-      for (const item of items) {
-        if (item.id === id) return item.collapsed || false;
-        if (item.children.length > 0) {
-          const result = findCollapsed(item.children);
-          if (result !== undefined) return result;
-        }
-      }
-      return undefined;
-    };
-    return findCollapsed(items) || false;
   };
 
   function handleDragStart({ active }: DragStartEvent) {
@@ -343,44 +277,31 @@ export default function AliLowcodeTree() {
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={sortedIds} strategy={verticalListSortingStrategy}>
-        {flattenedItems.map((item) => {
-          const childCount = getChildCount(items, item.id);
-          const collapsed = getCollapsedState(item.id);
-          const isBeingDragged = activeId === item.id;
-          
-          // 如果这个项是正在被拖拽的项的子项，不渲染
-          if (activeId && item.parentId === activeId && isBeingDragged === false) {
-            return null;
-          }
-          
-          return (
-            <SortableTreeItem
-              key={item.id}
-              id={item.id}
-              depth={item.id === activeId && projected ? projected.depth : item.depth}
-              value={item.id.toString()}
-              childCount={childCount}
-              onToggle={handleToggle}
-              collapsed={collapsed}
-              isDragging={isBeingDragged}
-            />
-          );
-        })}
-        {createPortal(
-          <DragOverlay>
-            {activeId && activeItem ? (
-              <SortableTreeItem
-                id={activeId}
-                depth={activeItem.depth}
-                clone
-                childCount={getChildCount(items, activeId)}
-                value={activeId.toString()}
-              />
-            ) : null}
-          </DragOverlay>,
-          document.body
-        )}
+        {items.map((item) => (
+          <SortableTreeItem
+            key={item.id}
+            item={item}
+            depth={0}
+            onToggle={handleToggle}
+            collapsed={item.collapsed || false}
+          />
+        ))}
       </SortableContext>
+
+      {createPortal(
+        <DragOverlay>
+          {activeId && activeItem ? (
+            <SortableTreeItem
+              item={activeItem}
+              depth={activeItem.depth}
+              clone
+              onToggle={handleToggle}
+              collapsed={activeItem.collapsed || false}
+            />
+          ) : null}
+        </DragOverlay>,
+        document.body
+      )}
     </DndContext>
   );
 }
