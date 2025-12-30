@@ -1,41 +1,32 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, CSSProperties } from "react";
-import { createPortal } from "react-dom";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  closestCenter,
-  DragStartEvent,
-  DragMoveEvent,
-  DragOverEvent,
-  DragEndEvent,
-  MeasuringStrategy,
-  UniqueIdentifier,
-} from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
-import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
+import React, { useState, useCallback } from "react";
+import { DndProvider, useDrag, useDrop, DropTargetMonitor } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { Button } from "../ui/button";
 
 /** Types **/
 interface TreeItem {
-  id: UniqueIdentifier;
+  id: string;
   children: TreeItem[];
   collapsed?: boolean;
-  parentId?: UniqueIdentifier | null;
+  parentId?: string | null;
   depth?: number;
 }
 
-interface FlattenedItem extends TreeItem {
-  parentId: UniqueIdentifier | null;
+interface DragItem {
+  id: string;
+  type: string;
   depth: number;
-  index: number;
+  parentId: string | null;
 }
 
-/** 初始数据 - 添加 collapsed 状态 **/
+interface DropResult {
+  id: string;
+  position: 'before' | 'after' | 'inside';
+}
+
+/** 初始数据 **/
 const initialItems: TreeItem[] = [
   { id: "Home", children: [] },
   {
@@ -46,7 +37,7 @@ const initialItems: TreeItem[] = [
       { id: "Fall", children: [] },
       { id: "Winter", children: [] },
     ],
-    collapsed: false, // 默认展开
+    collapsed: false,
   },
   { id: "About Us", children: [] },
   {
@@ -55,91 +46,82 @@ const initialItems: TreeItem[] = [
       { id: "Addresses", children: [] },
       { id: "Order History", children: [] },
     ],
-    collapsed: false, // 默认展开
+    collapsed: false,
   },
 ];
 
-/** 工具函数 - 修改 flattenTree 考虑 collapsed 状态 **/
-function flattenTree(items: TreeItem[], parentId: UniqueIdentifier | null = null, depth = 0): FlattenedItem[] {
-  return items.reduce<FlattenedItem[]>((acc, item, index) => {
-    const current: FlattenedItem = { ...item, parentId, depth, index };
-    const children = item.collapsed ? [] : flattenTree(item.children, item.id, depth + 1);
-    return [...acc, current, ...children];
-  }, []);
-}
-
-function buildTree(flattened: FlattenedItem[]): TreeItem[] {
-  const root: { [key: string]: TreeItem & { parentId: string | null } } = {};
-  flattened.forEach((item) => {
-    root[item.id.toString()] = { ...item, children: [] };
-  });
-  const tree: TreeItem[] = [];
-  flattened.forEach((item) => {
-    if (item.parentId) {
-      root[item.parentId].children.push(root[item.id]);
-    } else {
-      tree.push(root[item.id]);
-    }
-  });
-  return tree;
-}
-
-function getChildCount(items: TreeItem[], id: UniqueIdentifier): number {
-  const node = findItemDeep(items, id);
-  if (!node) return 0;
-  const countChildren = (children: TreeItem[]): number =>
-    children.reduce((acc, c) => acc + 1 + countChildren(c.children), 0);
-  return countChildren(node.children);
-}
-
-function findItemDeep(items: TreeItem[], id: UniqueIdentifier): TreeItem | undefined {
-  for (const item of items) {
-    if (item.id === id) return item;
-    const child = findItemDeep(item.children, id);
-    if (child) return child;
-  }
-  return undefined;
-}
-
-/** `getProjection` 函数实现 **/
-function getProjection(
-  items: FlattenedItem[],
-  activeId: UniqueIdentifier,
-  overId: UniqueIdentifier,
-  dragOffset: number,
-  indentationWidth: number
-) {
-  const dragDepth = Math.round(dragOffset / indentationWidth);
-  const overIndex = items.findIndex((i) => i.id === overId);
-  const activeIndex = items.findIndex((i) => i.id === activeId);
-  const activeItem = items[activeIndex];
-  const newItems = arrayMove(items, activeIndex, overIndex);
-  const previousItem = newItems[overIndex - 1];
-  let depth = activeItem.depth + dragDepth;
-  let parentId: UniqueIdentifier | null = null;
-
-  if (depth === 0 || !previousItem) parentId = null;
-  else if (depth === previousItem.depth) parentId = previousItem.parentId;
-  else if (depth > previousItem.depth) parentId = previousItem.id;
-  else {
-    const p = newItems.slice(0, overIndex).reverse().find((i) => i.depth === depth);
-    parentId = p?.parentId ?? null;
-  }
-
-  return { depth, parentId };
-}
-
-/** 树形渲染：递归渲染父子节点 **/
-interface SortableTreeItemProps {
+/** TreeItem 组件 - 可拖拽和放置 **/
+const DraggableTreeItem: React.FC<{
   item: TreeItem;
   depth: number;
-  onToggle: (id: UniqueIdentifier) => void;
-  collapsed: boolean;
-  isDragging?: boolean;
-}
-function SortableTreeItem({ item, depth, onToggle, collapsed, isDragging = false }: SortableTreeItemProps) {
-  const { id, children } = item;
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging: isDndDragging } = useSortable({ id });
+  index: number;
+  parentId: string | null;
+  onDrop: (dragId: string, dropId: string, position: 'before' | 'after' | 'inside') => void;
+  onToggle: (id: string) => void;
+  findItem: (id: string) => TreeItem | undefined;
+  moveItem: (dragId: string, hoverId: string, position: 'before' | 'after' | 'inside') => void;
+}> = ({ item, depth, index, parentId, onDrop, onToggle, findItem, moveItem }) => {
+  const { id, children, collapsed = false } = item;
+  const [dropPosition, setDropPosition] = useState<'before' | 'after' | 'inside' | null>(null);
+
+  // 使用 useDrag 实现拖拽
+  const [{ isDragging }, drag, preview] = useDrag({
+    type: 'tree-item',
+    item: (): DragItem => ({
+      id,
+      type: 'tree-item',
+      depth,
+      parentId,
+    }),
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  // 使用 useDrop 实现放置区域
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept: 'tree-item',
+    hover: (dragItem: DragItem, monitor: DropTargetMonitor) => {
+      if (dragItem.id === id) return;
+      
+      const clientOffset = monitor.getClientOffset();
+      if (!clientOffset) return;
+      
+      const hoverBoundingRect = (ref.current as HTMLElement)?.getBoundingClientRect();
+      if (!hoverBoundingRect) return;
+      
+      // 计算鼠标在元素中的位置
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+      
+      // 判断放置位置
+      let position: 'before' | 'after' | 'inside';
+      if (hoverClientY < hoverMiddleY / 3) {
+        position = 'before';
+      } else if (hoverClientY > hoverMiddleY * 2 / 3) {
+        position = 'after';
+      } else {
+        position = 'inside';
+      }
+      
+      setDropPosition(position);
+      
+      // 立即移动（可选，或者可以在 drop 时移动）
+      moveItem(dragItem.id, id, position);
+    },
+    drop: (dragItem: DragItem): DropResult => {
+      const position = dropPosition || 'inside';
+      onDrop(dragItem.id, id, position);
+      return { id, position };
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
+  });
+
+  const ref = React.useRef(null);
+  drag(drop(ref));
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -147,161 +129,251 @@ function SortableTreeItem({ item, depth, onToggle, collapsed, isDragging = false
     onToggle(id);
   };
 
-  const style: CSSProperties = {
-    // transform: CSS.Translate.toString(transform),
-    transition,
-    paddingLeft: depth * 40, // 控制缩进
-    opacity: isDndDragging ? 0.5 : 1,
-    background: "#fafafa",
-    border: "1px solid #ddd",
-    margin: "4px 0",
-    display: "flex",
-    alignItems: "center",
-    cursor: isDndDragging ? "grabbing" : "grab",
-    minHeight: "40px",
+  // 渲染样式
+  const getDropIndicatorStyle = () => {
+    if (!isOver || !dropPosition) return {};
+    
+    const styles: React.CSSProperties = {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      height: '2px',
+      backgroundColor: 'blue',
+    };
+    
+    switch (dropPosition) {
+      case 'before':
+        return { ...styles, top: 0 };
+      case 'after':
+        return { ...styles, bottom: 0 };
+      case 'inside':
+        return {
+          ...styles,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          height: '4px',
+        };
+      default:
+        return {};
+    }
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children.length > 0 && (
-        <button
-          onClick={handleToggle}
-          style={{
-            marginRight: "8px",
-            background: "none",
-            border: "1px solid #ccc",
-            borderRadius: "3px",
-            width: "20px",
-            height: "20px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {collapsed ? "+" : "-"}
-        </button>
-      )}
-      {item.id}
-      {children.length > 0 && !collapsed && (
-        <div style={{ marginLeft: 20 }}>
-          {children.map((child) => (
-            <SortableTreeItem
+    <div
+      ref={ref}
+      style={{
+        position: 'relative',
+        marginLeft: `${depth * 20}px`,
+        opacity: isDragging ? 0.5 : 1,
+        padding: '8px',
+        border: '1px solid #ddd',
+        marginBottom: '4px',
+        background: isOver ? '#f0f0f0' : '#fff',
+        cursor: 'move',
+      }}
+    >
+      {/* 拖拽指示器 */}
+      {isOver && <div style={getDropIndicatorStyle()} />}
+      
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        {children.length > 0 && (
+          <button
+            onClick={handleToggle}
+            style={{
+              marginRight: '8px',
+              padding: '2px 6px',
+              border: 'none',
+              background: '#eee',
+              cursor: 'pointer',
+            }}
+          >
+            {collapsed ? '+' : '-'}
+          </button>
+        )}
+        <span>{id}</span>
+      </div>
+      
+      {/* 渲染子元素（如果没有折叠） */}
+      {!collapsed && children.length > 0 && (
+        <div style={{ marginTop: '8px' }}>
+          {children.map((child, childIndex) => (
+            <DraggableTreeItem
               key={child.id}
               item={child}
               depth={depth + 1}
+              index={childIndex}
+              parentId={id}
+              onDrop={onDrop}
               onToggle={onToggle}
-              collapsed={collapsed}
+              findItem={findItem}
+              moveItem={moveItem}
             />
           ))}
         </div>
       )}
     </div>
   );
-}
+};
 
-/** 主组件 - 添加 toggle 功能 **/
-export default function AliLowcodeTree() {
+/** 主组件 **/
+export default function ReactDndTree() {
   const [items, setItems] = useState<TreeItem[]>(initialItems);
-  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const [overId, setOverId] = useState<UniqueIdentifier | null>(null);
-  const [offsetLeft, setOffsetLeft] = useState(0);
+  const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
 
-  const flattenedItems = useMemo(() => flattenTree(items), [items]);
+  // 查找树中的项目
+  const findItem = useCallback((id: string, tree: TreeItem[] = items): TreeItem | undefined => {
+    for (const item of tree) {
+      if (item.id === id) return item;
+      if (item.children.length > 0) {
+        const found = findItem(id, item.children);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  }, [items]);
 
-  const projected = useMemo(() => {
-    if (activeId && overId) return getProjection(flattenedItems, activeId, overId, offsetLeft, 40);
-    return null;
-  }, [activeId, overId, offsetLeft, flattenedItems]);
+  // 从树中移除项目
+  const removeItem = useCallback((id: string, tree: TreeItem[]): TreeItem[] => {
+    return tree.filter(item => {
+      if (item.id === id) return false;
+      if (item.children.length > 0) {
+        item.children = removeItem(id, item.children);
+      }
+      return true;
+    });
+  }, []);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor)
-  );
-
-  const activeItem = activeId ? flattenedItems.find((i) => i.id === activeId) : null;
-
-  const sortedIds = useMemo(() => flattenedItems.map((i) => i.id), [flattenedItems]);
-
-  const handleToggle = (id: UniqueIdentifier) => {
-    const toggleCollapsed = (items: TreeItem[]): TreeItem[] => {
-      return items.map(item => {
-        if (item.id === id) {
-          return { ...item, collapsed: !item.collapsed };
+  // 向树中添加项目
+  const insertItem = useCallback((
+    item: TreeItem,
+    targetId: string,
+    position: 'before' | 'after' | 'inside',
+    tree: TreeItem[]
+  ): TreeItem[] => {
+    return tree.flatMap(node => {
+      if (node.id === targetId) {
+        if (position === 'inside') {
+          return [{
+            ...node,
+            children: [item, ...node.children]
+          }];
+        } else if (position === 'before') {
+          return [item, node];
+        } else { // after
+          return [node, item];
         }
-        if (item.children.length > 0) {
-          return { ...item, children: toggleCollapsed(item.children) };
-        }
-        return item;
-      });
+      }
+      
+      if (node.children.length > 0) {
+        return [{
+          ...node,
+          children: insertItem(item, targetId, position, node.children)
+        }];
+      }
+      
+      return [node];
+    });
+  }, []);
+
+  // 处理拖拽放置
+  const handleDrop = useCallback((dragId: string, dropId: string, position: 'before' | 'after' | 'inside') => {
+    if (dragId === dropId) return;
+    
+    const draggedItem = findItem(dragId);
+    if (!draggedItem) return;
+    
+    // 检查是否尝试放置到自己的子节点中
+    const isDescendant = (parentId: string, childId: string): boolean => {
+      const item = findItem(parentId);
+      if (!item) return false;
+      if (item.children.some(child => child.id === childId)) return true;
+      return item.children.some(child => isDescendant(child.id, childId));
     };
-    setItems(prev => toggleCollapsed(prev));
-  };
+    
+    if (position === 'inside' && isDescendant(dragId, dropId)) {
+      console.warn('不能将父节点拖拽到子节点中');
+      return;
+    }
+    
+    setItems(prevItems => {
+      // 1. 移除拖拽的项目
+      const withoutDragged = removeItem(dragId, prevItems);
+      // 2. 插入到新位置
+      return insertItem(draggedItem, dropId, position, withoutDragged);
+    });
+  }, [findItem, removeItem, insertItem]);
 
-  function handleDragStart({ active }: DragStartEvent) {
-    setActiveId(active.id);
-    setOverId(active.id);
-  }
+  // 移动项目的即时反馈
+  const moveItem = useCallback((dragId: string, hoverId: string, position: 'before' | 'after' | 'inside') => {
+    // 这里可以实现即时视觉反馈
+    console.log(`移动 ${dragId} 到 ${hoverId} 的 ${position} 位置`);
+  }, []);
 
-  function handleDragMove({ delta }: DragMoveEvent) {
-    setOffsetLeft(delta.x);
-  }
-
-  function handleDragOver({ over }: DragOverEvent) {
-    setOverId(over?.id ?? null);
-  }
-
-  function handleDragEnd({ active, over }: DragEndEvent) {
-    setActiveId(null);
-    setOverId(null);
-    setOffsetLeft(0);
-    if (!projected || !over) return;
-
-    const { depth, parentId } = projected;
-    const flatClone = [...flattenedItems];
-    const activeIndex = flatClone.findIndex((i) => i.id === active.id);
-    const overIndex = flatClone.findIndex((i) => i.id === over.id);
-    flatClone[activeIndex] = { ...flatClone[activeIndex], depth, parentId };
-    const newItems = buildTree(arrayMove(flatClone, activeIndex, overIndex));
-    setItems(newItems);
-  }
+  // 切换折叠状态
+  const handleToggle = useCallback((id: string) => {
+    setItems(prevItems => {
+      const toggle = (tree: TreeItem[]): TreeItem[] => {
+        return tree.map(item => {
+          if (item.id === id) {
+            return { ...item, collapsed: !item.collapsed };
+          }
+          if (item.children.length > 0) {
+            return { ...item, children: toggle(item.children) };
+          }
+          return item;
+        });
+      };
+      return toggle(prevItems);
+    });
+  }, []);
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-      onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext items={sortedIds} strategy={verticalListSortingStrategy}>
-        {items.map((item) => (
-          <SortableTreeItem
+    <DndProvider backend={HTML5Backend}>
+      <div style={{ padding: '20px', maxWidth: '600px' }}>
+        <h2>React DnD 树形拖拽</h2>
+        <div style={{ marginBottom: '20px' }}>
+          <p>拖拽项目到其他项目上，可以放在前面、后面或内部</p>
+        </div>
+        
+        {items.map((item, index) => (
+          <DraggableTreeItem
             key={item.id}
             item={item}
             depth={0}
+            index={index}
+            parentId={null}
+            onDrop={handleDrop}
             onToggle={handleToggle}
-            collapsed={item.collapsed || false}
+            findItem={findItem}
+            moveItem={moveItem}
           />
         ))}
-      </SortableContext>
-
-      {createPortal(
-        <DragOverlay>
-          {activeId && activeItem ? (
-            <SortableTreeItem
-              item={activeItem}
-              depth={activeItem.depth}
-              clone
-              onToggle={handleToggle}
-              collapsed={activeItem.collapsed || false}
-            />
-          ) : null}
-        </DragOverlay>,
-        document.body
-      )}
-    </DndContext>
+        
+        {/* 拖拽预览 */}
+        {draggedItem && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              pointerEvents: 'none',
+              zIndex: 100,
+              opacity: 0.8,
+            }}
+          >
+            <div
+              style={{
+                padding: '8px',
+                background: '#fff',
+                border: '2px dashed #666',
+                borderRadius: '4px',
+              }}
+            >
+              {draggedItem.id}
+            </div>
+          </div>
+        )}
+      </div>
+    </DndProvider>
   );
 }
