@@ -4,21 +4,14 @@ import React, { useState, useCallback } from "react";
 import { DndProvider, useDrag, useDrop, DropTargetMonitor } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Button } from "../ui/button";
-
-/** Types **/
-interface TreeItem {
-  id: string;
-  children: TreeItem[];
-  collapsed?: boolean;
-  parentId?: string | null;
-  depth?: number;
-}
+import { DesignerNode } from "./types";
 
 interface DragItem {
   id: string;
   type: string;
   depth: number;
   parentId: string | null;
+  isContainer?: boolean; // 增加 isContainer 字段
 }
 
 interface DropResult {
@@ -27,29 +20,46 @@ interface DropResult {
 }
 
 /** 初始数据 **/
-const initialItems: TreeItem[] = [
+const initialItems: DesignerNode[] = [
   {
     id: "Root",
+    title: "",
+    componentName: "",
+    isContainer: true,
     children: [
-      { id: "Home", children: [] },
       {
-        id: "Collections",
-        children: [
-          { id: "Spring", children: [] },
-          { id: "Summer", children: [] },
-          { id: "Fall", children: [] },
-          { id: "Winter", children: [] },
-        ],
-        collapsed: false,
+        id: "container1",
+        title: "容器",
+        componentName: "Container",
+        isContainer: true,
       },
-      { id: "About Us", children: [] },
       {
-        id: "My Account",
+        id: "container2",
+        title: "容器",
+        componentName: "Container",
+        isContainer: true,
         children: [
-          { id: "Addresses", children: [] },
-          { id: "Order History", children: [] },
+          { id: "text1", title: "文本1", componentName: "Text", isContainer: false },
+          { id: "text2", title: "文本2", componentName: "Text", isContainer: false },
+          { id: "text3", title: "文本3", componentName: "Text", isContainer: false },
+          { id: "text4", title: "文本4", componentName: "Text", isContainer: false },
         ],
-        collapsed: false,
+      },
+      {
+        id: "container3",
+        title: "容器",
+        componentName: "Container",
+        isContainer: true,
+      },
+      {
+        id: "container4",
+        title: "容器",
+        componentName: "Container",
+        isContainer: true,
+        children: [
+          { id: "button1", title: "按钮1", componentName: "Button", isContainer: false },
+          { id: "button2", title: "按钮2", componentName: "Button", isContainer: false },
+        ],
       },
     ],
   },
@@ -57,7 +67,7 @@ const initialItems: TreeItem[] = [
 
 /** TreeItem 组件 - 可拖拽和放置 **/
 const DraggableTreeItem: React.FC<{
-  item: TreeItem;
+  item: DesignerNode;
   depth: number;
   index: number;
   parentId: string | null;
@@ -66,8 +76,7 @@ const DraggableTreeItem: React.FC<{
     dropId: string,
     position: "before" | "after" | "inside"
   ) => void;
-  onToggle: (id: string) => void;
-  findItem: (id: string) => TreeItem | undefined;
+  findItem: (id: string) => DesignerNode | undefined;
   moveItem: (
     dragId: string,
     hoverId: string,
@@ -79,11 +88,10 @@ const DraggableTreeItem: React.FC<{
   index,
   parentId,
   onDrop,
-  onToggle,
   findItem,
   moveItem,
 }) => {
-  const { id, children, collapsed = false } = item;
+  const { id, children, isContainer } = item;
   const [dropPosition, setDropPosition] = useState<
     "before" | "after" | "inside" | null
   >(null);
@@ -96,6 +104,7 @@ const DraggableTreeItem: React.FC<{
       type: "tree-item",
       depth,
       parentId,
+      isContainer, // 传递 isContainer
     }),
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
@@ -105,14 +114,30 @@ const DraggableTreeItem: React.FC<{
   // 使用 useDrop 实现放置区域
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: "tree-item",
+    canDrop: (dragItem: DragItem) => {
+      // 禁止将自己拖拽到自己内部
+      if (dragItem.id === id) return false;
+      
+      // 如果目标不是容器，则不允许放置到内部
+      if (dragItem.parentId === id && dragItem.depth < depth) {
+        return false;
+      }
+      
+      return true;
+    },
     hover: (dragItem: DragItem, monitor: DropTargetMonitor) => {
       if (dragItem.id === id) return;
+      
+      if (!monitor.canDrop()) {
+        setDropPosition(null);
+        return;
+      }
 
       const clientOffset = monitor.getClientOffset();
       if (!clientOffset) return;
 
       const hoverBoundingRect = (
-        ref.current as HTMLElement
+        ref.current as unknown as HTMLElement
       )?.getBoundingClientRect();
       if (!hoverBoundingRect) return;
 
@@ -128,16 +153,29 @@ const DraggableTreeItem: React.FC<{
       } else if (hoverClientY > (hoverMiddleY * 2) / 3) {
         position = "after";
       } else {
-        position = "inside";
+        // 如果目标不是容器，则不允许放置到内部
+        if (!isContainer) {
+          position = hoverClientY < hoverMiddleY ? "before" : "after";
+        } else {
+          position = "inside";
+        }
       }
 
       setDropPosition(position);
 
-      // 立即移动（可选，或者可以在 drop 时移动）
-      moveItem(dragItem.id, id, position);
+      // 只在可以放置时才移动
+      if (monitor.canDrop()) {
+        moveItem(dragItem.id, id, position);
+      }
     },
-    drop: (dragItem: DragItem): DropResult => {
-      const position = dropPosition || "inside";
+    drop: (dragItem: DragItem): DropResult | undefined => {
+      if (!isContainer && dropPosition === "inside") {
+        // 如果不是容器，不允许放置到内部
+        console.warn(`元素 ${id} 不是容器，不能放置到内部`);
+        return undefined;
+      }
+      
+      const position = dropPosition || (isContainer ? "inside" : "before");
       onDrop(dragItem.id, id, position);
       return { id, position };
     },
@@ -150,13 +188,7 @@ const DraggableTreeItem: React.FC<{
   const ref = React.useRef(null);
   drag(drop(ref));
 
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    onToggle(id);
-  };
-
-  // 渲染样式
+  // 获取放置指示器样式
   const getDropIndicatorStyle = () => {
     if (!isOver || !dropPosition) return {};
 
@@ -165,7 +197,7 @@ const DraggableTreeItem: React.FC<{
       left: 0,
       right: 0,
       height: "2px",
-      backgroundColor: "blue",
+      backgroundColor: canDrop ? "blue" : "red",
     };
 
     switch (dropPosition) {
@@ -174,54 +206,87 @@ const DraggableTreeItem: React.FC<{
       case "after":
         return { ...styles, bottom: 0 };
       case "inside":
+        if (!isContainer) return {}; // 非容器不显示内部指示器
         return {
           ...styles,
           top: "50%",
           transform: "translateY(-50%)",
           height: "4px",
+          backgroundColor: canDrop ? "green" : "red",
         };
       default:
         return {};
     }
   };
 
+  // 获取容器样式
+  const getContainerStyle = (): React.CSSProperties => {
+    const baseStyle: React.CSSProperties = {
+      position: "relative",
+      marginLeft: `${depth * 20}px`,
+      opacity: isDragging ? 0.5 : 1,
+      padding: "8px",
+      border: "1px solid #ddd",
+      marginBottom: "4px",
+      background: "#fff",
+      cursor: "move",
+    };
+
+    if (isOver) {
+      if (dropPosition === "inside" && isContainer) {
+        baseStyle.background = "#e6f7ff";
+        baseStyle.border = "2px dashed #1890ff";
+      } else {
+        baseStyle.background = "#f0f0f0";
+      }
+    }
+
+    if (!canDrop && isOver) {
+      baseStyle.border = "1px solid #ff4d4f";
+      baseStyle.background = "#fff2f0";
+    }
+
+    return baseStyle;
+  };
+
   return (
     <div
       ref={ref}
-      style={{
-        position: "relative",
-        marginLeft: `${depth * 20}px`,
-        opacity: isDragging ? 0.5 : 1,
-        padding: "8px",
-        border: "1px solid #ddd",
-        marginBottom: "4px",
-        background: isOver ? "#f0f0f0" : "#fff",
-        cursor: "move",
-      }}
+      style={getContainerStyle()}
     >
       {/* 拖拽指示器 */}
-      {isOver && <div style={getDropIndicatorStyle()} />}
+      {isOver && canDrop && dropPosition && (
+        <div style={getDropIndicatorStyle()} />
+      )}
 
-      <div style={{ display: "flex", alignItems: "center" }}>
-        {children.length > 0 && (
-          <button
-            onClick={handleToggle}
-            style={{
-              marginRight: "8px",
-              padding: "2px 6px",
-              border: "none",
-              background: "#eee",
-              cursor: "pointer",
-            }}
-          >
-            {collapsed ? "+" : "-"}
-          </button>
-        )}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <span>{id}</span>
+        {isContainer && (
+          <span style={{
+            fontSize: "12px",
+            color: "#666",
+            background: "#f0f0f0",
+            padding: "2px 6px",
+            borderRadius: "3px"
+          }}>
+            容器
+          </span>
+        )}
+        {!isContainer && (
+          <span style={{
+            fontSize: "12px",
+            color: "#999",
+            background: "#f9f9f9",
+            padding: "2px 6px",
+            borderRadius: "3px"
+          }}>
+            元素
+          </span>
+        )}
       </div>
 
-      {/* 渲染子元素（如果没有折叠） */}
-      {!collapsed && children.length > 0 && (
+      {/* 渲染子元素（如果存在且是容器） */}
+      {isContainer && children && children.length > 0 && (
         <div style={{ marginTop: "8px" }}>
           {children.map((child, childIndex) => (
             <DraggableTreeItem
@@ -231,11 +296,28 @@ const DraggableTreeItem: React.FC<{
               index={childIndex}
               parentId={id}
               onDrop={onDrop}
-              onToggle={onToggle}
               findItem={findItem}
               moveItem={moveItem}
             />
           ))}
+        </div>
+      )}
+      
+      {/* 空容器提示 */}
+      {isContainer && (!children || children.length === 0) && (
+        <div style={{
+          marginTop: "8px",
+          padding: "8px",
+          background: "#f9f9f9",
+          border: "1px dashed #ddd",
+          borderRadius: "4px",
+          fontSize: "12px",
+          color: "#999",
+          textAlign: "center"
+        }}>
+          {isOver && dropPosition === "inside" ? 
+            "可拖入元素到此容器" : "空容器"
+          }
         </div>
       )}
     </div>
@@ -244,15 +326,16 @@ const DraggableTreeItem: React.FC<{
 
 /** 主组件 **/
 export default function ReactDndTree() {
-  const [items, setItems] = useState<TreeItem[]>(initialItems);
-  const [draggedItem, setDraggedItem] = useState<TreeItem | null>(null);
+  const [items, setItems] = useState<DesignerNode[]>(initialItems);
+  const [draggedItem, setDraggedItem] = useState<DesignerNode | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 查找树中的项目
   const findItem = useCallback(
-    (id: string, tree: TreeItem[] = items): TreeItem | undefined => {
+    (id: string, tree: DesignerNode[] = items): DesignerNode | undefined => {
       for (const item of tree) {
         if (item.id === id) return item;
-        if (item.children.length > 0) {
+        if (item.isContainer && item.children) {
           const found = findItem(id, item.children);
           if (found) return found;
         }
@@ -263,46 +346,59 @@ export default function ReactDndTree() {
   );
 
   // 从树中移除项目
-  // 使用嵌套函数解决循环引用
-  const removeItem = useCallback((id: string, tree: TreeItem[]): TreeItem[] => {
-    const removeRecursive = (id: string, tree: TreeItem[]): TreeItem[] => {
-      return tree.filter((item) => {
-        if (item.id === id) return false;
-        if (item.children.length > 0) {
-          item.children = removeRecursive(id, item.children);
-        }
-        return true;
-      });
-    };
-    return removeRecursive(id, tree);
-  }, []);
+  const removeItem = useCallback(
+    (id: string, tree: DesignerNode[]): DesignerNode[] => {
+      const removeRecursive = (
+        id: string,
+        tree: DesignerNode[]
+      ): DesignerNode[] => {
+        return tree.filter((item) => {
+          if (item.id === id) return false;
+          if (item.isContainer && item.children) {
+            item.children = removeRecursive(id, item.children);
+          }
+          return true;
+        });
+      };
+      return removeRecursive(id, tree);
+    },
+    []
+  );
 
   // 向树中添加项目
   const insertItem = useCallback(
     (
-      item: TreeItem,
+      item: DesignerNode,
       targetId: string,
       position: "before" | "after" | "inside",
-      tree: TreeItem[]
-    ): TreeItem[] => {
+      tree: DesignerNode[]
+    ): DesignerNode[] => {
       return tree.flatMap((node) => {
         if (node.id === targetId) {
           if (position === "inside") {
+            // 只有容器才能有子元素
+            if (!node.isContainer) {
+              setErrorMessage(`元素 ${targetId} 不是容器，不能包含子元素`);
+              return [node];
+            }
+            setErrorMessage(null);
             return [
               {
                 ...node,
-                children: [item, ...node.children],
+                children: [item, ...(node.children ?? [])],
               },
             ];
           } else if (position === "before") {
+            setErrorMessage(null);
             return [item, node];
           } else {
             // after
+            setErrorMessage(null);
             return [node, item];
           }
         }
 
-        if (node.children.length > 0) {
+        if (node.isContainer && node.children) {
           return [
             {
               ...node,
@@ -324,21 +420,39 @@ export default function ReactDndTree() {
       dropId: string,
       position: "before" | "after" | "inside"
     ) => {
-      if (dragId === dropId) return;
+      if (dragId === dropId) {
+        setErrorMessage("不能将元素拖拽到自身");
+        return;
+      }
 
       const draggedItem = findItem(dragId);
-      if (!draggedItem) return;
+      if (!draggedItem) {
+        setErrorMessage(`找不到拖拽的元素: ${dragId}`);
+        return;
+      }
+
+      const dropItem = findItem(dropId);
+      if (!dropItem) {
+        setErrorMessage(`找不到目标元素: ${dropId}`);
+        return;
+      }
 
       // 检查是否尝试放置到自己的子节点中
       const isDescendant = (parentId: string, childId: string): boolean => {
         const item = findItem(parentId);
         if (!item) return false;
-        if (item.children.some((child) => child.id === childId)) return true;
-        return item.children.some((child) => isDescendant(child.id, childId));
+        if (item.children?.some((child) => child.id === childId)) return true;
+        return !!item.children?.some((child) => isDescendant(child.id, childId));
       };
 
       if (position === "inside" && isDescendant(dragId, dropId)) {
-        console.warn("不能将父节点拖拽到子节点中");
+        setErrorMessage("不能将父节点拖拽到子节点中");
+        return;
+      }
+
+      // 检查目标是否是容器
+      if (position === "inside" && !dropItem.isContainer) {
+        setErrorMessage(`元素 ${dropId} 不是容器，不能包含子元素`);
         return;
       }
 
@@ -365,30 +479,37 @@ export default function ReactDndTree() {
     []
   );
 
-  // 切换折叠状态
-  const handleToggle = useCallback((id: string) => {
-    setItems((prevItems) => {
-      const toggle = (tree: TreeItem[]): TreeItem[] => {
-        return tree.map((item) => {
-          if (item.id === id) {
-            return { ...item, collapsed: !item.collapsed };
-          }
-          if (item.children.length > 0) {
-            return { ...item, children: toggle(item.children) };
-          }
-          return item;
-        });
-      };
-      return toggle(prevItems);
-    });
-  }, []);
-
   return (
     <DndProvider backend={HTML5Backend}>
       <div style={{ padding: "20px", maxWidth: "600px" }}>
         <h2>React DnD 树形拖拽</h2>
+        
+        {/* 错误提示 */}
+        {errorMessage && (
+          <div style={{
+            padding: "10px",
+            marginBottom: "10px",
+            backgroundColor: "#fff2f0",
+            border: "1px solid #ffccc7",
+            borderRadius: "4px",
+            color: "#ff4d4f"
+          }}>
+            {errorMessage}
+          </div>
+        )}
+
         <div style={{ marginBottom: "20px" }}>
-          <p>拖拽项目到其他项目上，可以放在前面、后面或内部</p>
+          <p style={{ marginBottom: "8px" }}>
+            <strong>使用说明：</strong>
+          </p>
+          <ul style={{ paddingLeft: "20px", margin: 0 }}>
+            <li>容器（蓝色标签）可以包含子元素，可以拖拽元素到容器内部</li>
+            <li>元素（灰色标签）不能包含子元素，只能拖拽到其他位置</li>
+            <li>拖拽到目标元素上会出现指示线，表示放置位置</li>
+            <li>蓝色线：可放置位置</li>
+            <li>绿色线：可放置到内部（仅容器）</li>
+            <li>红色线：不可放置</li>
+          </ul>
         </div>
 
         {items.map((item, index) => (
@@ -399,7 +520,6 @@ export default function ReactDndTree() {
             index={index}
             parentId={null}
             onDrop={handleDrop}
-            onToggle={handleToggle}
             findItem={findItem}
             moveItem={moveItem}
           />
@@ -423,9 +543,23 @@ export default function ReactDndTree() {
                 background: "#fff",
                 border: "2px dashed #666",
                 borderRadius: "4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
               }}
             >
-              {draggedItem.id}
+              <span>{draggedItem.id}</span>
+              {draggedItem.isContainer && (
+                <span style={{
+                  fontSize: "10px",
+                  color: "#666",
+                  background: "#f0f0f0",
+                  padding: "1px 4px",
+                  borderRadius: "2px"
+                }}>
+                  容器
+                </span>
+              )}
             </div>
           </div>
         )}

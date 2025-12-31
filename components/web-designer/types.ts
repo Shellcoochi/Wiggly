@@ -1,8 +1,11 @@
 export type NodeType = "container" | "text" | "button";
-
 export interface DesignerNode {
   id: string;
-  type: NodeType;
-  props?: Record<string, any>;
-  children?: DesignerNode[];
+  title: string;
+  componentName: string;
+  children?: DesignerNode[] | null;
+  isContainer?: boolean;
+  isLocked?: boolean;
+  parentId?: string | null;
+  depth?: number;
 }
