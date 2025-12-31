@@ -233,15 +233,19 @@ export default function ReactDndTree() {
   }, [items]);
 
   // 从树中移除项目
-  const removeItem = useCallback((id: string, tree: TreeItem[]): TreeItem[] => {
+  // 使用嵌套函数解决循环引用
+const removeItem = useCallback((id: string, tree: TreeItem[]): TreeItem[] => {
+  const removeRecursive = (id: string, tree: TreeItem[]): TreeItem[] => {
     return tree.filter(item => {
       if (item.id === id) return false;
       if (item.children.length > 0) {
-        item.children = removeItem(id, item.children);
+        item.children = removeRecursive(id, item.children);
       }
       return true;
     });
-  }, []);
+  };
+  return removeRecursive(id, tree);
+}, []);
 
   // 向树中添加项目
   const insertItem = useCallback((
