@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { DndProvider, useDrag, useDrop, DropTargetMonitor } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Button } from "../ui/button";
@@ -133,6 +133,44 @@ const initialItems: DesignerNode[] = [
     ],
   },
 ];
+
+// ====== HighlightBox（无侵入高亮）======
+const HighlightBox: React.FC<{
+  nodeId: string;
+  canvasRef: React.RefObject<HTMLDivElement|null>;
+  isSelected?: boolean;
+}> = ({ nodeId, canvasRef, isSelected = false }) => {
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const targetEl = canvas?.querySelector(`[data-node-id="${nodeId}"]`);
+    const box = boxRef.current;
+
+    if (!targetEl || !box || !canvas) return;
+
+    const rect = targetEl.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+
+    const top = rect.top - canvasRect.top;
+    const left = rect.left - canvasRect.left;
+
+    box.style.cssText = `
+      position: absolute;
+      top: ${top}px;
+      left: ${left}px;
+      width: ${rect.width}px;
+      height: ${rect.height}px;
+      border: ${isSelected ? "2px solid #1890ff" : "1px dashed #597ef7"};
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 1000;
+      box-sizing: border-box;
+    `;
+  }, [nodeId, canvasRef, isSelected]);
+
+  return <div ref={boxRef} />;
+};
 
 /** TreeItem 组件 - 可拖拽和放置 **/
 const DraggableTreeItem: React.FC<{
@@ -294,7 +332,7 @@ const DraggableTreeItem: React.FC<{
   // 修复点击事件冒泡问题
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // 阻止事件冒泡
-    onSelect(item);
+    // onSelect(item);
   };
 
   // 获取放置指示器样式
@@ -335,9 +373,9 @@ const DraggableTreeItem: React.FC<{
       marginLeft: `${depth * 20}px`,
       opacity: isDragging ? 0.5 : 1,
       padding: "8px",
-      border: isSelected ? "2px solid #1890ff" : "1px solid #ddd",
+      border: "1px solid #ddd",
       marginBottom: "4px",
-      background: isSelected ? "#e6f7ff" : "#fff",
+      background:  "#fff",
       cursor: "move",
       borderRadius: "4px",
     };
@@ -360,7 +398,12 @@ const DraggableTreeItem: React.FC<{
   };
 
   return (
-    <div ref={setRefs} style={getContainerStyle()} onClick={handleClick}>
+    <div
+      ref={setRefs}
+      style={getContainerStyle()}
+      data-node-id={id}
+      onClick={handleClick}
+    >
       {/* 拖拽指示器 */}
       {isOver && canDrop && dropPosition && (
         <div style={getDropIndicatorStyle()} />
@@ -439,11 +482,57 @@ const DraggableTreeItem: React.FC<{
   );
 };
 
+const findNode = (id: string, nodes: DesignerNode[]): DesignerNode | undefined => {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findNode(id, node.children);
+      if (found) return found;
+    }
+  }
+};
+
 /** 主组件 **/
 export default function Designer() {
   const [items, setItems] = useState<DesignerNode[]>(initialItems);
   const [selectedNode, setSelectedNode] = useState<DesignerNode | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+// 监听器
+useEffect(() => {
+  const canvas = canvasRef.current;
+  if (!canvas) return;
+
+  const handleMouseMove = (e: MouseEvent) => {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const nodeId = el?.closest?.('[data-node-id]')?.getAttribute('data-node-id');
+    setHoveredNodeId(nodeId || null);
+  };
+
+  const handleClickCapture = (e: MouseEvent) => {
+    const el = e.target as HTMLElement;
+    const nodeEl = el.closest?.('[data-node-id]');
+    const id = nodeEl?.getAttribute('data-node-id');
+
+    if (id) {
+      const node = findNode(id, items);
+      setSelectedNode(node || null);
+    } else {
+      setSelectedNode(null);
+    }
+  };
+
+  // 添加监听（capture 阶段）
+  canvas.addEventListener('mousemove', handleMouseMove, { capture: true });
+  canvas.addEventListener('click', handleClickCapture, { capture: true });
+
+  return () => {
+    canvas.removeEventListener('mousemove', handleMouseMove, { capture: true });
+    canvas.removeEventListener('click', handleClickCapture, { capture: true });
+  };
+}, [items]); // 确保 items 更新时重新绑定（如果 findNode 依赖它）
 
   // 查找树中的项目
   const findItem = useCallback(
@@ -540,7 +629,7 @@ export default function Designer() {
       dragId: string,
       dropId: string,
       position: "before" | "after" | "inside",
-      source: "panel" | "tree" = "tree",
+      source: "panel" | "tree" = "tree"
     ) => {
       if (source === "tree" && dragId === dropId) {
         setErrorMessage("不能将元素拖拽到自身");
@@ -692,19 +781,9 @@ export default function Designer() {
 
         {/* 中间画布区域 */}
         <div
-          style={{
-            flex: 1,
-            padding: "20px",
-            overflow: "auto",
-            borderLeft: "1px solid #f0f0f0",
-            borderRight: "1px solid #f0f0f0",
-          }}
-          onClick={(e) => {
-            // 点击画布空白区域取消选中
-            if (e.target === e.currentTarget) {
-              setSelectedNode(null);
-            }
-          }}
+          ref={canvasRef}
+          className="flex-1 overflow-auto relative"
+          // onClick={handleCanvasClick}
         >
           <h2 style={{ marginBottom: "20px" }}>组件树</h2>
 
@@ -821,6 +900,16 @@ export default function Designer() {
               点击组件以选中，在右侧面板编辑属性
             </div>
           )}
+          {/* Overlay 高亮层 */}
+          <div className="absolute inset-0 pointer-events-none">
+            {hoveredNodeId &&
+              hoveredNodeId !== selectedNode?.id && (
+                <HighlightBox nodeId={hoveredNodeId} canvasRef={canvasRef} />
+              )}
+            {selectedNode && (
+              <HighlightBox nodeId={selectedNode.id} canvasRef={canvasRef} isSelected />
+            )}
+          </div>
         </div>
 
         {/* 右侧属性面板 */}
