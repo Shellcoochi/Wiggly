@@ -23,43 +23,33 @@ const initialItems: DesignerNode[] = [
   {
     id: "root",
     title: "页面根节点",
-    componentName: "Page",
+    componentName: "Container",
     isContainer: true,
-    props: {},
-    style: {},
     children: [
       {
         id: "container1",
         title: "容器1",
         componentName: "Container",
         isContainer: true,
-        props: { padding: 12 },
-        style: {
-          padding: "12px",
-          border: "1px solid #ddd",
-          minHeight: "100px",
+        props: {
+          width: "full",
+          height: "150px",
+          direction: "row",
         },
         children: [
           {
             id: "button1",
             title: "按钮1",
             componentName: "Button",
-            isContainer: false,
             props: { type: "primary", children: "按钮1" },
-            style: {
-              padding: "8px 16px",
-              background: "#1890ff",
-              color: "#fff",
-              borderRadius: "4px",
-            },
+           
           },
-          {
-            id: "text1",
-            title: "文本1",
-            componentName: "Text",
-            isContainer: false,
-            props: { children: "文本内容" },
-            style: { fontSize: "14px", color: "#333" },
+           {
+            id: "button2",
+            title: "按钮2",
+            componentName: "Button",
+            props: { type: "primary", children: "按钮2" },
+           
           },
         ],
       },

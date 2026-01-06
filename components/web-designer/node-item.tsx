@@ -233,6 +233,44 @@ export const NodeItem: React.FC<{
     const Com = asset.library;
     return <Com {...props} ref={setRefs} data-node-id={id} />;
   }
+  if (componentName === "Container") {
+    const Com = asset.library;
+    return (
+      <Com {...props} ref={setRefs} data-node-id={id}>
+        {/* 渲染子元素 */}
+        {isContainer && children && children.length > 0 && (
+          <>
+            {children.map((child, childIndex) => (
+              <NodeItem
+                key={child.id}
+                item={child}
+                depth={depth + 1}
+                index={childIndex}
+                parentId={id}
+                selectedNodeId={selectedNodeId}
+                onSelect={onSelect}
+                onDrop={onDrop}
+                findItem={findItem}
+                moveItem={moveItem}
+              />
+            ))}
+          </>
+        )}
+
+        {/* 空容器提示 */}
+        {isContainer && (!children || children.length === 0) && (
+          <div
+            onClick={handleClick}
+            className="flex items-center justify-center absolute top-0 left-0 right-0 bottom-0 bg-muted m-2 p-3 border rounded text-muted-foreground text-xs"
+          >
+            {isOver && dropPosition === "inside"
+              ? "释放以添加到此容器"
+              : "拖拽组件到此容器"}
+          </div>
+        )}
+      </Com>
+    );
+  }
 
   return (
     <div
@@ -298,17 +336,7 @@ export const NodeItem: React.FC<{
       {isContainer && (!children || children.length === 0) && (
         <div
           onClick={handleClick}
-          style={{
-            marginTop: "8px",
-            padding: "12px",
-            background: "#fafafa",
-            border: "1px dashed #d9d9d9",
-            borderRadius: "4px",
-            fontSize: "12px",
-            color: "#999",
-            textAlign: "center",
-            cursor: "pointer",
-          }}
+          className="absolute top-0 left-0 right-0 bottom-0 bg-muted m-2 p-3 border rounded text-muted-foreground text-xs"
         >
           {isOver && dropPosition === "inside"
             ? "释放以添加到此容器"

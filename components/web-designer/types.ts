@@ -17,7 +17,7 @@ export interface DesignerNode {
   id: string;
   title: string;
   componentName: string;
-  isContainer: boolean;
+  isContainer?: boolean;
   children?: DesignerNode[];
   props?: Record<string, any>;
   style?: React.CSSProperties;

@@ -1,10 +1,11 @@
 import { Button } from "./Button";
+import { Container } from "./Container";
 
 // 组件配置
 const recommendedGroup = {
   title: "推荐组件",
   type: "RECOMMENDED",
-  children: [Button],
+  children: [Button,Container],
 };
 
 const basicCategory = {

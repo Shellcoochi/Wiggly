@@ -25,7 +25,7 @@ const asset = {
 const snippet = {
   snippets: [
     {
-      id: "button-default",
+      id: "button",
       title: "按钮",
       screenshot: "ri-mouse-line",
       schema: {
