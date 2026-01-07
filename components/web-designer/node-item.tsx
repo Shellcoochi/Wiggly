@@ -4,6 +4,44 @@ import { useDrag, useDrop } from "react-dnd";
 import type { DropTargetMonitor } from "react-dnd";
 import { findAsset } from "./utils/tools";
 
+const getDistance = (dom: any, point: any) => {
+  const rect = dom.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  return Math.sqrt((point.x - centerX) ** 2 + (point.y - centerY) ** 2);
+};
+
+const getPosition = (dom: any, point: any, direction: any) => {
+  const rect = dom.getBoundingClientRect();
+  const { x, y } = point;
+
+  // 根据方向判断
+  if (direction === "row") {
+    // 判断左右
+    const distanceToLeft = Math.abs(x - rect.left); // 距离左边的距离
+    const distanceToRight = Math.abs(x - rect.right); // 距离右边的距离
+
+    if (distanceToLeft < distanceToRight) {
+      return "left"; // 鼠标靠左边更近
+    } else {
+      return "right"; // 鼠标靠右边更近
+    }
+  } else if (direction === "col") {
+    // 判断上下
+    const distanceToTop = Math.abs(y - rect.top); // 距离上边的距离
+    const distanceToBottom = Math.abs(y - rect.bottom); // 距离下边的距离
+
+    if (distanceToTop < distanceToBottom) {
+      return "top"; // 鼠标靠上边更近
+    } else {
+      return "bottom"; // 鼠标靠下边更近
+    }
+  }
+
+  // 如果 direction 不是 'row' 或 'col'，返回 null
+  return null;
+};
+
 export const NodeItem: React.FC<{
   item: DesignerNode;
   depth: number;
@@ -75,6 +113,9 @@ export const NodeItem: React.FC<{
       return true;
     },
     hover: (dragItem: DragItem, monitor: DropTargetMonitor) => {
+      if (!monitor.isOver({ shallow: true })) {
+        return;
+      }
       if (!monitor.canDrop()) {
         setDropPosition(null);
         return;
@@ -105,7 +146,32 @@ export const NodeItem: React.FC<{
           position = "inside";
         }
       }
-
+      let result;
+      if (isContainer) {
+        // 如果在容器内，首先获取容器的布局方式，默认值为横向布局
+        const direction = props?.direction ?? "row";
+        // 如果没有子元素则直接返回 inside
+        if (children?.length === 0) {
+          result = { dropId: id, position: "inside" };
+        } else {
+          // 获取距离拖拽节点最近的子元素
+          let shortest: any = undefined;
+          children?.forEach((child) => {
+            const childEl = document.querySelector(
+              `[data-node-id="${child.id}"]`
+            );
+            const distance = getDistance(childEl, clientOffset);
+            if (shortest === undefined || distance < shortest) {
+              shortest = distance;
+              // 如果是横向布局，判断离最近的元素左侧近还是右侧近
+              // 如果是纵向布局，判断离最近的元素上侧近还是下侧近
+              const location = getPosition(childEl, clientOffset, direction);
+              result = { dropId: child.id, position: location };
+            }
+          });
+        }
+        console.log(id, result);
+      }
       setDropPosition(position);
 
       if (dragItem.source === "tree" && monitor.canDrop()) {

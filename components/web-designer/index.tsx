@@ -25,6 +25,9 @@ const initialItems: DesignerNode[] = [
     title: "页面根节点",
     componentName: "Container",
     isContainer: true,
+    props: {
+      style: { height: "250px", border: "1px solid #ddd" },
+    },
     children: [
       {
         id: "container1",
@@ -35,21 +38,26 @@ const initialItems: DesignerNode[] = [
           width: "full",
           height: "150px",
           direction: "row",
+          style: { border: "1px solid #ddd" },
         },
         children: [
           {
             id: "button1",
-            title: "按钮1",
+            title: "1",
             componentName: "Button",
-            props: { type: "primary", children: "按钮1" },
-           
+            props: { type: "primary", children: "1" },
           },
-           {
+          {
             id: "button2",
-            title: "按钮2",
+            title: "2",
             componentName: "Button",
-            props: { type: "primary", children: "按钮2" },
-           
+            props: { type: "primary", children: "2" },
+          },
+          {
+            id: "button3",
+            title: "3",
+            componentName: "Button",
+            props: { type: "primary", children: "3" },
           },
         ],
       },
@@ -350,10 +358,7 @@ export default function Designer() {
         />
 
         {/* 中间画布区域 */}
-        <div
-          ref={canvasRef}
-          className="flex-1 overflow-auto relative"
-        >
+        <div ref={canvasRef} className="flex-1 overflow-auto relative">
           {/* 错误提示 */}
           {errorMessage && (
             <div
