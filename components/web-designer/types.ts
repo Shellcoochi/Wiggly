@@ -1,8 +1,10 @@
 export type NodeType = "container" | "text" | "button";
 
+export type NodePositon = "before" | "after" | "inside";
+export type Positon = "left" | "right" | "top" | "bottom" | "inside";
 export interface DropResult {
   id: string;
-  position: "before" | "after" | "inside";
+  position: Positon;
 }
 export interface DragItem {
   id: string;

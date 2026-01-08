@@ -51,17 +51,12 @@ export const NodeItem: React.FC<{
   onSelect: (node: DesignerNode) => void;
   onDrop: (
     dragId: string,
-    dropId: string,
-    position: "before" | "after" | "inside",
+    position: DropResult,
     source: "panel" | "tree",
     nodeData?: DesignerNode
   ) => void;
   findItem: (id: string) => DesignerNode | undefined;
-  moveItem: (
-    dragId: string,
-    hoverId: string,
-    position: "before" | "after" | "inside"
-  ) => void;
+  moveItem: (dragId: string, hoverId: string, position: DropResult) => void;
 }> = ({
   item,
   depth,
@@ -74,10 +69,7 @@ export const NodeItem: React.FC<{
 }) => {
   const { id, children, isContainer, title, componentName, props, style } =
     item;
-  const [dropPosition, setDropPosition] = useState<
-    "before" | "after" | "inside" | null
-  >(null);
-  const isSelected = selectedNodeId === id;
+  const [dropPosition, setDropPosition] = useState<DropResult | null>(null);
   const dragRef = useRef<HTMLDivElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
 
@@ -130,29 +122,13 @@ export const NodeItem: React.FC<{
       const hoverBoundingRect = dropRef.current?.getBoundingClientRect();
       if (!hoverBoundingRect) return;
 
-      const hoverMiddleY =
-        (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
-
-      let position: "before" | "after" | "inside";
-      if (hoverClientY < hoverMiddleY / 3) {
-        position = "before";
-      } else if (hoverClientY > (hoverMiddleY * 2) / 3) {
-        position = "after";
-      } else {
-        if (!isContainer) {
-          position = hoverClientY < hoverMiddleY ? "before" : "after";
-        } else {
-          position = "inside";
-        }
-      }
-      let result;
+      let result: DropResult = { id, position: "inside" };
       if (isContainer) {
         // 如果在容器内，首先获取容器的布局方式，默认值为横向布局
         const direction = props?.direction ?? "row";
         // 如果没有子元素则直接返回 inside
         if (children?.length === 0) {
-          result = { dropId: id, position: "inside" };
+          result = { id, position: "inside" };
         } else {
           // 获取距离拖拽节点最近的子元素
           let shortest: any = undefined;
@@ -165,35 +141,32 @@ export const NodeItem: React.FC<{
               shortest = distance;
               // 如果是横向布局，判断离最近的元素左侧近还是右侧近
               // 如果是纵向布局，判断离最近的元素上侧近还是下侧近
-              const location = getPosition(childEl, clientOffset, direction);
-              result = { dropId: child.id, position: location };
+              const position =
+                getPosition(childEl, clientOffset, direction) ?? "inside";
+              result = { id: child.id, position };
             }
           });
         }
-        console.log(id, result);
       }
-      setDropPosition(position);
-
-      if (dragItem.source === "tree" && monitor.canDrop()) {
-        moveItem(dragItem.id, id, position);
-      }
+      setDropPosition(result);
+      onSelect(item);
+      moveItem(dragItem.id, id, result);
     },
     drop: (dragItem: DragItem, monitor): DropResult | undefined => {
       if (!monitor.canDrop()) return undefined;
 
-      if (!isContainer && dropPosition === "inside") {
+      if (!isContainer && dropPosition?.position === "inside") {
         return undefined;
       }
 
-      const position = dropPosition || (isContainer ? "inside" : "before");
+      const position = dropPosition || { id, position: "inside" };
       onDrop(
         dragItem.id,
-        id,
         position,
         dragItem.source || "tree",
         dragItem.nodeData
       );
-      return { id, position };
+      return position;
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
@@ -227,73 +200,6 @@ export const NodeItem: React.FC<{
     [setDragRef, setDropRef]
   );
 
-  // 修复点击事件冒泡问题
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // 阻止事件冒泡
-    // onSelect(item);
-  };
-
-  // 获取放置指示器样式
-  const getDropIndicatorStyle = () => {
-    if (!isOver || !dropPosition) return {};
-
-    const styles: React.CSSProperties = {
-      position: "absolute",
-      left: 0,
-      right: 0,
-      height: "2px",
-      backgroundColor: canDrop ? "blue" : "red",
-    };
-
-    switch (dropPosition) {
-      case "before":
-        return { ...styles, top: 0 };
-      case "after":
-        return { ...styles, bottom: 0 };
-      case "inside":
-        if (!isContainer) return {};
-        return {
-          ...styles,
-          top: "50%",
-          transform: "translateY(-50%)",
-          height: "4px",
-          backgroundColor: canDrop ? "green" : "red",
-        };
-      default:
-        return {};
-    }
-  };
-
-  // 获取容器样式
-  const getContainerStyle = (): React.CSSProperties => {
-    const baseStyle: React.CSSProperties = {
-      position: "relative",
-      marginLeft: `${depth * 20}px`,
-      opacity: isDragging ? 0.5 : 1,
-      padding: "8px",
-      border: "1px solid #ddd",
-      marginBottom: "4px",
-      background: "#fff",
-      cursor: "move",
-      borderRadius: "4px",
-    };
-
-    if (isOver && !isSelected) {
-      if (dropPosition === "inside" && isContainer) {
-        baseStyle.background = "#f0f9ff";
-        baseStyle.border = "2px dashed #1890ff";
-      } else {
-        baseStyle.background = "#f5f5f5";
-      }
-    }
-
-    if (!canDrop && isOver) {
-      baseStyle.border = "1px solid #ff4d4f";
-      baseStyle.background = "#fff2f0";
-    }
-
-    return baseStyle;
-  };
   const asset = findAsset(componentName);
   if (componentName === "Button") {
     const Com = asset.library;
@@ -325,11 +231,8 @@ export const NodeItem: React.FC<{
 
         {/* 空容器提示 */}
         {isContainer && (!children || children.length === 0) && (
-          <div
-            onClick={handleClick}
-            className="flex items-center justify-center absolute top-0 left-0 right-0 bottom-0 bg-muted m-2 p-3 border rounded text-muted-foreground text-xs"
-          >
-            {isOver && dropPosition === "inside"
+          <div className="flex items-center justify-center absolute top-0 left-0 right-0 bottom-0 bg-muted m-2 p-3 border rounded text-muted-foreground text-xs">
+            {isOver && dropPosition?.position === "inside"
               ? "释放以添加到此容器"
               : "拖拽组件到此容器"}
           </div>
@@ -337,78 +240,4 @@ export const NodeItem: React.FC<{
       </Com>
     );
   }
-
-  return (
-    <div
-      ref={setRefs}
-      style={getContainerStyle()}
-      data-node-id={id}
-      onClick={handleClick}
-    >
-      {/* 拖拽指示器 */}
-      {isOver && canDrop && dropPosition && (
-        <div style={getDropIndicatorStyle()} />
-      )}
-
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <div
-          style={{
-            width: "8px",
-            height: "8px",
-            borderRadius: "50%",
-            background: isContainer ? "#1890ff" : "#52c41a",
-          }}
-        />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: "bold" }}>{title || id}</div>
-          <div style={{ fontSize: "12px", color: "#666" }}>{componentName}</div>
-        </div>
-        {isContainer && (
-          <span
-            style={{
-              fontSize: "12px",
-              color: "#1890ff",
-              background: "#e6f7ff",
-              padding: "2px 8px",
-              borderRadius: "3px",
-            }}
-          >
-            容器
-          </span>
-        )}
-      </div>
-
-      {/* 渲染子元素 */}
-      {isContainer && children && children.length > 0 && (
-        <div style={{ marginTop: "8px" }}>
-          {children.map((child, childIndex) => (
-            <NodeItem
-              key={child.id}
-              item={child}
-              depth={depth + 1}
-              index={childIndex}
-              parentId={id}
-              selectedNodeId={selectedNodeId}
-              onSelect={onSelect}
-              onDrop={onDrop}
-              findItem={findItem}
-              moveItem={moveItem}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* 空容器提示 */}
-      {isContainer && (!children || children.length === 0) && (
-        <div
-          onClick={handleClick}
-          className="absolute top-0 left-0 right-0 bottom-0 bg-muted m-2 p-3 border rounded text-muted-foreground text-xs"
-        >
-          {isOver && dropPosition === "inside"
-            ? "释放以添加到此容器"
-            : "暂无子元素"}
-        </div>
-      )}
-    </div>
-  );
 };

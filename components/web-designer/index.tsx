@@ -4,13 +4,14 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Button } from "../ui/button";
-import { DesignerNode } from "./types";
+import { DesignerNode, DropResult, NodePositon } from "./types";
 import ComponentPanel from "./component-panel";
 import PropertyPanel from "./property-panel";
 import materials from "./material";
 import { findNode, generateNodeId } from "./utils/tools";
 import { NodeSelector } from "./node-selector";
 import { NodeItem } from "./node-item";
+import { PositionIndicator } from "./position-indicator";
 
 const { assets, snippets, categories } = materials;
 
@@ -71,6 +72,7 @@ export default function Designer() {
   const [selectedNode, setSelectedNode] = useState<DesignerNode | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [dropInfo, setDropInfo] = useState<DropResult | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // 监听器
@@ -161,7 +163,7 @@ export default function Designer() {
     (
       item: DesignerNode,
       targetId: string,
-      position: "before" | "after" | "inside",
+      position: NodePositon,
       tree: DesignerNode[]
     ): DesignerNode[] => {
       return tree.flatMap((node) => {
@@ -204,14 +206,20 @@ export default function Designer() {
 
   // 处理拖拽放置
   const handleDrop = useCallback(
-    (
-      dragId: string,
-      dropId: string,
-      position: "before" | "after" | "inside",
-      source: "panel" | "tree" = "tree"
-    ) => {
+    (dragId: string, result: DropResult, source: "panel" | "tree" = "tree") => {
+      const dropId = result.id;
+      let position: NodePositon = "inside";
+      if (result.position === "left" || result.position === "top") {
+        position = "before";
+      }
+      if (result.position === "right" || result.position === "bottom") {
+        position = "after";
+      }
+      if (result.position === "inside") {
+        position = "inside";
+      }
+
       if (source === "tree" && dragId === dropId) {
-        setErrorMessage("不能将元素拖拽到自身");
         return;
       }
 
@@ -285,10 +293,8 @@ export default function Designer() {
         return insertItem(draggedItem, dropId, position, newItems);
       });
 
-      // 选中新添加的节点
-      if (source === "panel") {
-        setSelectedNode(draggedItem);
-      }
+      setSelectedNode(draggedItem);
+      setDropInfo(null);
     },
     [findItem, removeItem, insertItem]
   );
@@ -330,12 +336,9 @@ export default function Designer() {
 
   // 移动项目的即时反馈
   const moveItem = useCallback(
-    (
-      dragId: string,
-      hoverId: string,
-      position: "before" | "after" | "inside"
-    ) => {
+    (dragId: string, hoverId: string, dropResult: DropResult) => {
       // 这里可以实现即时视觉反馈
+      setDropInfo(dropResult);
     },
     []
   );
@@ -454,6 +457,13 @@ export default function Designer() {
                 nodeId={selectedNode.id}
                 canvasRef={canvasRef}
                 isSelected
+              />
+            )}
+            {dropInfo?.id && (
+              <PositionIndicator
+                canvasRef={canvasRef}
+                nodeId={dropInfo?.id}
+                position={dropInfo.position}
               />
             )}
           </div>
