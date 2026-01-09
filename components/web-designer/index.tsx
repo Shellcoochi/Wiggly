@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Button } from "../ui/button";
@@ -114,6 +114,14 @@ export default function Designer() {
       });
     };
   }, [items]); // 确保 items 更新时重新绑定（如果 findNode 依赖它）
+
+  const asset = useMemo(() => {
+    if (selectedNode) {
+      return findAsset(selectedNode.componentName);
+    } else {
+      return null;
+    }
+  }, [selectedNode]);
 
   // 查找树中的项目
   const findItem = useCallback(
@@ -470,7 +478,7 @@ export default function Designer() {
         </div>
 
         {/* 右侧属性面板 */}
-        <PropertyPanel selectedNode={selectedNode} onUpdate={updateNode} />
+        <PropertyPanel asset={asset} selectedNode={selectedNode} onUpdate={updateNode} />
       </div>
     </DndProvider>
   );

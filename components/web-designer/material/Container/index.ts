@@ -8,6 +8,13 @@ const asset = {
     component: {
       isContainer: true,
     },
+    props: [
+      {
+        name: "direction",
+        title: "布局",
+        setter: "StringSetter",
+      },
+    ],
     supports: {
       style: true,
       loop: true,
