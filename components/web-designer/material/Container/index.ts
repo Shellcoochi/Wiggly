@@ -1,4 +1,4 @@
-import { Container as Com } from "../../../ui/container";
+import { Container as Com } from "./container";
 
 const asset = {
   title: "容器",

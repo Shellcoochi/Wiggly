@@ -1,4 +1,4 @@
-import { Button as Com } from "../../../ui/button";
+import { Button as Com } from "./button";
 
 const asset = {
   title: "按钮",
