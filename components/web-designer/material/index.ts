@@ -1,6 +1,6 @@
-import { Button } from "./Button";
-import { Container } from "./Container";
-import { Text } from "./Text";
+import { Button } from "./button";
+import { Container } from "./container";
+import { Text } from "./text";
 
 // 组件配置
 const recommendedGroup = {
