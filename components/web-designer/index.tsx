@@ -44,21 +44,25 @@ const initialItems: DesignerNode[] = [
         children: [
           {
             id: "button1",
-            title: "1",
+            title: "按钮1",
             componentName: "Button",
-            props: { type: "primary", children: "1" },
+            props: { children: "按钮1" },
+          },
+          {
+            id: "text1",
+            title: "文本1",
+            componentName: "Text",
+            props: {
+              children: "这是一段文本",
+              size: "base",
+              color: "default",
+            },
           },
           {
             id: "button2",
-            title: "2",
+            title: "按钮2",
             componentName: "Button",
-            props: { type: "primary", children: "2" },
-          },
-          {
-            id: "button3",
-            title: "3",
-            componentName: "Button",
-            props: { type: "primary", children: "3" },
+            props: { children: "按钮2" },
           },
         ],
       },
@@ -478,7 +482,11 @@ export default function Designer() {
         </div>
 
         {/* 右侧属性面板 */}
-        <PropertyPanel asset={asset} selectedNode={selectedNode} onUpdate={updateNode} />
+        <PropertyPanel
+          asset={asset}
+          selectedNode={selectedNode}
+          onUpdate={updateNode}
+        />
       </div>
     </DndProvider>
   );

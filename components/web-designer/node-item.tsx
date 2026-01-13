@@ -240,4 +240,10 @@ export const NodeItem: React.FC<{
       </Com>
     );
   }
+  if (componentName === "Text" && asset?.library) {
+    const Com = asset.library;
+    return (
+      <Com {...props} ref={setRefs} data-node-id={id}  />
+    );
+  }
 };

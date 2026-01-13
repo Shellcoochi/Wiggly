@@ -1,11 +1,12 @@
 import { Button } from "./Button";
 import { Container } from "./Container";
+import { Text } from "./Text";
 
 // 组件配置
 const recommendedGroup = {
   title: "推荐组件",
   type: "RECOMMENDED",
-  children: [Button,Container],
+  children: [Button, Container, Text],
 };
 
 const basicCategory = {
@@ -38,5 +39,5 @@ const extractMaterials = (categories: any[]) => {
 };
 const materials = extractMaterials(categories);
 
-console.log(materials.assets)
+console.log(materials.assets);
 export default materials;
