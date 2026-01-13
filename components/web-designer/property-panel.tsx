@@ -31,6 +31,20 @@ const FormField: React.FC<{
   </div>
 );
 
+// Setter 配置类型
+interface SetterConfig {
+  name: string;
+  props?: Record<string, any>;
+}
+
+// 解析 setter 配置
+const parseSetterConfig = (setter: string | SetterConfig): SetterConfig => {
+  if (typeof setter === "string") {
+    return { name: setter, props: {} };
+  }
+  return { name: setter.name || "StringSetter", props: setter.props || {} };
+};
+
 // 属性编辑器工厂
 const PropertyEditor: React.FC<{
   attr: any;
@@ -39,37 +53,57 @@ const PropertyEditor: React.FC<{
 }> = ({ attr, value, onChange }) => {
   const { name, title, setter = "StringSetter", options } = attr;
 
+  // 解析 setter 配置
+  const setterConfig = useMemo(() => parseSetterConfig(setter), [setter]);
+  const { name: setterName, props: setterProps } = setterConfig;
+
+  // 通用的 placeholder
+  const placeholder = setterProps?.placeholder || `请输入${title || name}`;
+
   // 根据 setter 类型渲染不同的编辑器
-  switch (setter) {
+  switch (setterName) {
     case "StringSetter":
       return (
         <Input
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={`请输入${title || name}`}
+          placeholder={placeholder}
           className="w-full"
+          {...setterProps}
         />
       );
+
     case "NumberInputSetter":
       return (
         <Input
           type="number"
-          value={value || ""}
-          onChange={(e) => onChange(Number(e.target.value))}
-          placeholder={`请输入${title || name}`}
+          value={value ?? ""}
+          onChange={(e) => {
+            const numValue = e.target.value === "" ? "" : Number(e.target.value);
+            onChange(numValue);
+          }}
+          placeholder={placeholder}
+          min={setterProps?.min}
+          max={setterProps?.max}
+          step={setterProps?.step || 1}
           className="w-full"
+          {...setterProps}
         />
       );
 
     case "SelectSetter":
+      const selectOptions = options || setterProps?.options || [];
       return (
-        <Select value={value || ""} onValueChange={onChange}>
+        <Select 
+          value={value ? String(value) : ""} 
+          onValueChange={onChange}
+        >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder={`请选择${title || name}`} />
+            <SelectValue placeholder={setterProps?.placeholder || `请选择${title || name}`} />
           </SelectTrigger>
           <SelectContent>
-            {options?.map((opt: any) => (
-              <SelectItem key={opt.value} value={opt.value}>
+            {selectOptions.map((opt: any) => (
+              <SelectItem key={opt.value} value={String(opt.value)}>
                 {opt.label || opt.value}
               </SelectItem>
             ))}
@@ -85,9 +119,10 @@ const PropertyEditor: React.FC<{
             checked={!!value}
             onCheckedChange={onChange}
             id={`switch-${name}`}
+            {...setterProps}
           />
           <Label htmlFor={`switch-${name}`} className="text-xs text-gray-500">
-            {value ? "开启" : "关闭"}
+            {value ? (setterProps?.onText || "开启") : (setterProps?.offText || "关闭")}
           </Label>
         </div>
       );
@@ -97,28 +132,72 @@ const PropertyEditor: React.FC<{
         <div className="flex gap-2">
           <Input
             type="color"
-            value={value || "#000000"}
+            value={value || setterProps?.defaultColor || "#000000"}
             onChange={(e) => onChange(e.target.value)}
-            className="w-12 h-9 p-1"
+            className="w-12 h-9 p-1 cursor-pointer"
           />
           <Input
             type="text"
             value={value || ""}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="#000000"
+            placeholder={setterProps?.placeholder || "#000000"}
             className="flex-1"
           />
         </div>
       );
 
+    case "RadioGroupSetter":
+      const radioOptions = options || setterProps?.options || [];
+      return (
+        <div className="flex flex-col gap-2">
+          {radioOptions.map((opt: any) => (
+            <label
+              key={opt.value}
+              className="flex items-center space-x-2 cursor-pointer"
+            >
+              <input
+                type="radio"
+                name={name}
+                value={opt.value}
+                checked={value === opt.value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-4 h-4 text-blue-600"
+              />
+              <span className="text-sm text-gray-700">{opt.label || opt.value}</span>
+            </label>
+          ))}
+        </div>
+      );
+
+    case "SliderSetter":
+      return (
+        <div className="space-y-2">
+          <input
+            type="range"
+            value={value || setterProps?.min || 0}
+            onChange={(e) => onChange(Number(e.target.value))}
+            min={setterProps?.min || 0}
+            max={setterProps?.max || 100}
+            step={setterProps?.step || 1}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>{setterProps?.min || 0}</span>
+            <span className="font-medium text-gray-700">{value || setterProps?.min || 0}</span>
+            <span>{setterProps?.max || 100}</span>
+          </div>
+        </div>
+      );
+
     default:
-      // 默认使用 Input
+      // 默认使用 StringSetter
       return (
         <Input
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={`请输入${title || name}`}
+          placeholder={placeholder}
           className="w-full"
+          {...setterProps}
         />
       );
   }
@@ -336,7 +415,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
             数据预览
           </h4>
           <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-            <pre className="text-xs text-gray-600 whitespace-pre-wrap wrap-break-word font-mono">
+            <pre className="text-xs text-gray-600 whitespace-pre-wrap break-words font-mono">
               {JSON.stringify(
                 {
                   id: selectedNode.id,

@@ -12,7 +12,12 @@ const asset = {
       {
         name: "children",
         title: "内容",
-        setter: "StringSetter",
+        setter: {
+          name: "StringSetter",
+          props: {
+            placeholder: "请输入按钮内容",
+          },
+        },
       },
     ],
     supports: {
