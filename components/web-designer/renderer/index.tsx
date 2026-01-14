@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { DesignerNode } from "../types";
 import { findAsset } from "../utils/tools";
 
+
 interface RendererProps {
   /**
    * 设计器产出的 Schema
@@ -57,6 +58,7 @@ export const Renderer: React.FC<RendererProps> = ({
   );
 };
 
+
 interface NodeRendererProps {
   node: DesignerNode;
   preview?: boolean;
@@ -70,7 +72,7 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
   components,
   onError,
 }) => {
-  const { id, componentName, props, style, children } = node;
+  const { id, componentName, props, style, children, isContainer } = node;
 
   // 获取组件
   const Component = useMemo(() => {
@@ -94,7 +96,7 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
   if (!Component) {
     const error = new Error(`Component "${componentName}" not found`);
     onError?.(error, node);
-
+    
     return (
       <div
         className="border-2 border-destructive bg-destructive/10 p-4 rounded text-destructive text-sm"
@@ -125,7 +127,7 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
     return (
       <Component {...finalProps}>
         {/* 渲染子节点 */}
-        {children && children.length > 0 && (
+        {isContainer && children && children.length > 0 && (
           <>
             {children.map((child) => (
               <NodeRenderer
@@ -138,15 +140,15 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
             ))}
           </>
         )}
-
+        
         {/* 如果没有子节点，渲染 props.children */}
-        {props?.children}
+        {!isContainer && props?.children}
       </Component>
     );
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     onError?.(err, node);
-
+    
     return (
       <div
         className="border-2 border-destructive bg-destructive/10 p-4 rounded text-destructive text-sm"
@@ -193,9 +195,7 @@ class RenderErrorBoundary extends React.Component<
           <h3 className="font-bold mb-2">渲染出错</h3>
           <p className="text-sm">{this.state.error?.message}</p>
           <details className="mt-2 text-xs">
-            <summary className="cursor-pointer hover:text-destructive/80">
-              详细信息
-            </summary>
+            <summary className="cursor-pointer hover:text-destructive/80">详细信息</summary>
             <pre className="mt-2 overflow-auto p-2 bg-muted rounded text-muted-foreground">
               {this.state.errorInfo?.componentStack}
             </pre>
