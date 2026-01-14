@@ -1,11 +1,15 @@
 import { useEffect, useRef } from "react";
 import { Positon } from "../types";
+import { useCanvasRelativeRect } from "../hooks/use-canvas-relative-rect";
 
-const getStyles = (position: Positon, targetRect: DOMRect, canvasRect: DOMRect) => {
-  const top = targetRect.top - canvasRect.top;
-  const left = targetRect.left - canvasRect.left;
-  const width = targetRect.width;
-  const height = targetRect.height;
+const getStyles = (
+  position: Positon,
+  rect: { top: number; left: number; width: number; height: number }
+) => {
+  const top = rect.top;
+  const left = rect.left;
+  const width = rect.width;
+  const height = rect.height;
 
   const baseStyles: React.CSSProperties = {
     position: "absolute",
@@ -73,19 +77,22 @@ export const PositionIndicator: React.FC<{
   position: Positon;
 }> = ({ nodeId, canvasRef, position }) => {
   const boxRef = useRef<HTMLDivElement>(null);
+  const getRect = useCanvasRelativeRect(canvasRef);
 
   useEffect(() => {
     const updatePosition = () => {
       const canvas = canvasRef.current;
-      const targetEl = canvas?.querySelector<HTMLElement>(`[data-node-id="${nodeId}"]`);
+      const targetEl = canvas?.querySelector<HTMLElement>(
+        `[data-node-id="${nodeId}"]`
+      );
       const box = boxRef.current;
 
-      if (!targetEl || !box || !canvas) return;
+      if (!canvas || !targetEl || !box) return;
 
-      const targetRect = targetEl.getBoundingClientRect();
-      const canvasRect = canvas.getBoundingClientRect();
-      const styles = getStyles(position, targetRect, canvasRect);
+      const rect = getRect(targetEl);
+      if (!rect) return;
 
+      const styles = getStyles(position, rect);
       Object.assign(box.style, styles);
     };
 
@@ -94,17 +101,17 @@ export const PositionIndicator: React.FC<{
     // 监听滚动和窗口大小变化
     const canvas = canvasRef.current;
     if (canvas) {
-      canvas.addEventListener('scroll', updatePosition);
-      window.addEventListener('resize', updatePosition);
+      canvas.addEventListener("scroll", updatePosition);
+      window.addEventListener("resize", updatePosition);
     }
 
     return () => {
       if (canvas) {
-        canvas.removeEventListener('scroll', updatePosition);
+        canvas.removeEventListener("scroll", updatePosition);
       }
-      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener("resize", updatePosition);
     };
-  }, [nodeId, position, canvasRef]);
+  }, [nodeId, position, canvasRef, getRect]);
 
   return <div ref={boxRef} />;
 };

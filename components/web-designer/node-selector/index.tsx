@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useCanvasRelativeRect } from "../hooks/use-canvas-relative-rect";
 
 export const NodeSelector: React.FC<{
   nodeId: string;
@@ -6,33 +7,46 @@ export const NodeSelector: React.FC<{
   isSelected?: boolean;
 }> = ({ nodeId, canvasRef, isSelected = false }) => {
   const boxRef = useRef<HTMLDivElement>(null);
+  const getRect = useCanvasRelativeRect(canvasRef);
 
   useEffect(() => {
+    const update = () => {
+      const canvas = canvasRef.current;
+      const targetEl = canvas?.querySelector<HTMLElement>(
+        `[data-node-id="${nodeId}"]`
+      );
+      const box = boxRef.current;
+      if (!canvas || !targetEl || !box) return;
+
+      const rect = getRect(targetEl);
+      if (!rect) return;
+
+      Object.assign(box.style, {
+        position: "absolute",
+        top: `${rect.top}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        border: isSelected ? "2px solid #1890ff" : "1px dashed #597ef7",
+        borderRadius: "4px",
+        pointerEvents: "none",
+        zIndex: 1000,
+        boxSizing: "border-box",
+      });
+    };
+    update();
+
     const canvas = canvasRef.current;
-    const targetEl = canvas?.querySelector(`[data-node-id="${nodeId}"]`);
-    const box = boxRef.current;
+    if (!canvas) return;
 
-    if (!targetEl || !box || !canvas) return;
+    canvas.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
 
-    const rect = targetEl.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
-
-    const top = rect.top - canvasRect.top;
-    const left = rect.left - canvasRect.left;
-
-    box.style.cssText = `
-      position: absolute;
-      top: ${top}px;
-      left: ${left}px;
-      width: ${rect.width}px;
-      height: ${rect.height}px;
-      border: ${isSelected ? "2px solid #1890ff" : "1px dashed #597ef7"};
-      border-radius: 4px;
-      pointer-events: none;
-      z-index: 1000;
-      box-sizing: border-box;
-    `;
-  }, [nodeId, canvasRef, isSelected]);
+    return () => {
+      canvas.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [nodeId, isSelected, getRect, canvasRef]);
 
   return <div ref={boxRef} />;
 };
