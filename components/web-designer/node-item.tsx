@@ -242,8 +242,10 @@ export const NodeItem: React.FC<{
   }
   if (componentName === "Text" && asset?.library) {
     const Com = asset.library;
-    return (
-      <Com {...props} ref={setRefs} data-node-id={id}  />
-    );
+    return <Com {...props} ref={setRefs} data-node-id={id} />;
+  }
+  if (componentName === "Image" && asset?.library) {
+    const Com = asset.library;
+    return <Com {...props} ref={setRefs} data-node-id={id} />;
   }
 };

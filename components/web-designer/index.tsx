@@ -191,16 +191,16 @@ const initialItems: DesignerNode[] = [
                 },
                 children: [
                   {
-                    id: "feature-1-icon",
-                    title: "图标占位",
-                    componentName: "Container",
-                    isContainer: true,
+                    id: "feature-1-image",
+                    title: "特性1图片",
+                    componentName: "Image",
                     props: {
-                      className: "bg-primary/10 rounded-full",
-                    },
-                    style: {
-                      width: "48px",
-                      height: "48px",
+                      src: "/next.svg",
+                      alt: "可视化设计",
+                      width: "80px",
+                      height: "80px",
+                      objectFit: "fill",
+                      rounded: "lg",
                     },
                   },
                   {
@@ -250,16 +250,16 @@ const initialItems: DesignerNode[] = [
                 },
                 children: [
                   {
-                    id: "feature-2-icon",
-                    title: "图标占位",
-                    componentName: "Container",
-                    isContainer: true,
+                    id: "feature-2-image",
+                    title: "特性2图片",
+                    componentName: "Image",
                     props: {
-                      className: "bg-green-500/10 rounded-full",
-                    },
-                    style: {
-                      width: "48px",
-                      height: "48px",
+                      src: "/next.svg",
+                      alt: "组件丰富",
+                      width: "80px",
+                      height: "80px",
+                      objectFit: "fill",
+                      rounded: "lg",
                     },
                   },
                   {
@@ -309,16 +309,16 @@ const initialItems: DesignerNode[] = [
                 },
                 children: [
                   {
-                    id: "feature-3-icon",
-                    title: "图标占位",
-                    componentName: "Container",
-                    isContainer: true,
+                    id: "feature-3-image",
+                    title: "特性3图片",
+                    componentName: "Image",
                     props: {
-                      className: "bg-purple-500/10 rounded-full",
-                    },
-                    style: {
-                      width: "48px",
-                      height: "48px",
+                      src: "/next.svg",
+                      alt: "主题定制",
+                      width: "80px",
+                      height: "80px",
+                      objectFit: "fill",
+                      rounded: "lg",
                     },
                   },
                   {
