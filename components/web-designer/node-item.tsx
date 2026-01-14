@@ -208,7 +208,7 @@ export const NodeItem: React.FC<{
   if (componentName === "Container") {
     const Com = asset.library;
     return (
-      <Com {...props} ref={setRefs} data-node-id={id}>
+      <Com {...props} style={style} ref={setRefs} data-node-id={id}>
         {/* 渲染子元素 */}
         {isContainer && children && children.length > 0 && (
           <>
