@@ -1,51 +1,48 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useDrag } from "react-dnd";
 import { ComponentTemplate } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import Collapsible from "../ui/collapsible";
+import { cn } from "@/lib/utils";
 
 const ComponentPanel: React.FC<{
   templates: any[];
   onDragStart?: (template: ComponentTemplate) => void;
 }> = ({ templates, onDragStart }) => {
   return (
-    <div
-      style={{
-        width: "250px",
-        background: "#fff",
-        borderRight: "1px solid #f0f0f0",
-        padding: "20px",
-        overflow: "auto",
-      }}
-    >
-      <h3 style={{ marginBottom: "20px" }}>组件列表</h3>
-      <p style={{ fontSize: "12px", color: "#666", marginBottom: "20px" }}>
-        拖拽组件到画布中
-      </p>
-      <Tabs defaultValue="BASIC">
-        <TabsList className="bg-muted">
+    <div className="w-62.5 shrink-0 bg-card border-r border-border p-5 overflow-auto">
+      {/* Header */}
+      <h3 className="mb-2 text-sm font-semibold text-foreground">组件列表</h3>
+      <p className="mb-5 text-xs text-muted-foreground">拖拽组件到画布中</p>
+
+      {/* Tabs */}
+      <Tabs defaultValue="BASIC" className="space-y-4">
+        <TabsList className="bg-muted p-1 rounded-lg">
           {templates.map((template) => (
-            <TabsTrigger key={template.type} value={template.type}>
+            <TabsTrigger
+              key={template.type}
+              value={template.type}
+              className="text-xs"
+            >
               {template.title}
             </TabsTrigger>
           ))}
         </TabsList>
+
         {templates.map((template) => (
-          <TabsContent key={template.type} value={template.type}>
+          <TabsContent
+            key={template.type}
+            value={template.type}
+            className="space-y-3"
+          >
             {template.children.map((group: any) => (
               <Collapsible
                 key={group.type}
-                defaultValue={true}
+                defaultValue
                 content={
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "12px",
-                    }}
-                  >
+                  <div className="flex flex-col gap-3 pt-2">
                     {group.children.map((com: any) => (
                       <DraggableComponentItem
                         key={com.snippet.snippets[0].id}
@@ -58,10 +55,16 @@ const ComponentPanel: React.FC<{
                   </div>
                 }
               >
-                <div className="px-2 py-1.5 hover:bg-accent/50 rounded-md">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{group.title}</span>
-                  </div>
+                {/* Group Header */}
+                <div
+                  className={cn(
+                    "flex items-center px-2 py-1.5 rounded-md",
+                    "text-sm font-medium text-foreground",
+                    "cursor-pointer transition-colors",
+                    "hover:bg-accent/50"
+                  )}
+                >
+                  {group.title}
                 </div>
               </Collapsible>
             ))}
@@ -76,6 +79,8 @@ const DraggableComponentItem: React.FC<{
   template: ComponentTemplate;
   onDragStart?: () => void;
 }> = ({ template, onDragStart }) => {
+  const dragRef = useRef<HTMLDivElement>(null);
+
   const [{ isDragging }, drag] = useDrag({
     type: "component-panel-item",
     item: () => {
@@ -91,43 +96,34 @@ const DraggableComponentItem: React.FC<{
     }),
   });
 
+  useEffect(() => {
+    if (dragRef.current) {
+      drag(dragRef.current);
+    }
+  }, [drag]);
+
   return (
     <div
-      ref={drag}
-      style={{
-        padding: "12px",
-        border: "1px solid #e8e8e8",
-        borderRadius: "6px",
-        background: isDragging ? "#f0f9ff" : "#fff",
-        cursor: "move",
-        opacity: isDragging ? 0.5 : 1,
-        transition: "all 0.2s",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        "&:hover": {
-          borderColor: "#1890ff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        },
-      }}
+      ref={dragRef}
+      className={cn(
+        "flex items-center gap-2.5 p-3 rounded-lg border border-border bg-card",
+        "cursor-move transition-all",
+        "hover:border-primary hover:shadow-sm",
+        isDragging && "bg-accent opacity-50"
+      )}
     >
       <div
-        style={{
-          width: "32px",
-          height: "32px",
-          background: "#f6ffed",
-          borderRadius: "6px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#52c41a",
-          fontSize: "12px",
-        }}
+        className={cn(
+          "flex items-center justify-center",
+          "h-8 w-8 rounded-md",
+          "bg-muted text-primary text-xs font-medium"
+        )}
       >
         组
       </div>
-      <div>
-        <div style={{ fontWeight: "500" }}>{template.title}</div>
+
+      <div className="text-sm font-medium text-foreground">
+        {template.title}
       </div>
     </div>
   );
