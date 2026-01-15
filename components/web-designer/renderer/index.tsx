@@ -1,9 +1,148 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { DesignerNode } from "../types";
+import { DesignerNode, Binding, Variable, DataSource } from "../types";
 import { findAsset } from "../utils/tools";
 
+// ============================================
+// 1. 绑定解析工具函数
+// ============================================
+
+// 根据路径获取值
+const getValueByPath = (obj: any, path: string): any => {
+  if (!path || !obj) return undefined;
+  
+  const keys = path.split(".");
+  let result = obj;
+  
+  for (const key of keys) {
+    // 处理数组索引: items[0]
+    const arrayMatch = key.match(/^(\w+)\[(\d+)\]$/);
+    if (arrayMatch) {
+      const [, prop, index] = arrayMatch;
+      result = result?.[prop]?.[parseInt(index)];
+    } else {
+      result = result?.[key];
+    }
+    
+    if (result === undefined) break;
+  }
+  
+  return result;
+};
+
+// 执行表达式（安全的）
+const evaluateExpression = (
+  expression: string,
+  context: { variables: Record<string, any>; dataSources: Record<string, any> }
+): any => {
+  try {
+    // 移除 {{}} 包裹
+    const code = expression.replace(/^\{\{|\}\}$/g, "").trim();
+    
+    // 创建安全的执行上下文
+    const func = new Function(
+      "variables",
+      "dataSources",
+      `
+        try {
+          with (variables) { 
+            return ${code}; 
+          }
+        } catch (e) {
+          console.error("表达式执行失败:", e);
+          return undefined;
+        }
+      `
+    );
+    
+    return func(context.variables, context.dataSources);
+  } catch (error) {
+    console.error("表达式解析失败:", error);
+    return undefined;
+  }
+};
+
+// 解析单个绑定
+export const resolveBinding = (
+  binding: Binding | undefined,
+  staticValue: any,
+  context: {
+    variables: Record<string, any>;
+    dataSources: Record<string, any>;
+  }
+): any => {
+  // 没有绑定或静态值，直接返回原值
+  if (!binding || binding.type === "static") {
+    return staticValue;
+  }
+
+  try {
+    switch (binding.type) {
+      case "variable":
+        // 解析变量路径: user.name
+        if (!binding.variablePath) return staticValue;
+        const variableValue = getValueByPath(context.variables, binding.variablePath);
+        return variableValue !== undefined ? variableValue : staticValue;
+
+      case "expression":
+        // 解析表达式: {{user.name + ' ' + user.age}}
+        if (!binding.expression) return staticValue;
+        const expressionValue = evaluateExpression(binding.expression, context);
+        return expressionValue !== undefined ? expressionValue : staticValue;
+
+      case "datasource":
+        // 解析数据源: datasourceId.data.items[0]
+        if (!binding.datasourceId) return staticValue;
+        const dsData = context.dataSources[binding.datasourceId];
+        if (!dsData) return staticValue;
+        
+        const dataValue = binding.dataPath 
+          ? getValueByPath(dsData, binding.dataPath)
+          : dsData;
+        return dataValue !== undefined ? dataValue : staticValue;
+
+      default:
+        return staticValue;
+    }
+  } catch (error) {
+    console.error("绑定解析失败:", error, binding);
+    return staticValue;
+  }
+};
+
+// 解析节点的所有属性绑定
+const resolveNodeBindings = (
+  node: DesignerNode,
+  context: {
+    variables: Record<string, any>;
+    dataSources: Record<string, any>;
+  }
+): Record<string, any> => {
+  const resolvedProps: Record<string, any> = { ...node.props };
+  
+  // 如果没有绑定配置，直接返回原 props
+  if (!node.bindings) {
+    return resolvedProps;
+  }
+
+  // 遍历所有绑定，解析每个属性
+  for (const [key, binding] of Object.entries(node.bindings)) {
+    const staticValue = node.props?.[key];
+    const resolvedValue = resolveBinding(binding, staticValue, context);
+    
+    // 只有当解析成功时才更新值
+    if (resolvedValue !== undefined) {
+      resolvedProps[key] = resolvedValue;
+    }
+  }
+
+  return resolvedProps;
+};
+
+// ============================================
+// 2. Renderer 组件（支持绑定）
+// ============================================
 
 interface RendererProps {
   /**
@@ -22,6 +161,14 @@ interface RendererProps {
    * 渲染错误时的回调
    */
   onError?: (error: Error, node: DesignerNode) => void;
+  /**
+   * 运行时变量（新增）
+   */
+  variables?: Record<string, any>;
+  /**
+   * 运行时数据源（新增）
+   */
+  dataSources?: Record<string, any>;
 }
 
 export const Renderer: React.FC<RendererProps> = ({
@@ -29,7 +176,15 @@ export const Renderer: React.FC<RendererProps> = ({
   preview = false,
   components,
   onError,
+  variables = {},
+  dataSources = {},
 }) => {
+  // 创建绑定上下文
+  const bindingContext = useMemo(() => ({
+    variables,
+    dataSources,
+  }), [variables, dataSources]);
+
   // 如果是数组，渲染所有节点
   if (Array.isArray(schema)) {
     return (
@@ -41,6 +196,7 @@ export const Renderer: React.FC<RendererProps> = ({
             preview={preview}
             components={components}
             onError={onError}
+            bindingContext={bindingContext}
           />
         ))}
       </>
@@ -54,16 +210,24 @@ export const Renderer: React.FC<RendererProps> = ({
       preview={preview}
       components={components}
       onError={onError}
+      bindingContext={bindingContext}
     />
   );
 };
 
+// ============================================
+// 3. NodeRenderer（支持绑定解析）
+// ============================================
 
 interface NodeRendererProps {
   node: DesignerNode;
   preview?: boolean;
   components?: Record<string, React.ComponentType<any>>;
   onError?: (error: Error, node: DesignerNode) => void;
+  bindingContext: {
+    variables: Record<string, any>;
+    dataSources: Record<string, any>;
+  };
 }
 
 const NodeRenderer: React.FC<NodeRendererProps> = ({
@@ -71,6 +235,7 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
   preview = false,
   components,
   onError,
+  bindingContext,
 }) => {
   const { id, componentName, props, style, children, isContainer } = node;
 
@@ -92,6 +257,11 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
     return null;
   }, [componentName, components]);
 
+  // 解析属性绑定
+  const resolvedProps = useMemo(() => {
+    return resolveNodeBindings(node, bindingContext);
+  }, [node, bindingContext]);
+
   // 组件未找到时的错误处理
   if (!Component) {
     const error = new Error(`Component "${componentName}" not found`);
@@ -109,10 +279,10 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
 
   // 错误边界处理
   try {
-    // 合并 props 和 style
+    // 合并 props 和 style（使用解析后的 props）
     const finalProps = {
-      ...props,
-      style: { ...props?.style, ...style },
+      ...resolvedProps,
+      style: { ...resolvedProps?.style, ...style },
       "data-renderer-id": id, // 添加标识符，方便调试
     };
 
@@ -121,6 +291,14 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
       // 可以在这里添加预览模式的特殊处理
       // 例如：禁用所有点击事件
       // finalProps.onClick = (e: Event) => e.preventDefault();
+    }
+
+    // 调试：在开发环境显示绑定信息
+    if (process.env.NODE_ENV === "development" && node.bindings) {
+      console.log(`[Renderer] ${componentName} (${id}):`, {
+        bindings: node.bindings,
+        resolvedProps,
+      });
     }
 
     // 渲染组件
@@ -136,13 +314,14 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
                 preview={preview}
                 components={components}
                 onError={onError}
+                bindingContext={bindingContext}
               />
             ))}
           </>
         )}
         
         {/* 如果没有子节点，渲染 props.children */}
-        {!isContainer && props?.children}
+        {!isContainer && resolvedProps?.children}
       </Component>
     );
   } catch (error) {
@@ -159,6 +338,10 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
     );
   }
 };
+
+// ============================================
+// 4. 错误边界（保持不变）
+// ============================================
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -217,3 +400,85 @@ export const SafeRenderer: React.FC<
     </RenderErrorBoundary>
   );
 };
+
+// ============================================
+// 5. 使用示例
+// ============================================
+
+/*
+// 基础使用（无绑定）
+<Renderer schema={schema} />
+
+// 带变量绑定
+<Renderer 
+  schema={schema} 
+  variables={{
+    user: { name: "张三", age: 25 },
+    title: "欢迎页面"
+  }}
+/>
+
+// 带数据源绑定
+<Renderer 
+  schema={schema}
+  variables={{
+    user: { name: "张三" }
+  }}
+  dataSources={{
+    userList: {
+      data: {
+        items: [
+          { id: 1, name: "用户1" },
+          { id: 2, name: "用户2" }
+        ]
+      }
+    }
+  }}
+/>
+
+// 完整示例：带状态管理
+function App() {
+  const [variables, setVariables] = useState({
+    count: 0,
+    user: { name: "张三" }
+  });
+
+  const [dataSources, setDataSources] = useState({
+    api: { loading: false, data: null }
+  });
+
+  // 加载数据
+  useEffect(() => {
+    fetchData().then(data => {
+      setDataSources(prev => ({
+        ...prev,
+        api: { loading: false, data }
+      }));
+    });
+  }, []);
+
+  return (
+    <SafeRenderer
+      schema={schema}
+      variables={variables}
+      dataSources={dataSources}
+    />
+  );
+}
+
+// Schema 示例（带绑定）
+const schema = {
+  id: "text1",
+  componentName: "Text",
+  props: {
+    children: "默认文本"  // 静态值
+  },
+  bindings: {
+    children: {
+      type: "variable",
+      variablePath: "user.name",  // 绑定到 user.name
+      value: "默认文本"
+    }
+  }
+};
+*/
