@@ -139,7 +139,7 @@ const snippet = {
       schema: {
         componentName: "Image",
         props: {
-          src: "https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=400&h=300&fit=crop",
+          src: "/next.svg",
           alt: "示例图片",
           width: "400px",
           height: "300px",
@@ -155,7 +155,7 @@ const snippet = {
       schema: {
         componentName: "Image",
         props: {
-          src: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+          src: "/next.svg",
           alt: "用户头像",
           width: "80px",
           height: "80px",
@@ -171,7 +171,7 @@ const snippet = {
       schema: {
         componentName: "Image",
         props: {
-          src: "https://images.unsplash.com/photo-1557683316-973673baf926?w=1200&h=400&fit=crop",
+          src: "/next.svg",
           alt: "横幅图片",
           width: "100%",
           height: "200px",
@@ -187,7 +187,7 @@ const snippet = {
       schema: {
         componentName: "Image",
         props: {
-          src: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
+          src: "/next.svg",
           alt: "产品图片",
           width: "300px",
           height: "300px",
