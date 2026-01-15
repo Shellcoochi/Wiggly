@@ -5,13 +5,14 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Button } from "../../ui/button";
 import { DesignerNode, DropResult, NodePositon } from "../types";
-import ComponentPanel from "../panels/component-panel";
-import PropertyPanel from "../panels/property-panel";
+import ComponentPanel from "../sidebar-panel/component-panel";
+import PropertyPanel from "../property-panel";
 import materials from "../material";
 import { findNode, generateNodeId } from "../utils/tools";
 import { NodeSelector } from "../node-selector";
 import { NodeItem } from "./node-item";
 import { PositionIndicator } from "../position-indicator";
+import DesignerSidebar from "../sidebar-panel";
 
 const { assets, snippets, categories } = materials;
 
@@ -742,10 +743,10 @@ export default function Designer() {
         }}
       >
         {/* 左侧组件面板 */}
-        <ComponentPanel
+        <DesignerSidebar
           templates={categories}
           onDragStart={(template) => {
-            console.log("开始拖拽:", template.name);
+            console.log("开始拖拽:", template);
           }}
         />
 
