@@ -3,15 +3,15 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Button } from "../ui/button";
-import { DesignerNode, DropResult, NodePositon } from "./types";
-import ComponentPanel from "./component-panel";
-import PropertyPanel from "./property-panel";
-import materials from "./material";
-import { findNode, generateNodeId } from "./utils/tools";
-import { NodeSelector } from "./node-selector";
+import { Button } from "../../ui/button";
+import { DesignerNode, DropResult, NodePositon } from "../types";
+import ComponentPanel from "../panels/component-panel";
+import PropertyPanel from "../panels/property-panel";
+import materials from "../material";
+import { findNode, generateNodeId } from "../utils/tools";
+import { NodeSelector } from "../node-selector";
 import { NodeItem } from "./node-item";
-import { PositionIndicator } from "./position-indicator";
+import { PositionIndicator } from "../position-indicator";
 
 const { assets, snippets, categories } = materials;
 

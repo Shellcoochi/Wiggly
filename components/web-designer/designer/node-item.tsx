@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState, useMemo } from "react";
-import { DesignerNode, DragItem, DropResult } from "./types";
+import { DesignerNode, DragItem, DropResult } from "../types";
 import { useDrag, useDrop } from "react-dnd";
 import type { DropTargetMonitor } from "react-dnd";
-import { findAsset } from "./utils/tools";
+import { findAsset } from "../utils/tools";
 
 // 常量定义
 const INDENT_SIZE = 20;

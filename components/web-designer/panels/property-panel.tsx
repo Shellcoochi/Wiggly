@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { DesignerNode } from "./types";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
+import { DesignerNode } from "../types";
+import { Button } from "../../ui/button";
+import { Input } from "../../ui/input";
+import { Label } from "../../ui/label";
 
-import { SETTER_MAP, SetterConfig } from "./setter";
+import { SETTER_MAP, SetterConfig } from "../setter";
 
 interface PropertyPanelProps {
   asset: any;

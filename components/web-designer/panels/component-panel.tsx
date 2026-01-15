@@ -2,9 +2,9 @@
 
 import React, { ReactNode, useEffect, useRef } from "react";
 import { useDrag } from "react-dnd";
-import { ComponentTemplate } from "./types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import Collapsible from "../ui/collapsible";
+import { ComponentTemplate } from "../types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import Collapsible from "../../ui/collapsible";
 import { cn } from "@/lib/utils";
 import { IconPuzzleFilled } from "@tabler/icons-react";
 
