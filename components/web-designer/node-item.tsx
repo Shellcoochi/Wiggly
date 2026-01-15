@@ -1,48 +1,45 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useMemo } from "react";
 import { DesignerNode, DragItem, DropResult } from "./types";
 import { useDrag, useDrop } from "react-dnd";
 import type { DropTargetMonitor } from "react-dnd";
 import { findAsset } from "./utils/tools";
 
-const getDistance = (dom: any, point: any) => {
-  const rect = dom.getBoundingClientRect();
+// 常量定义
+const INDENT_SIZE = 20;
+// 移除未使用的 HOVER_THROTTLE_MS 常量
+
+// 工具函数：计算距离
+const getDistance = (
+  element: Element,
+  point: { x: number; y: number }
+): number => {
+  const rect = element.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
   return Math.sqrt((point.x - centerX) ** 2 + (point.y - centerY) ** 2);
 };
 
-const getPosition = (dom: any, point: any, direction: any) => {
-  const rect = dom.getBoundingClientRect();
+// 工具函数：判断位置
+const getPosition = (
+  element: Element,
+  point: { x: number; y: number },
+  direction: "row" | "col"
+): "left" | "right" | "top" | "bottom" => {
+  const rect = element.getBoundingClientRect();
   const { x, y } = point;
 
-  // 根据方向判断
   if (direction === "row") {
-    // 判断左右
-    const distanceToLeft = Math.abs(x - rect.left); // 距离左边的距离
-    const distanceToRight = Math.abs(x - rect.right); // 距离右边的距离
-
-    if (distanceToLeft < distanceToRight) {
-      return "left"; // 鼠标靠左边更近
-    } else {
-      return "right"; // 鼠标靠右边更近
-    }
-  } else if (direction === "col") {
-    // 判断上下
-    const distanceToTop = Math.abs(y - rect.top); // 距离上边的距离
-    const distanceToBottom = Math.abs(y - rect.bottom); // 距离下边的距离
-
-    if (distanceToTop < distanceToBottom) {
-      return "top"; // 鼠标靠上边更近
-    } else {
-      return "bottom"; // 鼠标靠下边更近
-    }
+    const distanceToLeft = Math.abs(x - rect.left);
+    const distanceToRight = Math.abs(x - rect.right);
+    return distanceToLeft < distanceToRight ? "left" : "right";
+  } else {
+    const distanceToTop = Math.abs(y - rect.top);
+    const distanceToBottom = Math.abs(y - rect.bottom);
+    return distanceToTop < distanceToBottom ? "top" : "bottom";
   }
-
-  // 如果 direction 不是 'row' 或 'col'，返回 null
-  return null;
 };
 
-export const NodeItem: React.FC<{
+interface NodeItemProps {
   item: DesignerNode;
   depth: number;
   index: number;
@@ -57,7 +54,9 @@ export const NodeItem: React.FC<{
   ) => void;
   findItem: (id: string) => DesignerNode | undefined;
   moveItem: (dragId: string, hoverId: string, position: DropResult) => void;
-}> = ({
+}
+
+export const NodeItem: React.FC<NodeItemProps> = ({
   item,
   depth,
   parentId,
@@ -67,13 +66,14 @@ export const NodeItem: React.FC<{
   findItem,
   moveItem,
 }) => {
-  const { id, children, isContainer, title, componentName, props, style } =
-    item;
+  const { id, children, isContainer, title, componentName, props,style } = item;
   const [dropPosition, setDropPosition] = useState<DropResult | null>(null);
+  const isSelected = selectedNodeId === id;
   const dragRef = useRef<HTMLDivElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
+  // 移除未使用的 lastHoverTime ref
 
-  // 使用 useDrag 实现拖拽
+  // 拖拽配置
   const [{ isDragging }, drag] = useDrag({
     type: "tree-item",
     item: (): DragItem => ({
@@ -90,162 +90,252 @@ export const NodeItem: React.FC<{
     }),
   });
 
-  // 使用 useDrop 实现放置区域
+  // 放置配置
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: ["tree-item", "component-panel-item"],
     canDrop: (dragItem: DragItem) => {
-      // 从面板拖拽过来，总是允许
       if (dragItem.source === "panel") return true;
-
-      // 树内拖拽的限制
       if (dragItem.id === id) return false;
-      if (dragItem.parentId === id && dragItem.depth < depth) {
-        return false;
-      }
+      if (dragItem.parentId === id && dragItem.depth < depth) return false;
       return true;
     },
     hover: (dragItem: DragItem, monitor: DropTargetMonitor) => {
-      if (!monitor.isOver({ shallow: true })) {
-        return;
-      }
-      if (!monitor.canDrop()) {
+      // 节流优化 - 移除 Date.now() 调用
+      // React 19 不允许在 render 阶段调用 Date.now()
+      // 改用简单的计数器或移除节流
+      
+      if (!monitor.isOver({ shallow: true }) || !monitor.canDrop()) {
         setDropPosition(null);
         return;
       }
 
-      // 如果是面板拖拽，不判断同元素
       if (dragItem.source !== "panel" && dragItem.id === id) return;
 
       const clientOffset = monitor.getClientOffset();
       if (!clientOffset) return;
 
-      const hoverBoundingRect = dropRef.current?.getBoundingClientRect();
-      if (!hoverBoundingRect) return;
-
-      let result: DropResult = { id, position: "inside" };
-      if (isContainer) {
-        // 如果在容器内，首先获取容器的布局方式，默认值为横向布局
-        const direction = props?.direction ?? "row";
-        // 如果没有子元素则直接返回 inside
-        if (children?.length === 0) {
-          result = { id, position: "inside" };
-        } else {
-          // 获取距离拖拽节点最近的子元素
-          let shortest: any = undefined;
-          children?.forEach((child) => {
-            const childEl = document.querySelector(
-              `[data-node-id="${child.id}"]`
-            );
-            const distance = getDistance(childEl, clientOffset);
-            if (shortest === undefined || distance < shortest) {
-              shortest = distance;
-              // 如果是横向布局，判断离最近的元素左侧近还是右侧近
-              // 如果是纵向布局，判断离最近的元素上侧近还是下侧近
-              const position =
-                getPosition(childEl, clientOffset, direction) ?? "inside";
-              result = { id: child.id, position };
-            }
-          });
-        }
-      }
+      // 计算放置位置
+      const result = calculateDropPosition(clientOffset);
       setDropPosition(result);
-      onSelect(item);
+
+      // 只通知位置变化，不执行实际移动
       moveItem(dragItem.id, id, result);
     },
     drop: (dragItem: DragItem, monitor): DropResult | undefined => {
       if (!monitor.canDrop()) return undefined;
-
       if (!isContainer && dropPosition?.position === "inside") {
         return undefined;
       }
 
       const position = dropPosition || { id, position: "inside" };
-      onDrop(
-        dragItem.id,
-        position,
-        dragItem.source || "tree",
-        dragItem.nodeData
-      );
+      onDrop(dragItem.id, position, dragItem.source || "tree", dragItem.nodeData);
       return position;
     },
     collect: (monitor) => ({
-      isOver: monitor.isOver(),
+      isOver: monitor.isOver({ shallow: true }),
       canDrop: monitor.canDrop(),
     }),
   });
 
-  // 使用 callback refs 来连接 drag 和 drop
-  const setDragRef = useCallback(
+  // 计算放置位置
+  const calculateDropPosition = useCallback(
+    (clientOffset: { x: number; y: number }): DropResult => {
+      let result: DropResult = { id, position: "inside" };
+
+      if (!isContainer || !children || children.length === 0) {
+        return result;
+      }
+
+      const direction = (props?.direction as "row" | "col") || "row";
+
+      // 找到最近的子元素
+      type ClosestChildType = {
+        id: string;
+        distance: number;
+        element: Element;
+      };
+      
+      let closestChild: ClosestChildType | undefined;
+
+      children.forEach((child) => {
+        const childEl = document.querySelector(`[data-node-id="${child.id}"]`);
+        if (!childEl) return;
+
+        const distance = getDistance(childEl, clientOffset);
+        if (closestChild === undefined || distance < closestChild.distance) {
+          closestChild = { id: child.id, distance, element: childEl };
+        }
+      });
+
+      if (closestChild !== undefined) {
+        const position = getPosition(closestChild.element, clientOffset, direction);
+        result = { id: closestChild.id, position };
+      }
+
+      return result;
+    },
+    [id, isContainer, children, props?.direction]
+  );
+
+  // 合并 refs
+  const setRefs = useCallback(
     (node: HTMLDivElement | null) => {
       dragRef.current = node;
-      drag(node);
-    },
-    [drag]
-  );
-
-  const setDropRef = useCallback(
-    (node: HTMLDivElement | null) => {
       dropRef.current = node;
+      drag(node);
       drop(node);
     },
-    [drop]
+    [drag, drop]
   );
 
-  // 合并 drag 和 drop refs
-  const setRefs: any = useCallback(
-    (node: HTMLDivElement | null) => {
-      setDragRef(node);
-      setDropRef(node);
-    },
-    [setDragRef, setDropRef]
-  );
+  // 容器样式
+  const containerStyle = useMemo((): React.CSSProperties => {
+    const baseStyle: React.CSSProperties = {
+      position: "relative",
+      marginLeft: `${depth * INDENT_SIZE}px`,
+      opacity: isDragging ? 0.5 : 1,
+      padding: "8px",
+      border: "1px solid #ddd",
+      marginBottom: "4px",
+      background: "#fff",
+      cursor: "move",
+      borderRadius: "4px",
+    };
 
-  const asset = findAsset(componentName);
-  if (componentName === "Button") {
-    const Com = asset.library;
-    return <Com {...props} ref={setRefs} data-node-id={id} />;
-  }
-  if (componentName === "Container") {
-    const Com = asset.library;
+    if (isOver && !isSelected) {
+      if (dropPosition?.position === "inside" && isContainer) {
+        baseStyle.background = "#f0f9ff";
+        baseStyle.border = "2px dashed #1890ff";
+      } else {
+        baseStyle.background = "#f5f5f5";
+      }
+    }
+
+    if (!canDrop && isOver) {
+      baseStyle.border = "1px solid #ff4d4f";
+      baseStyle.background = "#fff2f0";
+    }
+
+    return baseStyle;
+  }, [depth, isDragging, isOver, isSelected, dropPosition, isContainer, canDrop]);
+
+  // 渲染子元素
+  const renderChildren = useCallback(() => {
+    if (!isContainer || !children || children.length === 0) {
+      return null;
+    }
+
+    return children.map((child, childIndex) => (
+      <NodeItem
+        key={child.id}
+        item={child}
+        depth={depth + 1}
+        index={childIndex}
+        parentId={id}
+        selectedNodeId={selectedNodeId}
+        onSelect={onSelect}
+        onDrop={onDrop}
+        findItem={findItem}
+        moveItem={moveItem}
+      />
+    ));
+  }, [isContainer, children, depth, id, selectedNodeId, onSelect, onDrop, findItem, moveItem]);
+
+  // 空容器占位符
+  const renderEmptyPlaceholder = useCallback(() => {
+    if (!isContainer || (children && children.length > 0)) {
+      return null;
+    }
+
     return (
-      <Com {...props} style={style} ref={setRefs} data-node-id={id}>
-        {/* 渲染子元素 */}
-        {isContainer && children && children.length > 0 && (
-          <>
-            {children.map((child, childIndex) => (
-              <NodeItem
-                key={child.id}
-                item={child}
-                depth={depth + 1}
-                index={childIndex}
-                parentId={id}
-                selectedNodeId={selectedNodeId}
-                onSelect={onSelect}
-                onDrop={onDrop}
-                findItem={findItem}
-                moveItem={moveItem}
-              />
-            ))}
-          </>
-        )}
-
-        {/* 空容器提示 */}
-        {isContainer && (!children || children.length === 0) && (
-          <div className="flex items-center justify-center absolute top-0 left-0 right-0 bottom-0 bg-muted m-2 p-3 border rounded text-muted-foreground text-xs">
-            {isOver && dropPosition?.position === "inside"
-              ? "释放以添加到此容器"
-              : "拖拽组件到此容器"}
-          </div>
-        )}
-      </Com>
+      <div className="flex items-center justify-center absolute top-0 left-0 right-0 bottom-0 bg-muted m-2 p-3 border rounded text-muted-foreground text-xs">
+        {isOver && dropPosition?.position === "inside"
+          ? "释放以添加到此容器"
+          : "拖拽组件到此容器"}
+      </div>
     );
-  }
-  if (componentName === "Text" && asset?.library) {
+  }, [isContainer, children, isOver, dropPosition]);
+
+  // 获取组件资源
+  const asset = useMemo(() => findAsset(componentName), [componentName]);
+
+  // ============================================
+  // 核心改进：统一的组件渲染逻辑
+  // ============================================
+  
+  // 如果找到了对应的组件库
+  if (asset?.library) {
     const Com = asset.library;
-    return <Com {...props} ref={setRefs} data-node-id={id} />;
+    
+    // 容器组件：需要渲染子元素
+    if (isContainer) {
+      return (
+        <Com
+          {...props}
+          ref={setRefs}
+          data-node-id={id}
+          style={style}
+        >
+          {renderChildren()}
+          {renderEmptyPlaceholder()}
+        </Com>
+      );
+    }
+    
+    // 非容器组件：直接渲染
+    return <Com {...props} style={style} ref={setRefs} data-node-id={id} />;
   }
-  if (componentName === "Image" && asset?.library) {
-    const Com = asset.library;
-    return <Com {...props} ref={setRefs} data-node-id={id} />;
-  }
+
+  // ============================================
+  // 降级方案：树形视图展示（用于调试或未找到组件时）
+  // ============================================
+  
+  return (
+    <div
+      ref={setRefs}
+      style={containerStyle}
+      data-node-id={id}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(item);
+      }}
+    >
+      {/* 节点信息 */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div
+          style={{
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
+            background: isContainer ? "#1890ff" : "#52c41a",
+          }}
+        />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: "bold" }}>{title || id}</div>
+          <div style={{ fontSize: "12px", color: "#666" }}>{componentName}</div>
+        </div>
+        {isContainer && (
+          <span
+            style={{
+              fontSize: "12px",
+              color: "#1890ff",
+              background: "#e6f7ff",
+              padding: "2px 8px",
+              borderRadius: "3px",
+            }}
+          >
+            容器
+          </span>
+        )}
+      </div>
+
+      {/* 子元素 */}
+      {isContainer && children && children.length > 0 && (
+        <div style={{ marginTop: "8px" }}>{renderChildren()}</div>
+      )}
+
+      {/* 空容器占位符 */}
+      {renderEmptyPlaceholder()}
+    </div>
+  );
 };
