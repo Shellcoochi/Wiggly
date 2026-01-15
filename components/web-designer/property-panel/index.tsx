@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { DesignerNode } from "../types";
+import { Binding, DataSource, DesignerNode, Variable } from "../types";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 
 import { SETTER_MAP, SetterConfig } from "../setter";
+import { BindingSelector } from "../ext/binding-selector";
 
 interface PropertyPanelProps {
   asset: any;
@@ -37,8 +38,11 @@ const parseSetterConfig = (setter: string | SetterConfig): SetterConfig => {
 const PropertyEditor: React.FC<{
   attr: any;
   value: any;
-  onChange: (value: any) => void;
-}> = ({ attr, value, onChange }) => {
+  binding?: Binding;
+  onChange: (value: any, binding?: Binding) => void;
+  variables?: Variable[];
+  dataSources?: DataSource[];
+}> = ({ attr, value, binding, onChange, variables, dataSources }) => {
   const { name, title, setter = "StringSetter" } = attr;
 
   // 解析 setter 配置
@@ -49,21 +53,23 @@ const PropertyEditor: React.FC<{
   const SetterComponent = SETTER_MAP[setterName as keyof typeof SETTER_MAP];
 
   if (!SetterComponent) {
-    console.warn(`Unknown setter: ${setterName}`);
-    return (
-      <div className="text-xs text-red-500">
-        未知的 Setter 类型: {setterName}
-      </div>
-    );
+    return <div className="text-xs text-destructive">未知 Setter</div>;
   }
 
-  // 合并默认 placeholder
-  const finalProps = {
-    placeholder: `请输入${title || name}`,
-    ...setterProps,
-  };
-
-  return <SetterComponent value={value} onChange={onChange} {...finalProps} />;
+  return (
+    <BindingSelector
+      value={value}
+      binding={binding}
+      onChange={onChange}
+      variables={variables}
+      dataSources={dataSources}
+      setterComponent={SetterComponent}
+      setterProps={{
+        placeholder: `请输入${title || name}`,
+        ...setterProps,
+      }}
+    />
+  );
 };
 
 const PropertyPanel: React.FC<PropertyPanelProps> = ({
