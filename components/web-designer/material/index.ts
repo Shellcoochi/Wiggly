@@ -2,12 +2,13 @@ import { Button } from "./button";
 import { Container } from "./container";
 import { Text } from "./text";
 import { Image } from "./image";
+import { Switch } from "./switch";
 
 // 组件配置
 const recommendedGroup = {
   title: "推荐组件",
   type: "RECOMMENDED",
-  children: [Button, Container, Text, Image],
+  children: [Button, Container, Text, Image, Switch],
 };
 
 const basicCategory = {
