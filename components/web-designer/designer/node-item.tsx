@@ -3,6 +3,7 @@ import { DesignerNode, DragItem, DropResult } from "../types";
 import { useDrag, useDrop } from "react-dnd";
 import type { DropTargetMonitor } from "react-dnd";
 import { findAsset } from "../utils/tools";
+import { resolveNodeBindings } from "../renderer";
 
 // 常量定义
 const INDENT_SIZE = 20;
@@ -54,6 +55,10 @@ interface NodeItemProps {
   ) => void;
   findItem: (id: string) => DesignerNode | undefined;
   moveItem: (dragId: string, hoverId: string, position: DropResult) => void;
+  bindingContext: {
+    variables: Record<string, any>;
+    dataSources: Record<string, any>;
+  };
 }
 
 export const NodeItem: React.FC<NodeItemProps> = ({
@@ -65,6 +70,7 @@ export const NodeItem: React.FC<NodeItemProps> = ({
   onDrop,
   findItem,
   moveItem,
+  bindingContext
 }) => {
   const { id, children, isContainer, title, componentName, props,style } = item;
   const [dropPosition, setDropPosition] = useState<DropResult | null>(null);
@@ -136,6 +142,12 @@ export const NodeItem: React.FC<NodeItemProps> = ({
       canDrop: monitor.canDrop(),
     }),
   });
+
+  // 在组件内解析绑定
+const resolvedProps = useMemo(() => 
+  resolveNodeBindings(item, bindingContext),
+  [item, bindingContext]
+);
 
   // 计算放置位置
   const calculateDropPosition = useCallback(
@@ -237,9 +249,10 @@ export const NodeItem: React.FC<NodeItemProps> = ({
         onDrop={onDrop}
         findItem={findItem}
         moveItem={moveItem}
+        bindingContext={bindingContext} 
       />
     ));
-  }, [isContainer, children, depth, id, selectedNodeId, onSelect, onDrop, findItem, moveItem]);
+  }, [isContainer, children, depth, id, selectedNodeId, onSelect, onDrop, findItem, moveItem, bindingContext]);
 
   // 空容器占位符
   const renderEmptyPlaceholder = useCallback(() => {
@@ -271,7 +284,7 @@ export const NodeItem: React.FC<NodeItemProps> = ({
     if (isContainer) {
       return (
         <Com
-          {...props}
+          {...resolvedProps}
           ref={setRefs}
           data-node-id={id}
           style={style}
@@ -283,7 +296,7 @@ export const NodeItem: React.FC<NodeItemProps> = ({
     }
     
     // 非容器组件：直接渲染
-    return <Com {...props} style={style} ref={setRefs} data-node-id={id} />;
+    return <Com {...resolvedProps} style={style} ref={setRefs} data-node-id={id} />;
   }
 
   // ============================================

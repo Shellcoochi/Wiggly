@@ -112,7 +112,7 @@ export const resolveBinding = (
 };
 
 // 解析节点的所有属性绑定
-const resolveNodeBindings = (
+export const resolveNodeBindings = (
   node: DesignerNode,
   context: {
     variables: Record<string, any>;

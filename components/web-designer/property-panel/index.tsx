@@ -13,6 +13,8 @@ interface PropertyPanelProps {
   asset: any;
   selectedNode: DesignerNode | null;
   onUpdate: (nodeId: string, updates: Partial<DesignerNode>) => void;
+  variables?: Variable[];
+  dataSources?: DataSource[];
 }
 
 // 表单字段组件
@@ -76,6 +78,8 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
   asset,
   selectedNode,
   onUpdate,
+  variables = [],
+  dataSources = [],
 }) => {
   const [localProps, setLocalProps] = useState<Record<string, any>>({});
   const [localStyle, setLocalStyle] = useState<React.CSSProperties>({});
@@ -99,15 +103,34 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
 
   // 处理属性变化（实时更新）
   const handlePropChange = useCallback(
-    (key: string, value: any) => {
+    (key: string, value: any, binding?: Binding) => {
+      // 接收 binding 参数
       if (!selectedNode) return;
 
       const newProps = { ...localProps, [key]: value };
       setLocalProps(newProps);
       setHasChanges(true);
 
+      // 构建更新对象
+      const updates: Partial<DesignerNode> = {
+        props: newProps,
+      };
+
+      // 如果有绑定,更新 bindings
+      if (binding && binding.type !== "static") {
+        updates.bindings = {
+          ...selectedNode.bindings,
+          [key]: binding,
+        };
+      } else if (selectedNode.bindings?.[key]) {
+        // 如果切换回静态模式,移除绑定
+        const newBindings = { ...selectedNode.bindings };
+        delete newBindings[key];
+        updates.bindings = newBindings;
+      }
+
       // 实时更新到父组件
-      onUpdate(selectedNode.id, { props: newProps });
+      onUpdate(selectedNode.id, updates);
     },
     [selectedNode, localProps, onUpdate]
   );
@@ -219,7 +242,12 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
                   <PropertyEditor
                     attr={attr}
                     value={localProps[attr.name]}
-                    onChange={(value) => handlePropChange(attr.name, value)}
+                    binding={selectedNode.bindings?.[attr.name]} // 传递现有绑定
+                    onChange={(value, binding) =>
+                      handlePropChange(attr.name, value, binding)
+                    } // 接收 binding
+                    variables={variables}
+                    dataSources={dataSources}
                   />
                 </FormField>
               ))}

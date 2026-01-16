@@ -4,7 +4,13 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Button } from "../../ui/button";
-import { DesignerNode, DropResult, NodePositon } from "../types";
+import {
+  DataSource,
+  DesignerNode,
+  DropResult,
+  NodePositon,
+  Variable,
+} from "../types";
 import ComponentPanel from "../sidebar-panel/component-panel";
 import PropertyPanel from "../property-panel";
 import materials from "../material";
@@ -448,6 +454,27 @@ const initialItems: DesignerNode[] = [
   },
 ];
 
+// 新增: 初始变量定义
+const initialVariables: Variable[] = [
+  {
+    id: "var1",
+    name: "userName",
+    type: "string",
+    defaultValue: "张三",
+    description: "用户名称",
+  },
+  {
+    id: "var2",
+    name: "userAge",
+    type: "number",
+    defaultValue: 25,
+    description: "用户年龄",
+  },
+];
+
+// 新增: 初始数据源
+const initialDataSources: DataSource[] = [];
+
 /** 主组件 **/
 export default function Designer() {
   const [items, setItems] = useState<DesignerNode[]>(initialItems);
@@ -456,6 +483,42 @@ export default function Designer() {
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [dropInfo, setDropInfo] = useState<DropResult | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // 新增: 变量管理
+  const [variables, setVariables] = useState<Variable[]>(initialVariables);
+  const [dataSources, setDataSources] =
+    useState<DataSource[]>(initialDataSources);
+
+  // 新增: 变量运行时值
+  const [variableValues, setVariableValues] = useState<Record<string, any>>(
+    () => {
+      const values: Record<string, any> = {};
+      initialVariables.forEach((v) => {
+        values[v.name] = v.defaultValue;
+      });
+      return values;
+    }
+  );
+
+  // 新增: 数据源运行时值
+  const [dataSourceValues, setDataSourceValues] = useState<Record<string, any>>(
+    () => {
+      const values: Record<string, any> = {};
+      initialDataSources.forEach((ds) => {
+        values[ds.id] = ds.config.data || null;
+      });
+      return values;
+    }
+  );
+
+  // 新增: 创建绑定上下文
+  const bindingContext = useMemo(
+    () => ({
+      variables: variableValues,
+      dataSources: dataSourceValues,
+    }),
+    [variableValues, dataSourceValues]
+  );
 
   // 监听器
   useEffect(() => {
@@ -483,7 +546,6 @@ export default function Designer() {
       }
     };
 
-    // 添加监听（capture 阶段）
     canvas.addEventListener("mousemove", handleMouseMove, { capture: true });
     canvas.addEventListener("click", handleClickCapture, { capture: true });
 
@@ -495,7 +557,7 @@ export default function Designer() {
         capture: true,
       });
     };
-  }, [items]); // 确保 items 更新时重新绑定（如果 findNode 依赖它）
+  }, [items]);
 
   const asset = useMemo(() => {
     if (selectedNode) {
@@ -616,7 +678,6 @@ export default function Designer() {
       let draggedItem: DesignerNode;
 
       if (source === "panel") {
-        // 从面板拖拽
         const template = snippets.find((t) => t.id === dragId);
         if (!template) {
           setErrorMessage(`找不到组件模板: ${dragId}`);
@@ -634,7 +695,6 @@ export default function Designer() {
           children: asset.configure?.component?.isContainer ? [] : undefined,
         };
       } else {
-        // 树内拖拽
         draggedItem = findItem(dragId)!;
         if (!draggedItem) {
           setErrorMessage(`找不到拖拽的元素: ${dragId}`);
@@ -648,7 +708,6 @@ export default function Designer() {
         return;
       }
 
-      // 检查是否尝试放置到自己的子节点中
       if (source === "tree") {
         const isDescendant = (parentId: string, childId: string): boolean => {
           const item = findItem(parentId);
@@ -665,7 +724,6 @@ export default function Designer() {
         }
       }
 
-      // 检查目标是否是容器
       if (position === "inside" && !dropItem.isContainer) {
         setErrorMessage(`元素 ${dropId} 不是容器，不能包含子元素`);
         return;
@@ -674,12 +732,10 @@ export default function Designer() {
       setItems((prevItems) => {
         let newItems = prevItems;
 
-        // 如果是树内拖拽，先移除原位置
         if (source === "tree") {
           newItems = removeItem(dragId, prevItems);
         }
 
-        // 插入到新位置
         return insertItem(draggedItem, dropId, position, newItems);
       });
 
@@ -710,6 +766,7 @@ export default function Designer() {
           return item;
         });
       };
+      console.log(items)
 
       setItems((prev) => updateNodeInTree(prev));
     },
@@ -727,7 +784,6 @@ export default function Designer() {
   // 移动项目的即时反馈
   const moveItem = useCallback(
     (dragId: string, hoverId: string, dropResult: DropResult) => {
-      // 这里可以实现即时视觉反馈
       setDropInfo(dropResult);
     },
     []
@@ -818,6 +874,7 @@ export default function Designer() {
               onDrop={handleDrop}
               findItem={findItem}
               moveItem={moveItem}
+              bindingContext={bindingContext} // 新增: 传递绑定上下文
             />
           ))}
 
@@ -864,6 +921,8 @@ export default function Designer() {
           asset={asset}
           selectedNode={selectedNode}
           onUpdate={updateNode}
+          variables={variables} // 新增: 传递变量列表
+          dataSources={dataSources} // 新增: 传递数据源列表
         />
       </div>
     </DndProvider>
