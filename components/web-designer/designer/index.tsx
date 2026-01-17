@@ -18,6 +18,7 @@ import { NodeSelector } from "../node-selector";
 import { NodeItem } from "./node-item";
 import { PositionIndicator } from "../position-indicator";
 import DesignerSidebar from "../sidebar-panel";
+import { DragPreviewLayer } from "./DragPreviewLayer";
 
 const { assets, snippets, categories } = materials;
 

@@ -4,6 +4,7 @@ import { useDrag, useDrop } from "react-dnd";
 import type { DropTargetMonitor } from "react-dnd";
 import { findAsset } from "../utils/tools";
 import { resolveNodeBindings } from "../renderer";
+import { cn } from "@/lib/utils";
 
 // 常量定义
 const INDENT_SIZE = 20;
@@ -12,7 +13,7 @@ const INDENT_SIZE = 20;
 // 工具函数：计算距离
 const getDistance = (
   element: Element,
-  point: { x: number; y: number }
+  point: { x: number; y: number },
 ): number => {
   const rect = element.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
@@ -24,7 +25,7 @@ const getDistance = (
 const getPosition = (
   element: Element,
   point: { x: number; y: number },
-  direction: "row" | "col"
+  direction: "row" | "col",
 ): "left" | "right" | "top" | "bottom" => {
   const rect = element.getBoundingClientRect();
   const { x, y } = point;
@@ -51,7 +52,7 @@ interface NodeItemProps {
     dragId: string,
     position: DropResult,
     source: "panel" | "tree",
-    nodeData?: DesignerNode
+    nodeData?: DesignerNode,
   ) => void;
   findItem: (id: string) => DesignerNode | undefined;
   moveItem: (dragId: string, hoverId: string, position: DropResult) => void;
@@ -70,9 +71,10 @@ export const NodeItem: React.FC<NodeItemProps> = ({
   onDrop,
   findItem,
   moveItem,
-  bindingContext
+  bindingContext,
 }) => {
-  const { id, children, isContainer, title, componentName, props,style } = item;
+  const { id, children, isContainer, title, componentName, props, style } =
+    item;
   const [dropPosition, setDropPosition] = useState<DropResult | null>(null);
   const isSelected = selectedNodeId === id;
   const dragRef = useRef<HTMLDivElement>(null);
@@ -109,7 +111,7 @@ export const NodeItem: React.FC<NodeItemProps> = ({
       // 节流优化 - 移除 Date.now() 调用
       // React 19 不允许在 render 阶段调用 Date.now()
       // 改用简单的计数器或移除节流
-      
+
       if (!monitor.isOver({ shallow: true }) || !monitor.canDrop()) {
         setDropPosition(null);
         return;
@@ -134,7 +136,12 @@ export const NodeItem: React.FC<NodeItemProps> = ({
       }
 
       const position = dropPosition || { id, position: "inside" };
-      onDrop(dragItem.id, position, dragItem.source || "tree", dragItem.nodeData);
+      onDrop(
+        dragItem.id,
+        position,
+        dragItem.source || "tree",
+        dragItem.nodeData,
+      );
       return position;
     },
     collect: (monitor) => ({
@@ -144,10 +151,10 @@ export const NodeItem: React.FC<NodeItemProps> = ({
   });
 
   // 在组件内解析绑定
-const resolvedProps = useMemo(() => 
-  resolveNodeBindings(item, bindingContext),
-  [item, bindingContext]
-);
+  const resolvedProps = useMemo(
+    () => resolveNodeBindings(item, bindingContext),
+    [item, bindingContext],
+  );
 
   // 计算放置位置
   const calculateDropPosition = useCallback(
@@ -166,7 +173,7 @@ const resolvedProps = useMemo(() =>
         distance: number;
         element: Element;
       };
-      
+
       let closestChild: ClosestChildType | undefined;
 
       children.forEach((child) => {
@@ -180,13 +187,17 @@ const resolvedProps = useMemo(() =>
       });
 
       if (closestChild !== undefined) {
-        const position = getPosition(closestChild.element, clientOffset, direction);
+        const position = getPosition(
+          closestChild.element,
+          clientOffset,
+          direction,
+        );
         result = { id: closestChild.id, position };
       }
 
       return result;
     },
-    [id, isContainer, children, props?.direction]
+    [id, isContainer, children, props?.direction],
   );
 
   // 合并 refs
@@ -197,7 +208,7 @@ const resolvedProps = useMemo(() =>
       drag(node);
       drop(node);
     },
-    [drag, drop]
+    [drag, drop],
   );
 
   // 容器样式
@@ -229,7 +240,15 @@ const resolvedProps = useMemo(() =>
     }
 
     return baseStyle;
-  }, [depth, isDragging, isOver, isSelected, dropPosition, isContainer, canDrop]);
+  }, [
+    depth,
+    isDragging,
+    isOver,
+    isSelected,
+    dropPosition,
+    isContainer,
+    canDrop,
+  ]);
 
   // 渲染子元素
   const renderChildren = useCallback(() => {
@@ -249,10 +268,21 @@ const resolvedProps = useMemo(() =>
         onDrop={onDrop}
         findItem={findItem}
         moveItem={moveItem}
-        bindingContext={bindingContext} 
+        bindingContext={bindingContext}
       />
     ));
-  }, [isContainer, children, depth, id, selectedNodeId, onSelect, onDrop, findItem, moveItem, bindingContext]);
+  }, [
+    isContainer,
+    children,
+    depth,
+    id,
+    selectedNodeId,
+    onSelect,
+    onDrop,
+    findItem,
+    moveItem,
+    bindingContext,
+  ]);
 
   // 空容器占位符
   const renderEmptyPlaceholder = useCallback(() => {
@@ -261,7 +291,19 @@ const resolvedProps = useMemo(() =>
     }
 
     return (
-      <div className="flex items-center justify-center absolute top-0 left-0 right-0 bottom-0 bg-muted m-2 p-3 border rounded text-muted-foreground text-xs">
+      <div
+        className={cn(
+          "flex items-center justify-center w-full",
+          "min-h-12", // 👈 关键：撑开容器
+          "m-2 p-3",
+          "rounded-md border border-dashed",
+          "text-xs text-muted-foreground",
+          "transition-colors",
+          isOver && dropPosition?.position === "inside"
+            ? "bg-accent/50 border-primary text-foreground"
+            : "bg-muted/30 border-border",
+        )}
+      >
         {isOver && dropPosition?.position === "inside"
           ? "释放以添加到此容器"
           : "拖拽组件到此容器"}
@@ -275,34 +317,31 @@ const resolvedProps = useMemo(() =>
   // ============================================
   // 核心改进：统一的组件渲染逻辑
   // ============================================
-  
+
   // 如果找到了对应的组件库
   if (asset?.library) {
     const Com = asset.library;
-    
+
     // 容器组件：需要渲染子元素
     if (isContainer) {
       return (
-        <Com
-          {...resolvedProps}
-          ref={setRefs}
-          data-node-id={id}
-          style={style}
-        >
+        <Com {...resolvedProps} ref={setRefs} data-node-id={id} style={style}>
           {renderChildren()}
           {renderEmptyPlaceholder()}
         </Com>
       );
     }
-    
+
     // 非容器组件：直接渲染
-    return <Com {...resolvedProps} style={style} ref={setRefs} data-node-id={id} />;
+    return (
+      <Com {...resolvedProps} style={style} ref={setRefs} data-node-id={id} />
+    );
   }
 
   // ============================================
   // 降级方案：树形视图展示（用于调试或未找到组件时）
   // ============================================
-  
+
   return (
     <div
       ref={setRefs}
