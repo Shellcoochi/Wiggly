@@ -3,6 +3,7 @@ import { Container } from "./container";
 import { Text } from "./text";
 import { Image } from "./image";
 import { Switch } from "./switch";
+import { TextInput } from "./text-input";
 
 // 组件配置
 const recommendedGroup = {
@@ -14,7 +15,7 @@ const recommendedGroup = {
 const formGroup = {
   title: "表单组件",
   type: "FORM",
-  children: [Switch],
+  children: [TextInput,Switch],
 };
 
 const basicCategory = {
