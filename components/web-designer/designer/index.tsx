@@ -11,7 +11,6 @@ import {
   NodePositon,
   Variable,
 } from "../types";
-import ComponentPanel from "../sidebar-panel/component-panel";
 import PropertyPanel from "../property-panel";
 import materials from "../material";
 import { findNode, generateNodeId } from "../utils/tools";
@@ -678,7 +677,7 @@ export default function Designer() {
       let draggedItem: DesignerNode;
 
       if (source === "panel") {
-        const template = snippets.find((t) => t.id === dragId);
+        const template = snippets.find((t: { id: string; }) => t.id === dragId);
         if (!template) {
           setErrorMessage(`找不到组件模板: ${dragId}`);
           return;
@@ -804,6 +803,10 @@ export default function Designer() {
           onDragStart={(template) => {
             console.log("开始拖拽:", template);
           }}
+          variables={variables}
+          variableValues={variableValues}
+          onVariablesChange={setVariables}
+          onVariableValuesChange={setVariableValues}
         />
 
         {/* 中间画布区域 */}
