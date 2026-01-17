@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useCanvasRelativeRect } from "../hooks/use-canvas-relative-rect";
 
 export const NodeSelector: React.FC<{
@@ -7,10 +7,16 @@ export const NodeSelector: React.FC<{
   isSelected?: boolean;
 }> = ({ nodeId, canvasRef, isSelected = false }) => {
   const boxRef = useRef<HTMLDivElement>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   const getRect = useCanvasRelativeRect(canvasRef);
 
-  useEffect(() => {
-    const update = () => {
+  const update = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    animationFrameRef.current = requestAnimationFrame(() => {
       const canvas = canvasRef.current;
       const targetEl = canvas?.querySelector<HTMLElement>(
         `[data-node-id="${nodeId}"]`
@@ -33,20 +39,43 @@ export const NodeSelector: React.FC<{
         zIndex: 1000,
         boxSizing: "border-box",
       });
-    };
+    });
+  }, [nodeId, isSelected, getRect, canvasRef]);
+
+  useEffect(() => {
     update();
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const targetEl = canvas.querySelector<HTMLElement>(
+      `[data-node-id="${nodeId}"]`
+    );
+    
+    if (targetEl) {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+      
+      resizeObserverRef.current = new ResizeObserver(update);
+      resizeObserverRef.current.observe(targetEl);
+    }
+
     canvas.addEventListener("scroll", update);
     window.addEventListener("resize", update);
 
     return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
       canvas.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-  }, [nodeId, isSelected, getRect, canvasRef]);
+  }, [update, canvasRef]);
 
   return <div ref={boxRef} />;
 };
