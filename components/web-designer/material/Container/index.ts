@@ -12,7 +12,15 @@ const asset = {
       {
         name: "direction",
         title: "布局",
-        setter: "StringSetter",
+        setter: {
+          name: "SelectSetter",
+          props: {
+            options: [
+              { label: "横向布局", value: "row" },
+              { label: "纵向布局", value: "col" },
+            ],
+          },
+        },
       },
     ],
     supports: {
