@@ -1,6 +1,8 @@
+// binding-selector.tsx - 重新设计的解决方案
+
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Binding, BindingType, Variable, DataSource } from "../types";
 import {
   Select,
@@ -18,10 +20,8 @@ interface BindingSelectorProps {
   value: any;
   binding?: Binding;
   onChange: (value: any, binding?: Binding) => void;
-  // 可用的变量和数据源
   variables?: Variable[];
   dataSources?: DataSource[];
-  // Setter 配置（用于静态值）
   setterComponent: React.ComponentType<any>;
   setterProps?: any;
 }
@@ -35,31 +35,88 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
   setterComponent: SetterComponent,
   setterProps = {},
 }) => {
-  const [mode, setMode] = useState<BindingType>(binding?.type || "static");
-  const [localBinding, setLocalBinding] = useState<Binding>(
-    binding || { type: "static", value }
-  );
+  const [mode, setMode] = useState<BindingType>("static");
+  const [localBinding, setLocalBinding] = useState<Binding>({ type: "static", value });
+  
+  // 关键：静态值的来源
+  // 1. 如果 binding 存在且有 value，使用 binding.value（这是保存的原始静态值）
+  // 2. 否则使用 props 传入的 value
+  const [staticValue, setStaticValue] = useState(() => {
+    if (binding?.value !== undefined) {
+      return binding.value;
+    }
+    return value;
+  });
+
+  // 当外部 props 变化时同步状态
+  useEffect(() => {
+    if (binding) {
+      setMode(binding.type);
+      setLocalBinding(binding);
+      
+      // 关键逻辑：
+      // binding.value 是切换到绑定模式前保存的静态值
+      // 这个值在组件切换时应该保持不变
+      if (binding.value !== undefined) {
+        setStaticValue(binding.value);
+      }
+    } else {
+      // 没有 binding，说明是纯静态模式
+      setMode("static");
+      setLocalBinding({ type: "static", value });
+      setStaticValue(value);
+    }
+  }, [binding, value, ]);
 
   // 切换绑定模式
   const handleModeChange = (newMode: BindingType) => {
     setMode(newMode);
-    const newBinding: Binding = { type: newMode, value };
-    setLocalBinding(newBinding);
-    onChange(value, newBinding);
+    
+    if (newMode === "static") {
+      // 切换回静态：使用保存的静态值
+      const newBinding: Binding = { 
+        type: "static", 
+        value: staticValue 
+      };
+      setLocalBinding(newBinding);
+      onChange(staticValue, newBinding);
+    } else {
+      // 切换到绑定模式：创建绑定，并保存当前静态值
+      const newBinding: Binding = { 
+        type: newMode,
+        value: staticValue // 保存静态值
+      };
+      setLocalBinding(newBinding);
+      onChange(staticValue, newBinding);
+    }
   };
 
   // 更新绑定配置
   const updateBinding = (updates: Partial<Binding>) => {
     const newBinding = { ...localBinding, ...updates };
+    
+    // 如果更新的是 value（静态值更新），同步 staticValue
+    if (updates.value !== undefined) {
+      setStaticValue(updates.value);
+    }
+    
     setLocalBinding(newBinding);
     onChange(newBinding.value, newBinding);
   };
 
-  // 判断是否有绑定
   const hasBinding = mode !== "static";
 
   return (
     <div className="space-y-2">
+      {/* 调试信息 */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs bg-yellow-50 border border-yellow-200 p-2 rounded">
+          <div>Mode: {mode}</div>
+          <div>Static Value: {JSON.stringify(staticValue)}</div>
+          <div>Binding Value: {JSON.stringify(binding?.value)}</div>
+        </div>
+      )}
+      
       {/* 绑定模式切换 */}
       <div className="flex gap-1 bg-muted p-1 rounded-md">
         <Button
@@ -104,10 +161,10 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
         )}
       >
         {mode === "static" && (
-          // 静态值：使用原有的 Setter
           <SetterComponent
-            value={value}
+            value={staticValue}
             onChange={(newValue: any) => {
+              setStaticValue(newValue);
               updateBinding({ value: newValue });
             }}
             {...setterProps}
@@ -115,17 +172,15 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
         )}
 
         {mode === "variable" && (
-          // 变量绑定
           <div className="space-y-2">
             <Label className="text-xs">选择变量</Label>
             {variables.length > 0 ? (
               <Select
                 value={localBinding.variablePath || ""}
                 onValueChange={(path) => {
-                  const variable = variables.find((v) => v.name === path);
                   updateBinding({
                     variablePath: path,
-                    value: variable?.defaultValue,
+                    // 保持 value 不变（这是静态值）
                   });
                 }}
               >
@@ -162,7 +217,6 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
         )}
 
         {mode === "expression" && (
-          // 表达式绑定
           <div className="space-y-2">
             <Label className="text-xs">表达式</Label>
             <Input
@@ -180,7 +234,6 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
         )}
 
         {mode === "datasource" && (
-          // 数据源绑定
           <div className="space-y-3">
             <div className="space-y-2">
               <Label className="text-xs">选择数据源</Label>

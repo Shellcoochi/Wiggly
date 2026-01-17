@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -83,58 +84,63 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
 }) => {
   const [localProps, setLocalProps] = useState<Record<string, any>>({});
   const [localStyle, setLocalStyle] = useState<React.CSSProperties>({});
+  const [localBindings, setLocalBindings] = useState<Record<string, Binding>>(
+    {},
+  ); // 新增
   const [hasChanges, setHasChanges] = useState(false);
 
-  // 同步选中节点的数据
+  // 修改：同步选中节点的数据，包括 bindings
   useEffect(() => {
     if (selectedNode) {
       setLocalProps(selectedNode.props || {});
       setLocalStyle(selectedNode.style || {});
+      setLocalBindings(selectedNode.bindings || {}); // 新增：同步 bindings
       setHasChanges(false);
     } else {
       setLocalProps({});
       setLocalStyle({});
+      setLocalBindings({}); // 新增：清空 bindings
       setHasChanges(false);
     }
-  }, [selectedNode]);
+  }, [selectedNode?.id]); // 修改：依赖项改为 selectedNode?.id
 
   // 获取配置的属性列表
   const configProps = useMemo(() => asset?.configure?.props || [], [asset]);
 
-  // 处理属性变化（实时更新）
+  // 在 PropertyPanel 组件中找到这个函数，替换为：
   const handlePropChange = useCallback(
     (key: string, value: any, binding?: Binding) => {
-      // 接收 binding 参数
       if (!selectedNode) return;
 
       const newProps = { ...localProps, [key]: value };
       setLocalProps(newProps);
+
+      // 更新 bindings
+      let newBindings = { ...localBindings };
+      if (binding && binding.type !== "static") {
+        // 关键修复：添加或更新绑定时，确保 binding.value 保存的是静态值
+        const existingBinding = localBindings[key];
+        newBindings[key] = {
+          ...binding,
+          // 优先使用已存在的 binding.value（原始静态值）
+          // 如果没有，使用当前 props 值
+          value: existingBinding?.value ?? localProps[key] ?? value,
+        };
+      } else {
+        // 移除绑定（切回静态值）
+        delete newBindings[key];
+      }
+      setLocalBindings(newBindings);
       setHasChanges(true);
 
-      // 构建更新对象
-      const updates: Partial<DesignerNode> = {
-        props: newProps,
-      };
-
-      // 如果有绑定,更新 bindings
-      if (binding && binding.type !== "static") {
-        updates.bindings = {
-          ...selectedNode.bindings,
-          [key]: binding,
-        };
-      } else if (selectedNode.bindings?.[key]) {
-        // 如果切换回静态模式,移除绑定
-        const newBindings = { ...selectedNode.bindings };
-        delete newBindings[key];
-        updates.bindings = newBindings;
-      }
-
       // 实时更新到父组件
-      onUpdate(selectedNode.id, updates);
+      onUpdate(selectedNode.id, {
+        props: newProps,
+        bindings: newBindings,
+      });
     },
-    [selectedNode, localProps, onUpdate]
+    [selectedNode, localProps, localBindings, onUpdate],
   );
-
   // 处理样式变化
   const handleStyleChange = useCallback(
     (key: string, value: any) => {
@@ -142,25 +148,27 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
       setLocalStyle(newStyle);
       setHasChanges(true);
     },
-    [localStyle]
+    [localStyle],
   );
 
-  // 应用所有更改
+  // 修改：应用所有更改
   const handleSave = useCallback(() => {
     if (selectedNode) {
       onUpdate(selectedNode.id, {
         props: { ...localProps },
         style: { ...localStyle },
+        bindings: { ...localBindings }, // 新增：保存 bindings
       });
       setHasChanges(false);
     }
-  }, [selectedNode, localProps, localStyle, onUpdate]);
+  }, [selectedNode, localProps, localStyle, localBindings, onUpdate]); // 修改：添加 localBindings 依赖
 
-  // 重置更改
+  // 修改：重置更改
   const handleReset = useCallback(() => {
     if (selectedNode) {
       setLocalProps(selectedNode.props || {});
       setLocalStyle(selectedNode.style || {});
+      setLocalBindings(selectedNode.bindings || {}); // 新增：重置 bindings
       setHasChanges(false);
     }
   }, [selectedNode]);
@@ -242,10 +250,10 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
                   <PropertyEditor
                     attr={attr}
                     value={localProps[attr.name]}
-                    binding={selectedNode.bindings?.[attr.name]} // 传递现有绑定
+                    binding={localBindings[attr.name]}
                     onChange={(value, binding) =>
                       handlePropChange(attr.name, value, binding)
-                    } // 接收 binding
+                    }
                     variables={variables}
                     dataSources={dataSources}
                   />
@@ -302,7 +310,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           </div>
         </section>
 
-        {/* 预览 */}
+        {/* 预览 - 修改：显示 bindings */}
         <section>
           <h4 className="text-sm font-medium mb-3 text-gray-700 flex items-center">
             <span className="w-1 h-4 bg-orange-500 rounded mr-2" />
@@ -317,9 +325,10 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
                   componentName: selectedNode.componentName,
                   props: localProps,
                   style: localStyle,
+                  bindings: localBindings,
                 },
                 null,
-                2
+                2,
               )}
             </pre>
           </div>
