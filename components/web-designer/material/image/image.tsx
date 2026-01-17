@@ -90,7 +90,7 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
       fill = false,
       priority = false,
       sizes = "100vw",
-      quality = 85,
+      quality = 75,
       className,
       style,
       ...props

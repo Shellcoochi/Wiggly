@@ -1,3 +1,5 @@
+"use client";
+
 import Designer from "@/components/web-designer/designer";
 
 export default function Workflow() {
