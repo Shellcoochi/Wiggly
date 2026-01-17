@@ -8,13 +8,19 @@ import { Switch } from "./switch";
 const recommendedGroup = {
   title: "推荐组件",
   type: "RECOMMENDED",
-  children: [Button, Container, Text, Image, Switch],
+  children: [Button, Container, Text, Image],
+};
+
+const formGroup = {
+  title: "表单组件",
+  type: "FORM",
+  children: [Switch],
 };
 
 const basicCategory = {
   title: "基础组件",
   type: "BASIC",
-  children: [recommendedGroup],
+  children: [recommendedGroup, formGroup],
 };
 
 const categories = [basicCategory];
