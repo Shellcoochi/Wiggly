@@ -825,8 +825,8 @@ export default function Designer() {
         />
 
         <div className="flex-1 flex overflow-hidden">
-          {/* 左侧：组件/资源面板 - 增加阴影和边界线 */}
-          <div className="w-72 border-r bg-card shrink-0 z-10 shadow-sm">
+          {/* 左侧：组件/资源面板 */}
+          <div className="w-72 border-r bg-card shrink-0 z-10 shadow-sm border-border">
             <DesignerSidebar
               templates={categories}
               variables={variables}
@@ -836,9 +836,9 @@ export default function Designer() {
             />
           </div>
 
-          {/* 中间：主工作区 - 增加背景网格和缩放容器 */}
-          <main className="flex-1 relative bg-slate-50 dark:bg-slate-950 flex flex-col overflow-hidden">
-            {/* 工具条：放置删除按钮、缩放比例、状态提示 */}
+          {/* 中间：主工作区 */}
+          <main className="flex-1 relative bg-background flex flex-col overflow-hidden">
+            {/* 工具条 */}
             <div className="h-12 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-2">
                 <Button
@@ -882,7 +882,7 @@ export default function Designer() {
             >
               {/* 模拟页面纸张感 */}
               <div
-                className="mx-auto bg-white dark:bg-gray-900 shadow-2xl ring-1 ring-black/5 min-h-full transition-all duration-300 origin-top"
+                className="mx-auto bg-card shadow-2xl ring-1 ring-black/5 min-h-full transition-all duration-300 origin-top"
                 style={{
                   transform: `scale(${zoom / 100})`,
                 }}
@@ -934,8 +934,8 @@ export default function Designer() {
             </div>
           </main>
 
-          {/* 右侧：属性面板 - 增加宽度和左边界 */}
-          <div className="w-80 border-l bg-card shrink-0 z-10">
+          {/* 右侧：属性面板 */}
+          <div className="w-80 border-l bg-card shrink-0 z-10 shadow-sm border-border">
             <PropertyPanel
               asset={asset}
               selectedNode={selectedNode}
