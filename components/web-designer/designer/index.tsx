@@ -18,7 +18,7 @@ import { NodeSelector } from "../node-selector";
 import { NodeItem } from "./node-item";
 import { PositionIndicator } from "../position-indicator";
 import DesignerSidebar from "../sidebar-panel";
-import { DragPreviewLayer } from "./DragPreviewLayer";
+import DesignerHeader, { ViewMode } from "./designer-header";
 
 const { assets, snippets, categories } = materials;
 
@@ -484,6 +484,11 @@ export default function Designer() {
   const [dropInfo, setDropInfo] = useState<DropResult | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  const [viewMode, setViewMode] = useState<ViewMode>("design");
+  const [zoom, setZoom] = useState(100);
+  const [canUndo, setCanUndo] = useState(true);
+  const [canRedo, setCanRedo] = useState(true);
+
   // 新增: 变量管理
   const [variables, setVariables] = useState<Variable[]>(initialVariables);
   const [dataSources, setDataSources] =
@@ -678,7 +683,7 @@ export default function Designer() {
       let draggedItem: DesignerNode;
 
       if (source === "panel") {
-        const template = snippets.find((t: { id: string; }) => t.id === dragId);
+        const template = snippets.find((t: { id: string }) => t.id === dragId);
         if (!template) {
           setErrorMessage(`找不到组件模板: ${dragId}`);
           return;
@@ -766,11 +771,11 @@ export default function Designer() {
           return item;
         });
       };
-      console.log(items)
+      console.log(items);
 
       setItems((prev) => updateNodeInTree(prev));
     },
-    [selectedNode]
+    [items, selectedNode?.id]
   );
 
   // 删除节点
@@ -791,143 +796,164 @@ export default function Designer() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div
-        style={{
-          display: "flex",
-          height: "100vh",
-          overflow: "hidden",
-        }}
-      >
-        {/* 左侧组件面板 */}
-        <DesignerSidebar
-          templates={categories}
-          onDragStart={(template) => {
-            console.log("开始拖拽:", template);
+      <div className="h-screen flex flex-col bg-background">
+        <DesignerHeader
+          projectName="电商管理系统"
+          pageName="商品列表"
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={() => {
+            console.log("撤销");
+            setCanUndo(false);
           }}
-          variables={variables}
-          variableValues={variableValues}
-          onVariablesChange={setVariables}
-          onVariableValuesChange={setVariableValues}
+          onRedo={() => {
+            console.log("重做");
+            setCanRedo(false);
+          }}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          zoom={zoom}
+          onZoomChange={setZoom}
+          onSave={() => console.log("保存")}
+          onPublish={() => console.log("发布")}
+          onShare={() => console.log("分享")}
+          onPageChange={(id) => console.log("切换页面:", id)}
+          onCreatePage={() => console.log("新建页面")}
+          onSettings={() => console.log("设置")}
+          onLogout={() => console.log("退出登录")}
         />
+        <div className="h-full flex items-center justify-center bg-muted/30 overflow-hidden">
+          {/* 左侧组件面板 */}
+          <DesignerSidebar
+            templates={categories}
+            onDragStart={(template) => {
+              console.log("开始拖拽:", template);
+            }}
+            variables={variables}
+            variableValues={variableValues}
+            onVariablesChange={setVariables}
+            onVariableValuesChange={setVariableValues}
+          />
 
-        {/* 中间画布区域 */}
-        <div ref={canvasRef} className="flex-1 overflow-auto relative">
-          {/* 错误提示 */}
-          {errorMessage && (
-            <div
-              style={{
-                padding: "10px",
-                marginBottom: "10px",
-                backgroundColor: "#fff2f0",
-                border: "1px solid #ffccc7",
-                borderRadius: "4px",
-                color: "#ff4d4f",
-              }}
-            >
-              {errorMessage}
-              <button
-                onClick={() => setErrorMessage(null)}
+          {/* 中间画布区域 */}
+          <div ref={canvasRef} className="flex-1 h-full overflow-auto relative">
+            {/* 错误提示 */}
+            {errorMessage && (
+              <div
                 style={{
-                  marginLeft: "10px",
-                  background: "none",
-                  border: "none",
+                  padding: "10px",
+                  marginBottom: "10px",
+                  backgroundColor: "#fff2f0",
+                  border: "1px solid #ffccc7",
+                  borderRadius: "4px",
                   color: "#ff4d4f",
-                  cursor: "pointer",
                 }}
               >
-                ×
-              </button>
-            </div>
-          )}
+                {errorMessage}
+                <button
+                  onClick={() => setErrorMessage(null)}
+                  style={{
+                    marginLeft: "10px",
+                    background: "none",
+                    border: "none",
+                    color: "#ff4d4f",
+                    cursor: "pointer",
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
 
-          {/* 操作按钮 */}
-          <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (selectedNode) {
-                  deleteNode(selectedNode.id);
-                }
-              }}
-              disabled={!selectedNode || selectedNode.id === "root"}
-            >
-              删除选中
-            </Button>
-            <div
-              style={{
-                flex: 1,
-                textAlign: "right",
-                fontSize: "14px",
-                color: "#666",
-              }}
-            >
-              当前选中: {selectedNode ? selectedNode.title : "无"}
+            {/* 操作按钮 */}
+            <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (selectedNode) {
+                    deleteNode(selectedNode.id);
+                  }
+                }}
+                disabled={!selectedNode || selectedNode.id === "root"}
+              >
+                删除选中
+              </Button>
+              <div
+                style={{
+                  flex: 1,
+                  textAlign: "right",
+                  fontSize: "14px",
+                  color: "#666",
+                }}
+              >
+                当前选中: {selectedNode ? selectedNode.title : "无"}
+              </div>
+            </div>
+
+            {/* 组件树 */}
+            {items.map((item, index) => (
+              <NodeItem
+                key={item.id}
+                item={item}
+                depth={0}
+                index={index}
+                parentId={null}
+                selectedNodeId={selectedNode?.id || null}
+                onSelect={setSelectedNode}
+                onDrop={handleDrop}
+                findItem={findItem}
+                moveItem={moveItem}
+                bindingContext={bindingContext} // 新增: 传递绑定上下文
+              />
+            ))}
+
+            {/* 提示信息 */}
+            {!selectedNode && (
+              <div
+                style={{
+                  marginTop: "20px",
+                  padding: "20px",
+                  background: "#fafafa",
+                  border: "1px dashed #d9d9d9",
+                  borderRadius: "4px",
+                  textAlign: "center",
+                  color: "#999",
+                }}
+              >
+                点击组件以选中，在右侧面板编辑属性
+              </div>
+            )}
+            {/* Overlay 高亮层 */}
+            <div className="absolute inset-0 pointer-events-none">
+              {hoveredNodeId && hoveredNodeId !== selectedNode?.id && (
+                <NodeSelector nodeId={hoveredNodeId} canvasRef={canvasRef} />
+              )}
+              {selectedNode && (
+                <NodeSelector
+                  nodeId={selectedNode.id}
+                  canvasRef={canvasRef}
+                  isSelected
+                />
+              )}
+              {dropInfo?.id && (
+                <PositionIndicator
+                  canvasRef={canvasRef}
+                  nodeId={dropInfo?.id}
+                  position={dropInfo.position}
+                />
+              )}
             </div>
           </div>
 
-          {/* 组件树 */}
-          {items.map((item, index) => (
-            <NodeItem
-              key={item.id}
-              item={item}
-              depth={0}
-              index={index}
-              parentId={null}
-              selectedNodeId={selectedNode?.id || null}
-              onSelect={setSelectedNode}
-              onDrop={handleDrop}
-              findItem={findItem}
-              moveItem={moveItem}
-              bindingContext={bindingContext} // 新增: 传递绑定上下文
-            />
-          ))}
-
-          {/* 提示信息 */}
-          {!selectedNode && (
-            <div
-              style={{
-                marginTop: "20px",
-                padding: "20px",
-                background: "#fafafa",
-                border: "1px dashed #d9d9d9",
-                borderRadius: "4px",
-                textAlign: "center",
-                color: "#999",
-              }}
-            >
-              点击组件以选中，在右侧面板编辑属性
-            </div>
-          )}
-          {/* Overlay 高亮层 */}
-          <div className="absolute inset-0 pointer-events-none">
-            {hoveredNodeId && hoveredNodeId !== selectedNode?.id && (
-              <NodeSelector nodeId={hoveredNodeId} canvasRef={canvasRef} />
-            )}
-            {selectedNode && (
-              <NodeSelector
-                nodeId={selectedNode.id}
-                canvasRef={canvasRef}
-                isSelected
-              />
-            )}
-            {dropInfo?.id && (
-              <PositionIndicator
-                canvasRef={canvasRef}
-                nodeId={dropInfo?.id}
-                position={dropInfo.position}
-              />
-            )}
-          </div>
+          {/* 右侧属性面板 */}
+          <PropertyPanel
+            asset={asset}
+            selectedNode={selectedNode}
+            onUpdate={updateNode}
+            variables={variables} // 新增: 传递变量列表
+            dataSources={dataSources} // 新增: 传递数据源列表
+          />
         </div>
-
-        {/* 右侧属性面板 */}
-        <PropertyPanel
-          asset={asset}
-          selectedNode={selectedNode}
-          onUpdate={updateNode}
-          variables={variables} // 新增: 传递变量列表
-          dataSources={dataSources} // 新增: 传递数据源列表
-        />
       </div>
     </DndProvider>
   );
