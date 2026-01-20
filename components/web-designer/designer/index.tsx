@@ -10,6 +10,7 @@ import {
   DesignerNode,
   DropResult,
   NodePositon,
+  Positon,
   Variable,
 } from "../types";
 import PropertyPanel from "../property-panel";
@@ -58,6 +59,11 @@ export default function Designer() {
   const [selectedNode, setSelectedNode] = useState<DesignerNode | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [dropInfo, setDropInfo] = useState<DropResult | null>(null);
+  // 新增:大纲拖拽状态(用于在画布显示指示器)
+  const [outlineDropInfo, setOutlineDropInfo] = useState<{
+    nodeId: string;
+    position: Positon;
+  } | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const [viewMode, setViewMode] = useState<ViewMode>("design");
@@ -203,7 +209,7 @@ export default function Designer() {
         if (node.id === targetId) {
           if (position === "inside") {
             if (!node.isContainer) {
-              toast.warning(`元素 ${targetId} 不是容器，不能包含子元素`);
+              toast.warning(`元素 ${targetId} 不是容器,不能包含子元素`);
               return [node];
             }
             return [
@@ -303,7 +309,7 @@ export default function Designer() {
       }
 
       if (position === "inside" && !dropItem.isContainer) {
-        toast.warning(`元素 ${dropId} 不是容器，不能包含子元素`);
+        toast.warning(`元素 ${dropId} 不是容器,不能包含子元素`);
         return;
       }
 
@@ -322,6 +328,76 @@ export default function Designer() {
     },
     [findItem, removeItem, insertItem]
   );
+
+  // 新增:大纲面板移动处理
+  const handleOutlineMove = useCallback(
+    (dragId: string, targetId: string, position: "before" | "after" | "inside") => {
+      const draggedItem = findItem(dragId);
+      if (!draggedItem) {
+        toast.warning(`找不到拖拽的元素: ${dragId}`);
+        return;
+      }
+
+      const targetItem = findItem(targetId);
+      if (!targetItem) {
+        toast.warning(`找不到目标元素: ${targetId}`);
+        return;
+      }
+
+      // 检查是否拖拽到自己的后代
+      const isDescendant = (parentId: string, childId: string): boolean => {
+        const item = findItem(parentId);
+        if (!item) return false;
+        if (item.children?.some((child) => child.id === childId)) return true;
+        return !!item.children?.some((child) =>
+          isDescendant(child.id, childId)
+        );
+      };
+
+      if (position === "inside" && isDescendant(dragId, targetId)) {
+        toast.warning(`不能将父节点拖拽到子节点中`);
+        return;
+      }
+
+      if (position === "inside" && !targetItem.isContainer) {
+        toast.warning(`元素 ${targetId} 不是容器,不能包含子元素`);
+        return;
+      }
+
+      setItems((prevItems) => {
+        const newItems = removeItem(dragId, prevItems);
+        return insertItem(draggedItem, targetId, position, newItems);
+      });
+
+      toast.success("移动成功");
+    },
+    [findItem, removeItem, insertItem]
+  );
+
+  // 新增:处理大纲拖拽悬停(在画布显示位置指示器)
+  const handleOutlineHover = useCallback(
+    (dragId: string, targetId: string, position: "before" | "after" | "inside") => {
+      // 转换position格式以适配PositionIndicator组件
+      let canvasPosition: "left" | "right" | "top" | "bottom" | "inside" = "inside";
+      if (position === "before") {
+        canvasPosition = "top";
+      } else if (position === "after") {
+        canvasPosition = "bottom";
+      } else {
+        canvasPosition = "inside";
+      }
+
+      setOutlineDropInfo({
+        nodeId: targetId,
+        position: canvasPosition as any,
+      });
+    },
+    []
+  );
+
+  const handleOutlineHoverEnd = useCallback(() => {
+    setOutlineDropInfo(null);
+  }, []);
 
   // 更新节点属性
   const updateNode = useCallback(
@@ -344,11 +420,10 @@ export default function Designer() {
           return item;
         });
       };
-      console.log(items);
 
       setItems((prev) => updateNodeInTree(prev));
     },
-    [items, selectedNode?.id]
+    [selectedNode?.id]
   );
 
   // 删除节点
@@ -366,6 +441,26 @@ export default function Designer() {
     },
     []
   );
+
+  // 将画布dropInfo转换为大纲canvasDropInfo
+  const canvasDropInfoForOutline = useMemo(() => {
+    if (!dropInfo) return null;
+
+    let position: "before" | "after" | "inside" = "inside";
+    
+    if (dropInfo.position === "left" || dropInfo.position === "top") {
+      position = "before";
+    } else if (dropInfo.position === "right" || dropInfo.position === "bottom") {
+      position = "after";
+    } else if (dropInfo.position === "inside") {
+      position = "inside";
+    }
+
+    return {
+      nodeId: dropInfo.id,
+      position,
+    };
+  }, [dropInfo]);
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -398,7 +493,7 @@ export default function Designer() {
         />
 
         <div className="flex-1 flex overflow-hidden">
-          {/* 左侧：组件/资源面板 */}
+          {/* 左侧:组件/资源面板 */}
           <div className="w-72 border-r bg-card shrink-0 z-10 shadow-sm border-border">
             <DesignerSidebar
               templates={categories}
@@ -406,12 +501,19 @@ export default function Designer() {
               variableValues={variableValues}
               onVariablesChange={setVariables}
               onVariableValuesChange={setVariableValues}
+              items={items}
+              selectedNodeId={selectedNode?.id || null}
+              onSelectNode={setSelectedNode}
+              onMoveNode={handleOutlineMove}
+              onHoverNode={handleOutlineHover}
+              onHoverEndNode={handleOutlineHoverEnd}
+              canvasDropInfo={canvasDropInfoForOutline}
             />
           </div>
 
-          {/* 中间：主工作区 */}
+          {/* 中间:主工作区 */}
           <main className="flex-1 relative bg-background flex flex-col overflow-hidden">
-            {/* 工具条 */}
+            {/* 工具栏 */}
             <div className="h-12 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-2">
                 <Button
@@ -484,6 +586,7 @@ export default function Designer() {
                     isSelected
                   />
                 )}
+                {/* 画布拖拽的位置指示器 */}
                 {dropInfo?.id && (
                   <PositionIndicator
                     canvasRef={canvasRef}
@@ -491,11 +594,19 @@ export default function Designer() {
                     position={dropInfo.position}
                   />
                 )}
+                {/* 大纲拖拽的位置指示器 */}
+                {outlineDropInfo?.nodeId && (
+                  <PositionIndicator
+                    canvasRef={canvasRef}
+                    nodeId={outlineDropInfo.nodeId}
+                    position={outlineDropInfo.position}
+                  />
+                )}
               </div>
             </div>
           </main>
 
-          {/* 右侧：属性面板 */}
+          {/* 右侧:属性面板 */}
           <div className="w-80 border-l bg-card shrink-0 z-10 shadow-sm border-border">
             <PropertyPanel
               asset={asset}

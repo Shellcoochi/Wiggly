@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import ComponentPanel from "./component-panel";
-import { ComponentTemplate, Variable } from "../types";
+import { ComponentTemplate, Variable, DesignerNode, NodePositon } from "../types";
 import { VariablesPanel } from "./variables-panel";
+import { OutlinePanel } from "./outline-panel";
 
 /** 侧边栏面板类型 */
 type SidebarPanel = "components" | "variables" | "datasources" | "outline";
@@ -23,6 +24,27 @@ export const DesignerSidebar: React.FC<{
   variableValues?: Record<string, any>;
   onVariablesChange?: (variables: Variable[]) => void;
   onVariableValuesChange?: (values: Record<string, any>) => void;
+  // 新增:大纲面板相关props
+  items?: DesignerNode[];
+  selectedNodeId?: string | null;
+  onSelectNode?: (node: DesignerNode) => void;
+  onMoveNode?: (
+    dragId: string,
+    targetId: string,
+    position: NodePositon
+  ) => void;
+  // 新增:悬停反馈
+  onHoverNode?: (
+    dragId: string,
+    targetId: string,
+    position: NodePositon
+  ) => void;
+  onHoverEndNode?: () => void;
+  // 新增:画布拖拽状态
+  canvasDropInfo?: {
+    nodeId: string;
+    position: NodePositon;
+  } | null;
 }> = ({
   templates,
   onDragStart,
@@ -30,9 +52,15 @@ export const DesignerSidebar: React.FC<{
   variableValues = {},
   onVariablesChange = () => {},
   onVariableValuesChange = () => {},
+  items = [],
+  selectedNodeId = null,
+  onSelectNode = () => {},
+  onMoveNode = () => {},
+  onHoverNode = () => {},
+  onHoverEndNode = () => {},
+  canvasDropInfo = null,
 }) => {
-  const [activePanel, setActivePanel] =
-    useState<SidebarPanel>("components");
+  const [activePanel, setActivePanel] = useState<SidebarPanel>("components");
 
   /** 侧边栏配置 */
   const sidebarPanels: SidebarConfig[] = [
@@ -40,7 +68,12 @@ export const DesignerSidebar: React.FC<{
       id: "components",
       label: "组件",
       icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -55,7 +88,12 @@ export const DesignerSidebar: React.FC<{
       id: "variables",
       label: "变量",
       icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -70,7 +108,12 @@ export const DesignerSidebar: React.FC<{
       id: "datasources",
       label: "数据源",
       icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -85,7 +128,12 @@ export const DesignerSidebar: React.FC<{
       id: "outline",
       label: "大纲",
       icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -94,12 +142,13 @@ export const DesignerSidebar: React.FC<{
           />
         </svg>
       ),
-      component: OutlinePanel,
+      component: OutlinePanel, // 使用真实的大纲面板
     },
   ];
 
-  const ActivePanelComponent =
-    sidebarPanels.find((p) => p.id === activePanel)?.component;
+  const ActivePanelComponent = sidebarPanels.find(
+    (p) => p.id === activePanel
+  )?.component;
 
   return (
     <div className="flex h-full bg-background border-r border-border">
@@ -159,7 +208,12 @@ export const DesignerSidebar: React.FC<{
                        transition-colors"
             title="设置"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -181,12 +235,22 @@ export const DesignerSidebar: React.FC<{
       <div className="flex-1 overflow-hidden">
         {ActivePanelComponent && (
           <ActivePanelComponent
+            // 组件面板 props
             templates={templates}
             onDragStart={onDragStart}
+            // 变量面板 props
             variables={variables}
             variableValues={variableValues}
             onVariablesChange={onVariablesChange}
             onVariableValuesChange={onVariableValuesChange}
+            // 大纲面板 props
+            items={items}
+            selectedNodeId={selectedNodeId}
+            onSelect={onSelectNode}
+            onMove={onMoveNode}
+            onHover={onHoverNode}
+            onHoverEnd={onHoverEndNode}
+            canvasDropInfo={canvasDropInfo}
           />
         )}
       </div>
@@ -200,23 +264,9 @@ const DataSourcesPanel: React.FC = () => (
   <div className="h-full flex flex-col bg-background">
     <div className="p-4 border-b border-border bg-muted/30">
       <h3 className="text-sm font-semibold">数据源</h3>
-      <p className="mt-1 text-xs text-muted-foreground">
-        配置 API 和数据连接
-      </p>
+      <p className="mt-1 text-xs text-muted-foreground">配置 API 和数据连接</p>
     </div>
     <EmptyState label="数据源面板" />
-  </div>
-);
-
-const OutlinePanel: React.FC = () => (
-  <div className="h-full flex flex-col bg-background">
-    <div className="p-4 border-b border-border bg-muted/30">
-      <h3 className="text-sm font-semibold">页面大纲</h3>
-      <p className="mt-1 text-xs text-muted-foreground">
-        查看组件结构树
-      </p>
-    </div>
-    <EmptyState label="大纲面板" />
   </div>
 );
 
