@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { toast } from "sonner";
 import { Button } from "../../ui/button";
 import {
   DataSource,
@@ -55,7 +56,6 @@ const initialDataSources: DataSource[] = [];
 export default function Designer() {
   const [items, setItems] = useState<DesignerNode[]>(initialItems);
   const [selectedNode, setSelectedNode] = useState<DesignerNode | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [dropInfo, setDropInfo] = useState<DropResult | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -203,10 +203,9 @@ export default function Designer() {
         if (node.id === targetId) {
           if (position === "inside") {
             if (!node.isContainer) {
-              setErrorMessage(`元素 ${targetId} 不是容器，不能包含子元素`);
+              toast.warning(`元素 ${targetId} 不是容器，不能包含子元素`);
               return [node];
             }
-            setErrorMessage(null);
             return [
               {
                 ...node,
@@ -214,10 +213,8 @@ export default function Designer() {
               },
             ];
           } else if (position === "before") {
-            setErrorMessage(null);
             return [item, node];
           } else {
-            setErrorMessage(null);
             return [node, item];
           }
         }
@@ -261,7 +258,7 @@ export default function Designer() {
       if (source === "panel") {
         const template = snippets.find((t: { id: string }) => t.id === dragId);
         if (!template) {
-          setErrorMessage(`找不到组件模板: ${dragId}`);
+          toast.warning(`找不到组件模板: ${dragId}`);
           return;
         }
 
@@ -278,14 +275,14 @@ export default function Designer() {
       } else {
         draggedItem = findItem(dragId)!;
         if (!draggedItem) {
-          setErrorMessage(`找不到拖拽的元素: ${dragId}`);
+          toast.warning(`找不到拖拽的元素: ${dragId}`);
           return;
         }
       }
 
       const dropItem = findItem(dropId);
       if (!dropItem) {
-        setErrorMessage(`找不到目标元素: ${dropId}`);
+        toast.warning(`找不到目标元素: ${dropId}`);
         return;
       }
 
@@ -300,13 +297,13 @@ export default function Designer() {
         };
 
         if (position === "inside" && isDescendant(dragId, dropId)) {
-          setErrorMessage("不能将父节点拖拽到子节点中");
+          toast.warning(`不能将父节点拖拽到子节点中`);
           return;
         }
       }
 
       if (position === "inside" && !dropItem.isContainer) {
-        setErrorMessage(`元素 ${dropId} 不是容器，不能包含子元素`);
+        toast.warning(`元素 ${dropId} 不是容器，不能包含子元素`);
         return;
       }
 
@@ -431,19 +428,6 @@ export default function Designer() {
                   {selectedNode ? `选中: ${selectedNode.title}` : "未选中组件"}
                 </span>
               </div>
-
-              {/* 错误提示浮窗化 */}
-              {errorMessage && (
-                <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground px-4 py-2 rounded-md shadow-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-                  <span>⚠️ {errorMessage}</span>
-                  <button
-                    onClick={() => setErrorMessage(null)}
-                    className="hover:opacity-80"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* 画布滚动区域 */}
