@@ -496,6 +496,7 @@ export default function Designer() {
                   <NodeSelector
                     nodeId={selectedNode.id}
                     canvasRef={canvasRef}
+                    zoom={zoom}
                     isSelected
                   />
                 )}
