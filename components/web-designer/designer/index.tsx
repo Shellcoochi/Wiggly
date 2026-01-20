@@ -66,6 +66,56 @@ export default function Designer() {
   } | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  // 滚动画布到指定节点
+  const scrollCanvasToNode = useCallback((nodeId: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const nodeEl = canvas.querySelector<HTMLElement>(`[data-node-id="${nodeId}"]`);
+    if (!nodeEl) return;
+
+    const canvasRect = canvas.getBoundingClientRect();
+    const nodeRect = nodeEl.getBoundingClientRect();
+
+    // 计算相对于容器的位置
+    const relativeTop = nodeRect.top - canvasRect.top + canvas.scrollTop;
+    const relativeBottom = relativeTop + nodeRect.height;
+
+    // 检查是否在可视区域
+    const isAboveView = relativeTop < canvas.scrollTop;
+    const isBelowView = relativeBottom > canvas.scrollTop + canvas.clientHeight;
+
+    if (isAboveView) {
+      // 滚动到顶部附近,留20px边距
+      canvas.scrollTo({
+        top: relativeTop - 100,
+        behavior: "smooth",
+      });
+    } else if (isBelowView) {
+      // 滚动到底部附近,留20px边距
+      canvas.scrollTo({
+        top: relativeBottom - canvas.clientHeight + 100,
+        behavior: "smooth",
+      });
+    }
+  }, []);
+
+  // 当选中节点变化时,滚动画布到该节点
+  useEffect(() => {
+    if (selectedNode?.id) {
+      setTimeout(() => {
+        scrollCanvasToNode(selectedNode.id);
+      }, 100);
+    }
+  }, [selectedNode?.id, scrollCanvasToNode]);
+
+  // 当大纲拖拽的dropInfo变化时,滚动画布到目标节点
+  useEffect(() => {
+    if (outlineDropInfo?.nodeId) {
+      scrollCanvasToNode(outlineDropInfo.nodeId);
+    }
+  }, [outlineDropInfo?.nodeId, scrollCanvasToNode]);
+
   const [viewMode, setViewMode] = useState<ViewMode>("design");
   const [zoom, setZoom] = useState(100);
   const [canUndo, setCanUndo] = useState(true);
@@ -331,7 +381,7 @@ export default function Designer() {
 
   // 新增:大纲面板移动处理
   const handleOutlineMove = useCallback(
-    (dragId: string, targetId: string, position: "before" | "after" | "inside") => {
+    (dragId: string, targetId: string, position: NodePositon) => {
       const draggedItem = findItem(dragId);
       if (!draggedItem) {
         toast.warning(`找不到拖拽的元素: ${dragId}`);
@@ -376,9 +426,9 @@ export default function Designer() {
 
   // 新增:处理大纲拖拽悬停(在画布显示位置指示器)
   const handleOutlineHover = useCallback(
-    (dragId: string, targetId: string, position: "before" | "after" | "inside") => {
+    (dragId: string, targetId: string, position: NodePositon) => {
       // 转换position格式以适配PositionIndicator组件
-      let canvasPosition: "left" | "right" | "top" | "bottom" | "inside" = "inside";
+      let canvasPosition: Positon = "inside";
       if (position === "before") {
         canvasPosition = "top";
       } else if (position === "after") {
@@ -446,7 +496,7 @@ export default function Designer() {
   const canvasDropInfoForOutline = useMemo(() => {
     if (!dropInfo) return null;
 
-    let position: "before" | "after" | "inside" = "inside";
+    let position: NodePositon = "inside";
     
     if (dropInfo.position === "left" || dropInfo.position === "top") {
       position = "before";

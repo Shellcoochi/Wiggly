@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import type { DropTargetMonitor } from "react-dnd";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,7 @@ import {
 } from "@tabler/icons-react";
 import { NodePositon } from "../types";
 
-
+// 类型定义
 interface DesignerNode {
   id: string;
   title?: string;
@@ -41,12 +41,12 @@ interface OutlinePanelProps {
   items: DesignerNode[];
   selectedNodeId: string | null;
   onSelect: (node: DesignerNode) => void;
-  onMove: (dragId: string, targetId: string, position: "before" | "after" | "inside") => void;
+  onMove: (dragId: string, targetId: string, position: NodePositon) => void;
   // 新增:拖拽悬停反馈
-  onHover?: (dragId: string, targetId: string, position: "before" | "after" | "inside") => void;
+  onHover?: (dragId: string, targetId: string, position: NodePositon) => void;
   onHoverEnd?: () => void;
   // 新增:接收画布的拖拽状态
-  canvasDropInfo?: { nodeId: string; position: "before" | "after" | "inside" } | null;
+  canvasDropInfo?: { nodeId: string; position: NodePositon } | null;
 }
 
 export const OutlinePanel: React.FC<OutlinePanelProps> = ({
@@ -58,13 +58,18 @@ export const OutlinePanel: React.FC<OutlinePanelProps> = ({
   onHoverEnd,
   canvasDropInfo,
 }) => {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(["root"]));
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(
+    new Set(["root"])
+  );
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [lockedIds, setLockedIds] = useState<Set<string>>(new Set());
   const [outlineDropInfo, setOutlineDropInfo] = useState<{
     nodeId: string;
-    position: "before" | "after" | "inside";
+    position: NodePositon;
   } | null>(null);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const nodeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -106,7 +111,7 @@ export const OutlinePanel: React.FC<OutlinePanelProps> = ({
 
   // 处理大纲内拖拽悬停
   const handleOutlineHover = useCallback(
-    (dragId: string, targetId: string, position: "before" | "after" | "inside") => {
+    (dragId: string, targetId: string, position: NodePositon) => {
       setOutlineDropInfo({ nodeId: targetId, position });
       // 同时通知画布显示位置指示器
       onHover?.(dragId, targetId, position);
@@ -122,6 +127,109 @@ export const OutlinePanel: React.FC<OutlinePanelProps> = ({
   // 合并大纲和画布的drop信息(优先显示大纲的)
   const activeDropInfo = outlineDropInfo || canvasDropInfo;
 
+  // 获取节点的所有祖先ID
+  const getAncestorIds = useCallback(
+    (nodeId: string, nodes: DesignerNode[]): string[] => {
+      const ancestors: string[] = [];
+
+      const findAncestors = (
+        id: string,
+        tree: DesignerNode[],
+        path: string[] = []
+      ): boolean => {
+        for (const node of tree) {
+          if (node.id === id) {
+            ancestors.push(...path);
+            return true;
+          }
+          if (node.children) {
+            if (findAncestors(id, node.children, [...path, node.id])) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      findAncestors(nodeId, nodes);
+      return ancestors;
+    },
+    []
+  );
+
+  // 滚动到指定节点
+  const scrollToNode = useCallback((nodeId: string) => {
+    const nodeEl = nodeRefs.current.get(nodeId);
+    const container = scrollContainerRef.current;
+
+    if (!nodeEl || !container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const nodeRect = nodeEl.getBoundingClientRect();
+
+    // 计算相对于容器的位置
+    const relativeTop = nodeRect.top - containerRect.top + container.scrollTop;
+    const relativeBottom = relativeTop + nodeRect.height;
+
+    // 检查是否在可视区域
+    const isAboveView = relativeTop < container.scrollTop;
+    const isBelowView =
+      relativeBottom > container.scrollTop + container.clientHeight;
+
+    if (isAboveView) {
+      // 滚动到顶部附近
+      container.scrollTo({
+        top: relativeTop - 20,
+        behavior: "smooth",
+      });
+    } else if (isBelowView) {
+      // 滚动到底部附近
+      container.scrollTo({
+        top: relativeBottom - container.clientHeight + 20,
+        behavior: "smooth",
+      });
+    }
+  }, []);
+
+  // 展开到指定节点
+  const expandToNode = useCallback(
+    (nodeId: string) => {
+      const ancestors = getAncestorIds(nodeId, items);
+
+      if (ancestors.length > 0) {
+        setExpandedIds((prev) => {
+          const next = new Set(prev);
+          ancestors.forEach((id) => next.add(id));
+          return next;
+        });
+      }
+    },
+    [items, getAncestorIds]
+  );
+
+  // 当选中节点变化时,展开并滚动到该节点
+  useEffect(() => {
+    if (selectedNodeId) {
+      expandToNode(selectedNodeId);
+
+      // 延迟滚动,等待展开动画完成
+      setTimeout(() => {
+        scrollToNode(selectedNodeId);
+      }, 100);
+    }
+  }, [selectedNodeId, expandToNode, scrollToNode]);
+
+  // 当画布拖拽的dropInfo变化时,展开并滚动到目标节点
+  useEffect(() => {
+    if (canvasDropInfo?.nodeId) {
+      expandToNode(canvasDropInfo.nodeId);
+
+      setTimeout(() => {
+        scrollToNode(canvasDropInfo.nodeId);
+      }, 100);
+    }
+  }, [canvasDropInfo?.nodeId, expandToNode, scrollToNode]);
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* 头部 */}
@@ -129,9 +237,7 @@ export const OutlinePanel: React.FC<OutlinePanelProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-foreground">页面大纲</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              组件结构树视图
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">组件结构树视图</p>
           </div>
           <div className="flex gap-1">
             <button
@@ -153,7 +259,10 @@ export const OutlinePanel: React.FC<OutlinePanelProps> = ({
       </div>
 
       {/* 树形列表 */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto p-2 space-y-0.5"
+      >
         {items.map((item) => (
           <OutlineTreeNode
             key={item.id}
@@ -171,6 +280,7 @@ export const OutlinePanel: React.FC<OutlinePanelProps> = ({
             onHover={handleOutlineHover}
             onHoverEnd={handleOutlineHoverEnd}
             activeDropInfo={activeDropInfo}
+            nodeRefs={nodeRefs}
           />
         ))}
       </div>
@@ -209,6 +319,7 @@ interface OutlineTreeNodeProps {
   onHover?: (dragId: string, targetId: string, position: NodePositon) => void;
   onHoverEnd?: () => void;
   activeDropInfo?: { nodeId: string; position: NodePositon } | null;
+  nodeRefs?: React.RefObject<Map<string, HTMLDivElement>>;
 }
 
 const OutlineTreeNode: React.FC<OutlineTreeNodeProps> = ({
@@ -226,19 +337,35 @@ const OutlineTreeNode: React.FC<OutlineTreeNodeProps> = ({
   onHover,
   onHoverEnd,
   activeDropInfo,
+  nodeRefs,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [localDropPosition, setLocalDropPosition] = useState<"before" | "after" | "inside" | null>(null);
+  const [localDropPosition, setLocalDropPosition] =
+    useState<NodePositon | null>(null);
 
   const isExpanded = expandedIds.has(node.id);
   const isHidden = hiddenIds.has(node.id);
   const isLocked = lockedIds.has(node.id);
   const isSelected = selectedNodeId === node.id;
-  const hasChildren = node.isContainer && node.children && node.children.length > 0;
+  const hasChildren =
+    node.isContainer && node.children && node.children.length > 0;
 
   // 判断当前节点是否是拖拽目标
   const isDropTarget = activeDropInfo?.nodeId === node.id;
   const dropPosition = isDropTarget ? activeDropInfo.position : null;
+
+  // 注册节点ref
+  useEffect(() => {
+    if (ref.current && nodeRefs) {
+      const currentRefs = nodeRefs.current;
+      const nodeId = node.id;
+
+      currentRefs.set(nodeId, ref.current);
+      return () => {
+        currentRefs.delete(nodeId);
+      };
+    }
+  }, [node.id, nodeRefs]);
 
   // 拖拽配置
   const [{ isDragging }, drag] = useDrag({
@@ -310,7 +437,7 @@ const OutlineTreeNode: React.FC<OutlineTreeNodeProps> = ({
       }
 
       setLocalDropPosition(position);
-      
+
       // 通知父组件,触发画布的位置指示器
       if (position) {
         onHover?.(dragItem.id, node.id, position);
@@ -367,7 +494,8 @@ const OutlineTreeNode: React.FC<OutlineTreeNodeProps> = ({
               "absolute left-0 right-0 pointer-events-none z-10",
               dropPosition === "before" && "top-0 h-0.5 bg-primary",
               dropPosition === "after" && "bottom-0 h-0.5 bg-primary",
-              dropPosition === "inside" && "inset-0 bg-primary/10 border-2 border-primary rounded-md"
+              dropPosition === "inside" &&
+                "inset-0 bg-primary/10 border-2 border-primary rounded-md"
             )}
           />
         )}
@@ -402,9 +530,7 @@ const OutlineTreeNode: React.FC<OutlineTreeNodeProps> = ({
 
         {/* 标题 */}
         <div className="flex-1 min-w-0">
-          <div className="text-sm truncate">
-            {node.title || node.id}
-          </div>
+          <div className="text-sm truncate">{node.title || node.id}</div>
           <div className="text-xs text-muted-foreground truncate">
             {node.componentName}
           </div>
@@ -462,6 +588,7 @@ const OutlineTreeNode: React.FC<OutlineTreeNodeProps> = ({
               onHover={onHover}
               onHoverEnd={onHoverEnd}
               activeDropInfo={activeDropInfo}
+              nodeRefs={nodeRefs}
             />
           ))}
         </div>
