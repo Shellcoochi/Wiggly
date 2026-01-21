@@ -108,10 +108,6 @@ export const NodeItem: React.FC<NodeItemProps> = ({
       return true;
     },
     hover: (dragItem: DragItem, monitor: DropTargetMonitor) => {
-      // 节流优化 - 移除 Date.now() 调用
-      // React 19 不允许在 render 阶段调用 Date.now()
-      // 改用简单的计数器或移除节流
-
       if (!monitor.isOver({ shallow: true }) || !monitor.canDrop()) {
         setDropPosition(null);
         return;
