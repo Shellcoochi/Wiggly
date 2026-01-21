@@ -24,6 +24,7 @@ import DesignerSidebar from "../sidebar-panel";
 import DesignerHeader, { ViewMode } from "./designer-header";
 import { initialPageSchema } from "./initial-schema";
 import { IconTrash } from "@tabler/icons-react";
+import { useHistory } from "../hooks/use-history";
 
 const { assets, snippets, categories } = materials;
 
@@ -33,8 +34,10 @@ const findAsset = (componentName: string) => {
 
 /** 主组件 **/
 export default function Designer() {
-  // ✅ 核心 Schema State
-  const [schema, setSchema] = useState<PageSchema>(initialPageSchema);
+  // ✅ 使用 useHistory 管理 Schema
+  const history = useHistory<PageSchema>(initialPageSchema);
+  const schema = history.state;
+  const setSchema = history.set;
 
   // UI 状态
   const [selectedNode, setSelectedNode] = useState<DesignerNode | null>(null);
@@ -47,10 +50,6 @@ export default function Designer() {
 
   const [viewMode, setViewMode] = useState<ViewMode>("design");
   const [zoom, setZoom] = useState(100);
-
-  // 历史记录状态(TODO: 后续用 useSchemaHistory 替换)
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -116,30 +115,127 @@ export default function Designer() {
         };
       });
     },
-    []
+    [setSchema]
   );
 
-  const setVariables = useCallback((newVariables: Variable[]) => {
-    setSchema((prev) => ({
-      ...prev,
-      variables: newVariables,
-      meta: {
-        ...prev.meta,
-        updatedAt: new Date().toISOString(),
-      },
-    }));
-  }, []);
+  const setVariables = useCallback(
+    (newVariables: Variable[]) => {
+      setSchema((prev) => ({
+        ...prev,
+        variables: newVariables,
+        meta: {
+          ...prev.meta,
+          updatedAt: new Date().toISOString(),
+        },
+      }));
+    },
+    [setSchema]
+  );
 
-  const setDataSources = useCallback((newDataSources: DataSource[]) => {
-    setSchema((prev) => ({
-      ...prev,
-      dataSources: newDataSources,
-      meta: {
-        ...prev.meta,
-        updatedAt: new Date().toISOString(),
-      },
-    }));
-  }, []);
+  const setDataSources = useCallback(
+    (newDataSources: DataSource[]) => {
+      setSchema((prev) => ({
+        ...prev,
+        dataSources: newDataSources,
+        meta: {
+          ...prev.meta,
+          updatedAt: new Date().toISOString(),
+        },
+      }));
+    },
+    [setSchema]
+  );
+
+  const removeItem = useCallback(
+    (id: string, tree: DesignerNode[]): DesignerNode[] => {
+      const removeRecursive = (
+        id: string,
+        tree: DesignerNode[]
+      ): DesignerNode[] => {
+        return tree.filter((item) => {
+          if (item.id === id) {
+            if (selectedNode?.id === id) {
+              setSelectedNode(null);
+            }
+            return false;
+          }
+          if (item.isContainer && item.children) {
+            item.children = removeRecursive(id, item.children);
+          }
+          return true;
+        });
+      };
+      return removeRecursive(id, tree);
+    },
+    [selectedNode]
+  );
+
+  const deleteNode = useCallback(
+    (nodeId: string) => {
+      setItems(removeItem(nodeId, items));
+      toast.success("删除成功");
+    },
+    [items, removeItem, setItems]
+  );
+
+  // ============================================
+  // 快捷键支持
+  // ============================================
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 检查是否在输入框中
+      const target = e.target as HTMLElement;
+      const isInput =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+
+      if (isInput) return;
+
+      // Ctrl+Z / Cmd+Z - 撤销
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (history.canUndo) {
+          history.undo();
+          toast.success("撤销成功");
+        }
+      }
+
+      // Ctrl+Shift+Z / Cmd+Shift+Z - 重做
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) {
+        e.preventDefault();
+        if (history.canRedo) {
+          history.redo();
+          toast.success("重做成功");
+        }
+      }
+
+      // Ctrl+Y / Cmd+Y - 重做(备选)
+      if ((e.ctrlKey || e.metaKey) && e.key === "y") {
+        e.preventDefault();
+        if (history.canRedo) {
+          history.redo();
+          toast.success("重做成功");
+        }
+      }
+
+      // Delete - 删除选中元素
+      if (e.key === "Delete" && selectedNode && selectedNode.id !== "root") {
+        e.preventDefault();
+        deleteNode(selectedNode.id);
+      }
+
+      // Escape - 取消选中
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setSelectedNode(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deleteNode, history, selectedNode]);
 
   // ============================================
   // 画布交互监听
@@ -210,30 +306,6 @@ export default function Designer() {
       return undefined;
     },
     [items]
-  );
-
-  const removeItem = useCallback(
-    (id: string, tree: DesignerNode[]): DesignerNode[] => {
-      const removeRecursive = (
-        id: string,
-        tree: DesignerNode[]
-      ): DesignerNode[] => {
-        return tree.filter((item) => {
-          if (item.id === id) {
-            if (selectedNode?.id === id) {
-              setSelectedNode(null);
-            }
-            return false;
-          }
-          if (item.isContainer && item.children) {
-            item.children = removeRecursive(id, item.children);
-          }
-          return true;
-        });
-      };
-      return removeRecursive(id, tree);
-    },
-    [selectedNode]
   );
 
   const insertItem = useCallback(
@@ -482,13 +554,6 @@ export default function Designer() {
     [items, selectedNode?.id, setItems]
   );
 
-  const deleteNode = useCallback(
-    (nodeId: string) => {
-      setItems(removeItem(nodeId, items));
-    },
-    [items, removeItem, setItems]
-  );
-
   // ============================================
   // 智能滚动
   // ============================================
@@ -604,15 +669,15 @@ export default function Designer() {
         <DesignerHeader
           projectName={schema.meta.name}
           pageName={schema.meta.name}
-          canUndo={canUndo}
-          canRedo={canRedo}
+          canUndo={history.canUndo}
+          canRedo={history.canRedo}
           onUndo={() => {
-            console.log("撤销");
-            toast.info("撤销功能开发中");
+            history.undo();
+            toast.success("撤销成功");
           }}
           onRedo={() => {
-            console.log("重做");
-            toast.info("重做功能开发中");
+            history.redo();
+            toast.success("重做成功");
           }}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
@@ -663,6 +728,15 @@ export default function Designer() {
                 <div className="h-4 w-px bg-border mx-2" />
                 <span className="text-xs text-muted-foreground">
                   {selectedNode ? `选中: ${selectedNode.title}` : "未选中组件"}
+                </span>
+              </div>
+
+              {/* 历史记录状态提示 */}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  {history.canUndo ? "可撤销" : ""}
+                  {history.canUndo && history.canRedo ? " | " : ""}
+                  {history.canRedo ? "可重做" : ""}
                 </span>
               </div>
             </div>
