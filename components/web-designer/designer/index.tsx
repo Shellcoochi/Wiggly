@@ -6,12 +6,13 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { toast } from "sonner";
 import { Button } from "../../ui/button";
 import {
-  DataSource,
   DesignerNode,
   DropResult,
   NodePositon,
-  Positon,
+  PageSchema,
   Variable,
+  DataSource,
+  Positon,
 } from "../types";
 import PropertyPanel from "../property-panel";
 import materials from "../material";
@@ -21,7 +22,7 @@ import { NodeItem } from "./node-item";
 import { PositionIndicator } from "../position-indicator";
 import DesignerSidebar from "../sidebar-panel";
 import DesignerHeader, { ViewMode } from "./designer-header";
-import schema from "./schema.json";
+import { initialPageSchema } from "./initial-schema";
 
 const { assets, snippets, categories } = materials;
 
@@ -29,126 +30,57 @@ const findAsset = (componentName: string) => {
   return assets.find((asset: any) => asset.componentName === componentName);
 };
 
-/** 初始数据 **/
-const initialItems: DesignerNode[] = schema;
-
-// 新增: 初始变量定义
-const initialVariables: Variable[] = [
-  {
-    id: "var1",
-    name: "userName",
-    type: "string",
-    defaultValue: "张三",
-    description: "用户名称",
-  },
-  {
-    id: "var2",
-    name: "userAge",
-    type: "number",
-    defaultValue: 25,
-    description: "用户年龄",
-  },
-];
-
-// 新增: 初始数据源
-const initialDataSources: DataSource[] = [];
-
 /** 主组件 **/
 export default function Designer() {
-  const [items, setItems] = useState<DesignerNode[]>(initialItems);
+  // ✅ 核心 Schema State
+  const [schema, setSchema] = useState<PageSchema>(initialPageSchema);
+
+  // UI 状态
   const [selectedNode, setSelectedNode] = useState<DesignerNode | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [dropInfo, setDropInfo] = useState<DropResult | null>(null);
-  // 新增:大纲拖拽状态(用于在画布显示指示器)
   const [outlineDropInfo, setOutlineDropInfo] = useState<{
     nodeId: string;
     position: Positon;
   } | null>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
-
-  // 滚动画布到指定节点
-  const scrollCanvasToNode = useCallback((nodeId: string) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const nodeEl = canvas.querySelector<HTMLElement>(`[data-node-id="${nodeId}"]`);
-    if (!nodeEl) return;
-
-    const canvasRect = canvas.getBoundingClientRect();
-    const nodeRect = nodeEl.getBoundingClientRect();
-
-    // 计算相对于容器的位置
-    const relativeTop = nodeRect.top - canvasRect.top + canvas.scrollTop;
-    const relativeBottom = relativeTop + nodeRect.height;
-
-    // 检查是否在可视区域
-    const isAboveView = relativeTop < canvas.scrollTop;
-    const isBelowView = relativeBottom > canvas.scrollTop + canvas.clientHeight;
-
-    if (isAboveView) {
-      // 滚动到顶部附近,留20px边距
-      canvas.scrollTo({
-        top: relativeTop - 100,
-        behavior: "smooth",
-      });
-    } else if (isBelowView) {
-      // 滚动到底部附近,留20px边距
-      canvas.scrollTo({
-        top: relativeBottom - canvas.clientHeight + 100,
-        behavior: "smooth",
-      });
-    }
-  }, []);
-
-  // 当选中节点变化时,滚动画布到该节点
-  useEffect(() => {
-    if (selectedNode?.id) {
-      setTimeout(() => {
-        scrollCanvasToNode(selectedNode.id);
-      }, 100);
-    }
-  }, [selectedNode?.id, scrollCanvasToNode]);
-
-  // 当大纲拖拽的dropInfo变化时,滚动画布到目标节点
-  useEffect(() => {
-    if (outlineDropInfo?.nodeId) {
-      scrollCanvasToNode(outlineDropInfo.nodeId);
-    }
-  }, [outlineDropInfo?.nodeId, scrollCanvasToNode]);
 
   const [viewMode, setViewMode] = useState<ViewMode>("design");
   const [zoom, setZoom] = useState(100);
-  const [canUndo, setCanUndo] = useState(true);
-  const [canRedo, setCanRedo] = useState(true);
 
-  // 新增: 变量管理
-  const [variables, setVariables] = useState<Variable[]>(initialVariables);
-  const [dataSources, setDataSources] =
-    useState<DataSource[]>(initialDataSources);
+  // 历史记录状态(TODO: 后续用 useSchemaHistory 替换)
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
-  // 新增: 变量运行时值
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  // ✅ 从 schema 中解构
+  const items = schema.components;
+  const variables = schema.variables;
+  const dataSources = schema.dataSources;
+
+  // 变量运行时值
   const [variableValues, setVariableValues] = useState<Record<string, any>>(
     () => {
       const values: Record<string, any> = {};
-      initialVariables.forEach((v) => {
+      schema.variables.forEach((v) => {
         values[v.name] = v.defaultValue;
       });
       return values;
     }
   );
 
-  // 新增: 数据源运行时值
+  // 数据源运行时值
   const [dataSourceValues, setDataSourceValues] = useState<Record<string, any>>(
     () => {
       const values: Record<string, any> = {};
-      initialDataSources.forEach((ds) => {
+      schema.dataSources.forEach((ds) => {
         values[ds.id] = ds.config.data || null;
       });
       return values;
     }
   );
 
-  // 新增: 创建绑定上下文
+  // 创建绑定上下文
   const bindingContext = useMemo(
     () => ({
       variables: variableValues,
@@ -157,7 +89,61 @@ export default function Designer() {
     [variableValues, dataSourceValues]
   );
 
-  // 监听器
+  // ============================================
+  // Schema 更新方法
+  // ============================================
+
+  const setItems = useCallback(
+    (
+      newItemsOrUpdater:
+        | DesignerNode[]
+        | ((prev: DesignerNode[]) => DesignerNode[])
+    ) => {
+      setSchema((prev) => {
+        const newComponents =
+          typeof newItemsOrUpdater === "function"
+            ? newItemsOrUpdater(prev.components)
+            : newItemsOrUpdater;
+
+        return {
+          ...prev,
+          components: newComponents,
+          meta: {
+            ...prev.meta,
+            updatedAt: new Date().toISOString(),
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const setVariables = useCallback((newVariables: Variable[]) => {
+    setSchema((prev) => ({
+      ...prev,
+      variables: newVariables,
+      meta: {
+        ...prev.meta,
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+  }, []);
+
+  const setDataSources = useCallback((newDataSources: DataSource[]) => {
+    setSchema((prev) => ({
+      ...prev,
+      dataSources: newDataSources,
+      meta: {
+        ...prev.meta,
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+  }, []);
+
+  // ============================================
+  // 画布交互监听
+  // ============================================
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -204,7 +190,10 @@ export default function Designer() {
     }
   }, [selectedNode]);
 
-  // 查找树中的项目
+  // ============================================
+  // 节点操作辅助方法
+  // ============================================
+
   const findItem = useCallback(
     function findItemRecursive(
       id: string,
@@ -222,7 +211,6 @@ export default function Designer() {
     [items]
   );
 
-  // 从树中移除项目
   const removeItem = useCallback(
     (id: string, tree: DesignerNode[]): DesignerNode[] => {
       const removeRecursive = (
@@ -247,7 +235,6 @@ export default function Designer() {
     [selectedNode]
   );
 
-  // 向树中添加项目
   const insertItem = useCallback(
     (
       item: DesignerNode,
@@ -290,7 +277,10 @@ export default function Designer() {
     []
   );
 
-  // 处理拖拽放置
+  // ============================================
+  // 拖拽处理
+  // ============================================
+
   const handleDrop = useCallback(
     (dragId: string, result: DropResult, source: "panel" | "tree" = "tree") => {
       const dropId = result.id;
@@ -376,12 +366,15 @@ export default function Designer() {
       setSelectedNode(draggedItem);
       setDropInfo(null);
     },
-    [findItem, removeItem, insertItem]
+    [findItem, removeItem, insertItem, setItems]
   );
 
-  // 新增:大纲面板移动处理
   const handleOutlineMove = useCallback(
-    (dragId: string, targetId: string, position: NodePositon) => {
+    (
+      dragId: string,
+      targetId: string,
+      position: "before" | "after" | "inside"
+    ) => {
       const draggedItem = findItem(dragId);
       if (!draggedItem) {
         toast.warning(`找不到拖拽的元素: ${dragId}`);
@@ -394,7 +387,6 @@ export default function Designer() {
         return;
       }
 
-      // 检查是否拖拽到自己的后代
       const isDescendant = (parentId: string, childId: string): boolean => {
         const item = findItem(parentId);
         if (!item) return false;
@@ -421,14 +413,17 @@ export default function Designer() {
 
       toast.success("移动成功");
     },
-    [findItem, removeItem, insertItem]
+    [findItem, removeItem, insertItem, setItems]
   );
 
-  // 新增:处理大纲拖拽悬停(在画布显示位置指示器)
   const handleOutlineHover = useCallback(
-    (dragId: string, targetId: string, position: NodePositon) => {
-      // 转换position格式以适配PositionIndicator组件
-      let canvasPosition: Positon = "inside";
+    (
+      dragId: string,
+      targetId: string,
+      position: "before" | "after" | "inside"
+    ) => {
+      let canvasPosition: "left" | "right" | "top" | "bottom" | "inside" =
+        "inside";
       if (position === "before") {
         canvasPosition = "top";
       } else if (position === "after") {
@@ -449,7 +444,17 @@ export default function Designer() {
     setOutlineDropInfo(null);
   }, []);
 
-  // 更新节点属性
+  const moveItem = useCallback(
+    (dragId: string, hoverId: string, dropResult: DropResult) => {
+      setDropInfo(dropResult);
+    },
+    []
+  );
+
+  // ============================================
+  // 节点更新和删除
+  // ============================================
+
   const updateNode = useCallback(
     (nodeId: string, updates: Partial<DesignerNode>) => {
       const updateNodeInTree = (tree: DesignerNode[]): DesignerNode[] => {
@@ -471,36 +476,78 @@ export default function Designer() {
         });
       };
 
-      setItems((prev) => updateNodeInTree(prev));
+      setItems(updateNodeInTree(items));
     },
-    [selectedNode?.id]
+    [items, selectedNode?.id, setItems]
   );
 
-  // 删除节点
   const deleteNode = useCallback(
     (nodeId: string) => {
-      setItems((prev) => removeItem(nodeId, prev));
+      setItems(removeItem(nodeId, items));
     },
-    [removeItem]
+    [items, removeItem, setItems]
   );
 
-  // 移动项目的即时反馈
-  const moveItem = useCallback(
-    (dragId: string, hoverId: string, dropResult: DropResult) => {
-      setDropInfo(dropResult);
-    },
-    []
-  );
+  // ============================================
+  // 智能滚动
+  // ============================================
 
-  // 将画布dropInfo转换为大纲canvasDropInfo
+  const scrollCanvasToNode = useCallback((nodeId: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const nodeEl = canvas.querySelector<HTMLElement>(
+      `[data-node-id="${nodeId}"]`
+    );
+    if (!nodeEl) return;
+
+    const canvasRect = canvas.getBoundingClientRect();
+    const nodeRect = nodeEl.getBoundingClientRect();
+
+    const relativeTop = nodeRect.top - canvasRect.top + canvas.scrollTop;
+    const relativeBottom = relativeTop + nodeRect.height;
+
+    const isAboveView = relativeTop < canvas.scrollTop;
+    const isBelowView = relativeBottom > canvas.scrollTop + canvas.clientHeight;
+
+    if (isAboveView) {
+      canvas.scrollTo({
+        top: relativeTop - 100,
+        behavior: "smooth",
+      });
+    } else if (isBelowView) {
+      canvas.scrollTo({
+        top: relativeBottom - canvas.clientHeight + 100,
+        behavior: "smooth",
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedNode?.id) {
+      setTimeout(() => {
+        scrollCanvasToNode(selectedNode.id);
+      }, 100);
+    }
+  }, [selectedNode?.id, scrollCanvasToNode]);
+
+  useEffect(() => {
+    if (outlineDropInfo?.nodeId) {
+      scrollCanvasToNode(outlineDropInfo.nodeId);
+    }
+  }, [outlineDropInfo?.nodeId, scrollCanvasToNode]);
+
   const canvasDropInfoForOutline = useMemo(() => {
     if (!dropInfo) return null;
 
-    let position: NodePositon = "inside";
-    
+    let position: "before" | "after" | "inside" = "inside";
+
     if (dropInfo.position === "left" || dropInfo.position === "top") {
       position = "before";
-    } else if (dropInfo.position === "right" || dropInfo.position === "bottom") {
+    } else if (
+      dropInfo.position === "right" ||
+      dropInfo.position === "bottom"
+    ) {
       position = "after";
     } else if (dropInfo.position === "inside") {
       position = "inside";
@@ -512,30 +559,67 @@ export default function Designer() {
     };
   }, [dropInfo]);
 
+  // ============================================
+  // 保存/导出/导入
+  // ============================================
+
+  const handleSave = useCallback(() => {
+    const updatedSchema = {
+      ...schema,
+      meta: {
+        ...schema.meta,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+
+    localStorage.setItem("page-schema", JSON.stringify(updatedSchema));
+
+    console.log("保存的 Schema:", updatedSchema);
+    toast.success("保存成功");
+  }, [schema]);
+
+  const handlePublish = useCallback(() => {
+    console.log("发布 Schema:", schema);
+    toast.success("发布成功");
+  }, [schema]);
+
+  const handleShare = useCallback(() => {
+    const json = JSON.stringify(schema, null, 2);
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(json).then(() => {
+        toast.success("Schema 已复制到剪贴板");
+      });
+    } else {
+      console.log("分享 Schema:", json);
+      toast.success("Schema 已输出到控制台");
+    }
+  }, [schema]);
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
         {/* 顶部导航栏 */}
         <DesignerHeader
-          projectName="电商管理系统"
-          pageName="商品列表"
+          projectName={schema.meta.name}
+          pageName={schema.meta.name}
           canUndo={canUndo}
           canRedo={canRedo}
           onUndo={() => {
             console.log("撤销");
-            setCanUndo(false);
+            toast.info("撤销功能开发中");
           }}
           onRedo={() => {
             console.log("重做");
-            setCanRedo(false);
+            toast.info("重做功能开发中");
           }}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           zoom={zoom}
           onZoomChange={setZoom}
-          onSave={() => console.log("保存")}
-          onPublish={() => console.log("发布")}
-          onShare={() => console.log("分享")}
+          onSave={handleSave}
+          onPublish={handlePublish}
+          onShare={handleShare}
           onPageChange={(id) => console.log("切换页面:", id)}
           onCreatePage={() => console.log("新建页面")}
           onSettings={() => console.log("设置")}
@@ -623,7 +707,7 @@ export default function Designer() {
                 )}
               </div>
 
-              {/* Overlay 高亮层 (保持绝对定位) */}
+              {/* Overlay 高亮层 */}
               <div className="absolute inset-0 pointer-events-none">
                 {hoveredNodeId && hoveredNodeId !== selectedNode?.id && (
                   <NodeSelector nodeId={hoveredNodeId} canvasRef={canvasRef} />
@@ -636,7 +720,6 @@ export default function Designer() {
                     isSelected
                   />
                 )}
-                {/* 画布拖拽的位置指示器 */}
                 {dropInfo?.id && (
                   <PositionIndicator
                     canvasRef={canvasRef}
@@ -644,7 +727,6 @@ export default function Designer() {
                     position={dropInfo.position}
                   />
                 )}
-                {/* 大纲拖拽的位置指示器 */}
                 {outlineDropInfo?.nodeId && (
                   <PositionIndicator
                     canvasRef={canvasRef}
