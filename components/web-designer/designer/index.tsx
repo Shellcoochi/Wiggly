@@ -23,8 +23,14 @@ import { PositionIndicator } from "../position-indicator";
 import DesignerSidebar from "../sidebar-panel";
 import DesignerHeader, { ViewMode } from "./designer-header";
 import { initialPageSchema } from "./initial-schema";
-import { IconTrash } from "@tabler/icons-react";
+import {
+  IconClipboard,
+  IconCopy,
+  IconCut,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useHistory } from "../hooks/use-history";
+import { useClipboard } from "../hooks/use-clipboard";
 
 const { assets, snippets, categories } = materials;
 
@@ -79,6 +85,8 @@ export default function Designer() {
       return values;
     }
   );
+
+  const clipboard = useClipboard();
 
   // 创建绑定上下文
   const bindingContext = useMemo(
@@ -177,65 +185,6 @@ export default function Designer() {
     },
     [items, removeItem, setItems]
   );
-
-  // ============================================
-  // 快捷键支持
-  // ============================================
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // 检查是否在输入框中
-      const target = e.target as HTMLElement;
-      const isInput =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable;
-
-      if (isInput) return;
-
-      // Ctrl+Z / Cmd+Z - 撤销
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        if (history.canUndo) {
-          history.undo();
-          toast.success("撤销成功");
-        }
-      }
-
-      // Ctrl+Shift+Z / Cmd+Shift+Z - 重做
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) {
-        e.preventDefault();
-        if (history.canRedo) {
-          history.redo();
-          toast.success("重做成功");
-        }
-      }
-
-      // Ctrl+Y / Cmd+Y - 重做(备选)
-      if ((e.ctrlKey || e.metaKey) && e.key === "y") {
-        e.preventDefault();
-        if (history.canRedo) {
-          history.redo();
-          toast.success("重做成功");
-        }
-      }
-
-      // Delete - 删除选中元素
-      if (e.key === "Delete" && selectedNode && selectedNode.id !== "root") {
-        e.preventDefault();
-        deleteNode(selectedNode.id);
-      }
-
-      // Escape - 取消选中
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setSelectedNode(null);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [deleteNode, history, selectedNode]);
 
   // ============================================
   // 画布交互监听
@@ -662,6 +611,144 @@ export default function Designer() {
     }
   }, [schema]);
 
+  const handleCopy = useCallback(() => {
+    if (!selectedNode || selectedNode.id === "root") {
+      toast.warning("请先选择要复制的组件");
+      return;
+    }
+    clipboard.copy([selectedNode]);
+    toast.success("已复制");
+  }, [selectedNode, clipboard]);
+
+  // 剪切
+  const handleCut = useCallback(() => {
+    if (!selectedNode || selectedNode.id === "root") {
+      toast.warning("请先选择要剪切的组件");
+      return;
+    }
+    clipboard.cut([selectedNode]);
+    toast.success("已剪切");
+  }, [selectedNode, clipboard]);
+
+  // 粘贴
+  const handlePaste = useCallback(() => {
+    if (!clipboard.hasClipboard) {
+      toast.warning("剪贴板为空");
+      return;
+    }
+
+    const result = clipboard.paste();
+    if (!result) return;
+
+    const targetId = selectedNode?.id || "root";
+
+    setItems((prevItems) => {
+      let newItems = prevItems;
+
+      // 如果是剪切,先删除原节点
+      if (result.operation === "cut") {
+        result.sourceIds.forEach((id) => {
+          newItems = removeItem(id, newItems);
+        });
+      }
+
+      // 插入新节点
+      const targetNode = findItem(targetId, newItems);
+      result.nodes.forEach((node) => {
+        if (targetNode?.isContainer) {
+          newItems = insertItem(node, targetId, "inside", newItems);
+        } else {
+          newItems = insertItem(node, targetId, "after", newItems);
+        }
+      });
+
+      return newItems;
+    });
+
+    if (result.operation === "cut") {
+      clipboard.clear();
+    }
+
+    toast.success(`已粘贴 ${result.nodes.length} 个组件`);
+  }, [clipboard, selectedNode, findItem, setItems, removeItem, insertItem]);
+
+  // ============================================
+  // 快捷键支持
+  // ============================================
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 检查是否在输入框中
+      const target = e.target as HTMLElement;
+      const isInput =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+
+      if (isInput) return;
+
+      // Ctrl+Z / Cmd+Z - 撤销
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (history.canUndo) {
+          history.undo();
+          toast.success("撤销成功");
+        }
+      }
+
+      // Ctrl+Shift+Z / Cmd+Shift+Z - 重做
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) {
+        e.preventDefault();
+        if (history.canRedo) {
+          history.redo();
+          toast.success("重做成功");
+        }
+      }
+
+      // Ctrl+Y / Cmd+Y - 重做(备选)
+      if ((e.ctrlKey || e.metaKey) && e.key === "y") {
+        e.preventDefault();
+        if (history.canRedo) {
+          history.redo();
+          toast.success("重做成功");
+        }
+      }
+
+      // Delete - 删除选中元素
+      if (e.key === "Delete" && selectedNode && selectedNode.id !== "root") {
+        e.preventDefault();
+        deleteNode(selectedNode.id);
+      }
+
+      // Escape - 取消选中
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setSelectedNode(null);
+      }
+
+      // Ctrl+C - 复制
+      if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+        e.preventDefault();
+        handleCopy();
+      }
+
+      // Ctrl+X - 剪切
+      if ((e.ctrlKey || e.metaKey) && e.key === "x") {
+        e.preventDefault();
+        handleCut();
+      }
+
+      // Ctrl+V - 粘贴
+      if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+        e.preventDefault();
+        handlePaste();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deleteNode, handleCopy, handleCut, handlePaste, history, selectedNode]);
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
@@ -715,20 +802,82 @@ export default function Designer() {
           <main className="flex-1 relative bg-background flex flex-col overflow-hidden">
             {/* 工具栏 */}
             <div className="h-10 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center justify-between z-10">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:bg-destructive/10"
-                  onClick={() => selectedNode && deleteNode(selectedNode.id)}
-                  disabled={!selectedNode || selectedNode.id === "root"}
-                >
-                  <IconTrash className="mr-1" /> 删除
-                </Button>
-                <div className="h-4 w-px bg-border mx-2" />
-                <span className="text-xs text-muted-foreground">
-                  {selectedNode ? `选中: ${selectedNode.title}` : "未选中组件"}
-                </span>
+              <div className="h-10 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center justify-between z-10">
+                <div className="flex items-center gap-2">
+                  {/* 复制按钮 */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopy}
+                    disabled={!selectedNode || selectedNode.id === "root"}
+                    title="复制 (Ctrl+C)"
+                  >
+                    <IconCopy className="w-4 h-4 mr-1" />
+                    复制
+                  </Button>
+
+                  {/* 剪切按钮 */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCut}
+                    disabled={!selectedNode || selectedNode.id === "root"}
+                    title="剪切 (Ctrl+X)"
+                  >
+                    <IconCut className="w-4 h-4 mr-1" />
+                    剪切
+                  </Button>
+
+                  {/* 粘贴按钮 */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePaste}
+                    disabled={!clipboard.hasClipboard}
+                    title="粘贴 (Ctrl+V)"
+                  >
+                    <IconClipboard className="w-4 h-4 mr-1" />
+                    粘贴
+                    {clipboard.hasClipboard && (
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        ({clipboard.clipboard?.nodes.length})
+                      </span>
+                    )}
+                  </Button>
+
+                  <div className="h-4 w-px bg-border mx-2" />
+
+                  {/* 删除按钮 */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10"
+                    onClick={() => selectedNode && deleteNode(selectedNode.id)}
+                    disabled={!selectedNode || selectedNode.id === "root"}
+                    title="删除 (Delete)"
+                  >
+                    <IconTrash className="w-4 h-4 mr-1" />
+                    删除
+                  </Button>
+
+                  <div className="h-4 w-px bg-border mx-2" />
+
+                  <span className="text-xs text-muted-foreground">
+                    {selectedNode
+                      ? `选中: ${selectedNode.title}`
+                      : "未选中组件"}
+                  </span>
+                </div>
+
+                {/* 剪贴板状态提示 */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {clipboard.hasClipboard && (
+                    <span className="px-2 py-1 rounded bg-accent">
+                      {clipboard.isCut ? "已剪切" : "已复制"}:{" "}
+                      {clipboard.clipboard?.nodes.length} 个组件
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* 历史记录状态提示 */}
