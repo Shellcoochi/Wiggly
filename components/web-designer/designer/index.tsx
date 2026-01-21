@@ -29,6 +29,7 @@ import {
   IconCut,
   IconTrash,
 } from "@tabler/icons-react";
+import { ResizeHandles } from "../resize-handles";
 import { useHistory } from "../hooks/use-history";
 import { useClipboard } from "../hooks/use-clipboard";
 
@@ -44,6 +45,7 @@ export default function Designer() {
   const history = useHistory<PageSchema>(initialPageSchema);
   const schema = history.state;
   const setSchema = history.set;
+  const [maintainAspectRatio, setMaintainAspectRatio] = useState(false);
 
   // UI 状态
   const [selectedNode, setSelectedNode] = useState<DesignerNode | null>(null);
@@ -503,6 +505,19 @@ export default function Designer() {
     [items, selectedNode?.id, setItems]
   );
 
+  const handleResize = useCallback(
+    (nodeId: string, width: number, height: number) => {
+      updateNode(nodeId, {
+        style: {
+          ...findNode(nodeId, items)?.style,
+          width: `${width}px`,
+          height: `${height}px`,
+        },
+      });
+    },
+    [updateNode, items]
+  );
+
   // ============================================
   // 智能滚动
   // ============================================
@@ -804,6 +819,16 @@ export default function Designer() {
             <div className="h-10 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center justify-between z-10">
               <div className="h-10 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
+                  <div className="h-4 w-px bg-border mx-2" />
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={maintainAspectRatio}
+                      onChange={(e) => setMaintainAspectRatio(e.target.checked)}
+                      className="w-3 h-3"
+                    />
+                    保持宽高比
+                  </label>
                   {/* 复制按钮 */}
                   <Button
                     variant="ghost"
@@ -937,12 +962,22 @@ export default function Designer() {
                   <NodeSelector nodeId={hoveredNodeId} canvasRef={canvasRef} />
                 )}
                 {selectedNode && (
-                  <NodeSelector
-                    nodeId={selectedNode.id}
-                    canvasRef={canvasRef}
-                    zoom={zoom}
-                    isSelected
-                  />
+                  <>
+                    <NodeSelector
+                      nodeId={selectedNode.id}
+                      canvasRef={canvasRef}
+                      zoom={zoom}
+                      isSelected
+                    />
+                    <ResizeHandles
+                      nodeId={selectedNode.id}
+                      canvasRef={canvasRef}
+                      isSelected
+                      zoom={zoom}
+                      onResize={handleResize}
+                      maintainAspectRatio={maintainAspectRatio}
+                    />
+                  </>
                 )}
                 {dropInfo?.id && (
                   <PositionIndicator
