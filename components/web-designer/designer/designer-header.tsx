@@ -129,9 +129,6 @@ export default function DesignerHeader({
             <div className="text-sm font-semibold text-foreground leading-none">
               {projectName}
             </div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              低代码平台
-            </div>
           </div>
         </div>
 

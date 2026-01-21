@@ -23,6 +23,7 @@ import { PositionIndicator } from "../position-indicator";
 import DesignerSidebar from "../sidebar-panel";
 import DesignerHeader, { ViewMode } from "./designer-header";
 import { initialPageSchema } from "./initial-schema";
+import { IconTrash } from "@tabler/icons-react";
 
 const { assets, snippets, categories } = materials;
 
@@ -648,7 +649,7 @@ export default function Designer() {
           {/* 中间:主工作区 */}
           <main className="flex-1 relative bg-background flex flex-col overflow-hidden">
             {/* 工具栏 */}
-            <div className="h-12 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center justify-between z-10">
+            <div className="h-10 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -657,7 +658,7 @@ export default function Designer() {
                   onClick={() => selectedNode && deleteNode(selectedNode.id)}
                   disabled={!selectedNode || selectedNode.id === "root"}
                 >
-                  <span className="mr-1">🗑️</span> 删除
+                  <IconTrash className="mr-1" /> 删除
                 </Button>
                 <div className="h-4 w-px bg-border mx-2" />
                 <span className="text-xs text-muted-foreground">
