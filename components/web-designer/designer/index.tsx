@@ -29,7 +29,6 @@ import {
   IconCut,
   IconTrash,
 } from "@tabler/icons-react";
-import { ResizeHandles } from "../resize-handles";
 import { useHistory } from "../hooks/use-history";
 import { useClipboard } from "../hooks/use-clipboard";
 
@@ -505,18 +504,52 @@ export default function Designer() {
     [items, selectedNode?.id, setItems]
   );
 
-  const handleResize = useCallback(
-    (nodeId: string, width: number, height: number) => {
-      updateNode(nodeId, {
-        style: {
-          ...findNode(nodeId, items)?.style,
-          width: `${width}px`,
-          height: `${height}px`,
-        },
-      });
-    },
-    [updateNode, items]
-  );
+  // 调整大小功能
+  // ============================================
+
+   const handleSmartResize = useCallback((
+    nodeId: string, 
+    updates: {
+      width?: string;
+      height?: string;
+      marginLeft?: string;
+      marginRight?: string;
+      marginTop?: string;
+      marginBottom?: string;
+      flexGrow?: number;
+    }
+  ) => {
+    const node = findItem(nodeId);
+    if (!node) return;
+
+    const newStyle = { ...node.style };
+    
+    // 应用所有更新
+    if (updates.width) newStyle.width = updates.width;
+    if (updates.height) newStyle.height = updates.height;
+    if (updates.marginLeft) newStyle.marginLeft = updates.marginLeft;
+    if (updates.marginRight) newStyle.marginRight = updates.marginRight;
+    if (updates.marginTop) newStyle.marginTop = updates.marginTop;
+    if (updates.marginBottom) newStyle.marginBottom = updates.marginBottom;
+    if (updates.flexGrow !== undefined) newStyle.flexGrow = updates.flexGrow;
+
+    updateNode(nodeId, { style: newStyle });
+
+    console.log('智能调整:', {
+      nodeId,
+      updates,
+      newStyle
+    });
+  }, [findItem, updateNode]);
+
+  // 防抖版本的调整大小(可选,用于优化性能)
+  // const debouncedResize = useMemo(
+  //   () =>
+  //     debounce((nodeId: string, width: number, height: number) => {
+  //       handleResize(nodeId, width, height);
+  //     }, 100),
+  //   [handleResize]
+  // );
 
   // ============================================
   // 智能滚动
@@ -962,22 +995,13 @@ export default function Designer() {
                   <NodeSelector nodeId={hoveredNodeId} canvasRef={canvasRef} />
                 )}
                 {selectedNode && (
-                  <>
-                    <NodeSelector
-                      nodeId={selectedNode.id}
-                      canvasRef={canvasRef}
-                      zoom={zoom}
-                      isSelected
-                    />
-                    <ResizeHandles
-                      nodeId={selectedNode.id}
-                      canvasRef={canvasRef}
-                      isSelected
-                      zoom={zoom}
-                      onResize={handleResize}
-                      maintainAspectRatio={maintainAspectRatio}
-                    />
-                  </>
+                  <NodeSelector
+                    nodeId={selectedNode.id}
+                    canvasRef={canvasRef}
+                    zoom={zoom}
+                    isSelected
+                    onResize={handleSmartResize} 
+                  />
                 )}
                 {dropInfo?.id && (
                   <PositionIndicator
