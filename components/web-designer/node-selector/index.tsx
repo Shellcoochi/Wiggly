@@ -39,6 +39,10 @@ const ResizeHandleComponent: React.FC<ResizeHandleProps> = ({ position, onResize
         positionStyles[position],
         isCorner && "w-3 h-3"
       )}
+      style={{
+        // 🔧 关键: 手柄需要启用 pointer-events 来接收点击
+        pointerEvents: "auto"
+      }}
       onMouseDown={(e) => {
         e.stopPropagation();
         onResizeStart(e, position);
@@ -75,6 +79,8 @@ export const NodeSelector: React.FC<{
     startWidth: number;
     startHeight: number;
     aspectRatio: number;
+    startTop: number;
+    startLeft: number;
   } | null>(null);
 
   // 同步选择框位置到元素
@@ -99,17 +105,19 @@ export const NodeSelector: React.FC<{
     box.style.left = `${left}px`;
     box.style.width = `${targetRect.width}px`;
     box.style.height = `${targetRect.height}px`;
-    box.style.pointerEvents = isSelected ? "auto" : "none";
+    // 🔧 关键修复: 选择框本身始终不阻挡事件,只有手柄可以交互
+    box.style.pointerEvents = "none";
     box.style.zIndex = "1000";
     box.style.boxSizing = "border-box";
-  }, [nodeId, canvasRef, isSelected]);
+  }, [nodeId, canvasRef]);
 
   const handleResizeStart = useCallback((e: React.MouseEvent, handle: ResizeHandle) => {
     e.preventDefault();
     e.stopPropagation();
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const box = boxRef.current;
+    if (!canvas || !box) return;
 
     const targetEl = canvas.querySelector<HTMLElement>(
       `[data-node-id="${nodeId}"]`
@@ -117,6 +125,7 @@ export const NodeSelector: React.FC<{
     if (!targetEl) return;
 
     const rect = targetEl.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
 
     setKeepAspectRatio(e.shiftKey);
 
@@ -126,6 +135,9 @@ export const NodeSelector: React.FC<{
       startWidth: rect.width,
       startHeight: rect.height,
       aspectRatio: rect.width / rect.height,
+      // 🔧 记录初始位置
+      startTop: rect.top - canvasRect.top + canvas.scrollTop,
+      startLeft: rect.left - canvasRect.left + canvas.scrollLeft,
     };
 
     setIsResizing(true);
@@ -225,8 +237,15 @@ export const NodeSelector: React.FC<{
 
       // 使用 RAF 更新
       rafId = requestAnimationFrame(() => {
+        // 🔧 修复2: 使用 minWidth/maxWidth 确保宽度可以改变
         targetEl.style.width = `${Math.round(newWidth)}px`;
         targetEl.style.height = `${Math.round(newHeight)}px`;
+        targetEl.style.minWidth = 'unset';
+        targetEl.style.maxWidth = 'unset';
+        targetEl.style.minHeight = 'unset';
+        targetEl.style.maxHeight = 'unset';
+        targetEl.style.flexShrink = '0';
+        targetEl.style.flexGrow = '0';
         
         // 立即同步选择框位置
         syncBoxPosition();
@@ -257,6 +276,14 @@ export const NodeSelector: React.FC<{
       if (targetEl.style.height) {
         updates.height = targetEl.style.height;
       }
+
+      // 🔧 保存完成后清理临时样式,让组件使用设置的宽高
+      targetEl.style.minWidth = '';
+      targetEl.style.maxWidth = '';
+      targetEl.style.minHeight = '';
+      targetEl.style.maxHeight = '';
+      targetEl.style.flexShrink = '';
+      targetEl.style.flexGrow = '';
 
       // 通知父组件保存到 Schema
       if (Object.keys(updates).length > 0) {
@@ -308,42 +335,63 @@ export const NodeSelector: React.FC<{
       `[data-node-id="${nodeId}"]`
     );
 
-    // 使用 MutationObserver 监听样式变化
-    const mutationObserver = new MutationObserver(() => {
-      if (!isResizing) {
+    // 🔧 只在非拖拽改变大小时监听变化
+    if (!isResizing) {
+      // 使用 MutationObserver 监听属性变化
+      const mutationObserver = new MutationObserver(() => {
         syncBoxPosition();
-      }
-    });
-
-    if (targetEl) {
-      mutationObserver.observe(targetEl, {
-        attributes: true,
-        attributeFilter: ['style'],
       });
-    }
 
-    const resizeObserver = new ResizeObserver(() => {
-      if (!isResizing) {
+      if (targetEl) {
+        mutationObserver.observe(targetEl, {
+          attributes: true,
+          childList: true,
+          subtree: true,
+        });
+      }
+
+      // 监听父容器的变化
+      const parentEl = targetEl?.parentElement;
+      const parentObserver = new MutationObserver(() => {
         syncBoxPosition();
+      });
+
+      if (parentEl) {
+        parentObserver.observe(parentEl, {
+          attributes: true,
+          childList: true,
+          subtree: false,
+        });
       }
-    });
-    
-    if (targetEl) {
-      resizeObserver.observe(targetEl);
+
+      const resizeObserver = new ResizeObserver(() => {
+        syncBoxPosition();
+      });
+      
+      if (targetEl) {
+        resizeObserver.observe(targetEl);
+      }
+
+      // 定时器后备
+      const intervalId = setInterval(() => {
+        syncBoxPosition();
+      }, 100);
+
+      canvas.addEventListener("scroll", syncBoxPosition);
+      window.addEventListener("resize", syncBoxPosition);
+
+      return () => {
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        mutationObserver.disconnect();
+        parentObserver.disconnect();
+        resizeObserver.disconnect();
+        clearInterval(intervalId);
+        canvas.removeEventListener("scroll", syncBoxPosition);
+        window.removeEventListener("resize", syncBoxPosition);
+      };
     }
-
-    canvas.addEventListener("scroll", syncBoxPosition);
-    window.addEventListener("resize", syncBoxPosition);
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      mutationObserver.disconnect();
-      resizeObserver.disconnect();
-      canvas.removeEventListener("scroll", syncBoxPosition);
-      window.removeEventListener("resize", syncBoxPosition);
-    };
   }, [nodeId, zoom, canvasRef, syncBoxPosition, isResizing]);
 
   return (
@@ -359,7 +407,7 @@ export const NodeSelector: React.FC<{
         boxSizing: "border-box",
       }}
     >
-      {isSelected && !isResizing && (
+      {isSelected && (
         <>
           <ResizeHandleComponent position="top-left" onResizeStart={handleResizeStart} />
           <ResizeHandleComponent position="top-right" onResizeStart={handleResizeStart} />
