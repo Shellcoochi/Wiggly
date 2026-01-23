@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 
-type ResizeHandle = 
-  | "top" 
-  | "right" 
-  | "bottom" 
-  | "left" 
-  | "top-left" 
-  | "top-right" 
-  | "bottom-left" 
+type ResizeHandle =
+  | "top"
+  | "right"
+  | "bottom"
+  | "left"
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
   | "bottom-right";
 
 interface ResizeHandleProps {
@@ -18,18 +18,27 @@ interface ResizeHandleProps {
   onResizeStart: (e: React.MouseEvent, handle: ResizeHandle) => void;
 }
 
-const ResizeHandleComponent: React.FC<ResizeHandleProps> = ({ position, onResizeStart }) => {
+const ResizeHandleComponent: React.FC<ResizeHandleProps> = ({
+  position,
+  onResizeStart,
+}) => {
   const isCorner = position.includes("-");
-  
+
   const positionStyles: Record<ResizeHandle, string> = {
-    "top": "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-n-resize w-full h-2",
-    "right": "right-0 top-1/2 translate-x-1/2 -translate-y-1/2 cursor-e-resize w-2 h-full",
-    "bottom": "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 cursor-s-resize w-full h-2",
-    "left": "left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-w-resize w-2 h-full",
-    "top-left": "top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize",
-    "top-right": "top-0 right-0 translate-x-1/2 -translate-y-1/2 cursor-ne-resize",
-    "bottom-left": "bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-sw-resize",
-    "bottom-right": "bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-se-resize",
+    top: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-n-resize w-full h-2",
+    right:
+      "right-0 top-1/2 translate-x-1/2 -translate-y-1/2 cursor-e-resize w-2 h-full",
+    bottom:
+      "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 cursor-s-resize w-full h-2",
+    left: "left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-w-resize w-2 h-full",
+    "top-left":
+      "top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize",
+    "top-right":
+      "top-0 right-0 translate-x-1/2 -translate-y-1/2 cursor-ne-resize",
+    "bottom-left":
+      "bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-sw-resize",
+    "bottom-right":
+      "bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-se-resize",
   };
 
   return (
@@ -41,7 +50,7 @@ const ResizeHandleComponent: React.FC<ResizeHandleProps> = ({ position, onResize
       )}
       style={{
         // 🔧 关键: 手柄需要启用 pointer-events 来接收点击
-        pointerEvents: "auto"
+        pointerEvents: "auto",
       }}
       onMouseDown={(e) => {
         e.stopPropagation();
@@ -60,19 +69,22 @@ export const NodeSelector: React.FC<{
   canvasRef: React.RefObject<HTMLDivElement | null>;
   isSelected?: boolean;
   zoom?: number;
-  onResize?: (nodeId: string, updates: {
-    width?: string;
-    height?: string;
-  }) => void;
+  onResize?: (
+    nodeId: string,
+    updates: {
+      width?: string;
+      height?: string;
+    }
+  ) => void;
 }> = ({ nodeId, canvasRef, isSelected = false, zoom = 100, onResize }) => {
   const boxRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const prevZoomRef = useRef<number>(zoom);
-  
+
   const [isResizing, setIsResizing] = useState(false);
   const [resizeHandle, setResizeHandle] = useState<ResizeHandle | null>(null);
   const [keepAspectRatio, setKeepAspectRatio] = useState(false);
-  
+
   const resizeDataRef = useRef<{
     startX: number;
     startY: number;
@@ -111,38 +123,42 @@ export const NodeSelector: React.FC<{
     box.style.boxSizing = "border-box";
   }, [nodeId, canvasRef]);
 
-  const handleResizeStart = useCallback((e: React.MouseEvent, handle: ResizeHandle) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent, handle: ResizeHandle) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    const canvas = canvasRef.current;
-    const box = boxRef.current;
-    if (!canvas || !box) return;
+      const canvas = canvasRef.current;
+      const box = boxRef.current;
+      if (!canvas || !box) return;
 
-    const targetEl = canvas.querySelector<HTMLElement>(
-      `[data-node-id="${nodeId}"]`
-    );
-    if (!targetEl) return;
+      const targetEl = canvas.querySelector<HTMLElement>(
+        `[data-node-id="${nodeId}"]`
+      );
+      if (!targetEl) return;
 
-    const rect = targetEl.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
+      targetEl.style.transition = "none";
+      const rect = targetEl.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
 
-    setKeepAspectRatio(e.shiftKey);
+      setKeepAspectRatio(e.shiftKey);
 
-    resizeDataRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      startWidth: rect.width,
-      startHeight: rect.height,
-      aspectRatio: rect.width / rect.height,
-      // 🔧 记录初始位置
-      startTop: rect.top - canvasRect.top + canvas.scrollTop,
-      startLeft: rect.left - canvasRect.left + canvas.scrollLeft,
-    };
+      resizeDataRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        startWidth: rect.width,
+        startHeight: rect.height,
+        aspectRatio: rect.width / rect.height,
+        // 🔧 记录初始位置
+        startTop: rect.top - canvasRect.top + canvas.scrollTop,
+        startLeft: rect.left - canvasRect.left + canvas.scrollLeft,
+      };
 
-    setIsResizing(true);
-    setResizeHandle(handle);
-  }, [nodeId, canvasRef]);
+      setIsResizing(true);
+      setResizeHandle(handle);
+    },
+    [nodeId, canvasRef]
+  );
 
   // 拖拽改变大小
   useEffect(() => {
@@ -161,8 +177,9 @@ export const NodeSelector: React.FC<{
       );
       if (!targetEl) return;
 
-      const { startX, startY, startWidth, startHeight, aspectRatio } = resizeDataRef.current;
-      
+      const { startX, startY, startWidth, startHeight, aspectRatio } =
+        resizeDataRef.current;
+
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
 
@@ -172,57 +189,57 @@ export const NodeSelector: React.FC<{
       const shouldKeepRatio = keepAspectRatio || e.shiftKey;
 
       // 根据拖拽手柄计算新的宽高
-      if (resizeHandle === 'right') {
+      if (resizeHandle === "right") {
         newWidth = Math.max(50, startWidth + deltaX);
         if (shouldKeepRatio) {
           newHeight = newWidth / aspectRatio;
         }
-      } else if (resizeHandle === 'left') {
+      } else if (resizeHandle === "left") {
         newWidth = Math.max(50, startWidth - deltaX);
         if (shouldKeepRatio) {
           newHeight = newWidth / aspectRatio;
         }
-      } else if (resizeHandle === 'bottom') {
+      } else if (resizeHandle === "bottom") {
         newHeight = Math.max(50, startHeight + deltaY);
         if (shouldKeepRatio) {
           newWidth = newHeight * aspectRatio;
         }
-      } else if (resizeHandle === 'top') {
+      } else if (resizeHandle === "top") {
         newHeight = Math.max(50, startHeight - deltaY);
         if (shouldKeepRatio) {
           newWidth = newHeight * aspectRatio;
         }
-      } else if (resizeHandle === 'bottom-right') {
+      } else if (resizeHandle === "bottom-right") {
         newWidth = Math.max(50, startWidth + deltaX);
         newHeight = Math.max(50, startHeight + deltaY);
-        
+
         if (shouldKeepRatio) {
           const avgDelta = (deltaX + deltaY) / 2;
           newWidth = Math.max(50, startWidth + avgDelta);
           newHeight = newWidth / aspectRatio;
         }
-      } else if (resizeHandle === 'bottom-left') {
+      } else if (resizeHandle === "bottom-left") {
         newWidth = Math.max(50, startWidth - deltaX);
         newHeight = Math.max(50, startHeight + deltaY);
-        
+
         if (shouldKeepRatio) {
           const avgDelta = (-deltaX + deltaY) / 2;
           newHeight = Math.max(50, startHeight + avgDelta);
           newWidth = newHeight * aspectRatio;
         }
-      } else if (resizeHandle === 'top-right') {
+      } else if (resizeHandle === "top-right") {
         newWidth = Math.max(50, startWidth + deltaX);
         newHeight = Math.max(50, startHeight - deltaY);
-        
+
         if (shouldKeepRatio) {
           const avgDelta = (deltaX - deltaY) / 2;
           newWidth = Math.max(50, startWidth + avgDelta);
           newHeight = newWidth / aspectRatio;
         }
-      } else if (resizeHandle === 'top-left') {
+      } else if (resizeHandle === "top-left") {
         newWidth = Math.max(50, startWidth - deltaX);
         newHeight = Math.max(50, startHeight - deltaY);
-        
+
         if (shouldKeepRatio) {
           const avgDelta = (-deltaX - deltaY) / 2;
           newWidth = Math.max(50, startWidth + avgDelta);
@@ -240,13 +257,13 @@ export const NodeSelector: React.FC<{
         // 🔧 修复2: 使用 minWidth/maxWidth 确保宽度可以改变
         targetEl.style.width = `${Math.round(newWidth)}px`;
         targetEl.style.height = `${Math.round(newHeight)}px`;
-        targetEl.style.minWidth = 'unset';
-        targetEl.style.maxWidth = 'unset';
-        targetEl.style.minHeight = 'unset';
-        targetEl.style.maxHeight = 'unset';
-        targetEl.style.flexShrink = '0';
-        targetEl.style.flexGrow = '0';
-        
+        targetEl.style.minWidth = "unset";
+        targetEl.style.maxWidth = "unset";
+        targetEl.style.minHeight = "unset";
+        targetEl.style.maxHeight = "unset";
+        targetEl.style.flexShrink = "0";
+        targetEl.style.flexGrow = "0";
+
         // 立即同步选择框位置
         syncBoxPosition();
       });
@@ -266,7 +283,7 @@ export const NodeSelector: React.FC<{
         `[data-node-id="${nodeId}"]`
       );
       if (!targetEl) return;
-
+      targetEl.style.transition = "";
       // 收集实际应用的样式变化
       const updates: Parameters<NonNullable<typeof onResize>>[1] = {};
 
@@ -278,12 +295,12 @@ export const NodeSelector: React.FC<{
       }
 
       // 🔧 保存完成后清理临时样式,让组件使用设置的宽高
-      targetEl.style.minWidth = '';
-      targetEl.style.maxWidth = '';
-      targetEl.style.minHeight = '';
-      targetEl.style.maxHeight = '';
-      targetEl.style.flexShrink = '';
-      targetEl.style.flexGrow = '';
+      targetEl.style.minWidth = "";
+      targetEl.style.maxWidth = "";
+      targetEl.style.minHeight = "";
+      targetEl.style.maxHeight = "";
+      targetEl.style.flexShrink = "";
+      targetEl.style.flexGrow = "";
 
       // 通知父组件保存到 Schema
       if (Object.keys(updates).length > 0) {
@@ -293,7 +310,7 @@ export const NodeSelector: React.FC<{
       setIsResizing(false);
       setResizeHandle(null);
       resizeDataRef.current = null;
-      
+
       // 最后同步一次
       syncBoxPosition();
     };
@@ -308,7 +325,15 @@ export const NodeSelector: React.FC<{
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isResizing, resizeHandle, keepAspectRatio, nodeId, onResize, canvasRef, syncBoxPosition]);
+  }, [
+    isResizing,
+    resizeHandle,
+    keepAspectRatio,
+    nodeId,
+    onResize,
+    canvasRef,
+    syncBoxPosition,
+  ]);
 
   // 监听位置变化
   useEffect(() => {
@@ -367,7 +392,7 @@ export const NodeSelector: React.FC<{
       const resizeObserver = new ResizeObserver(() => {
         syncBoxPosition();
       });
-      
+
       if (targetEl) {
         resizeObserver.observe(targetEl);
       }
@@ -399,7 +424,9 @@ export const NodeSelector: React.FC<{
       ref={boxRef}
       className={cn(
         "absolute",
-        isSelected ? "border-2 border-primary" : "border border-dashed border-blue-400",
+        isSelected
+          ? "border-2 border-primary"
+          : "border border-dashed border-blue-400",
         "rounded-md",
         isResizing && "border-primary border-2"
       )}
@@ -409,14 +436,38 @@ export const NodeSelector: React.FC<{
     >
       {isSelected && (
         <>
-          <ResizeHandleComponent position="top-left" onResizeStart={handleResizeStart} />
-          <ResizeHandleComponent position="top-right" onResizeStart={handleResizeStart} />
-          <ResizeHandleComponent position="bottom-left" onResizeStart={handleResizeStart} />
-          <ResizeHandleComponent position="bottom-right" onResizeStart={handleResizeStart} />
-          <ResizeHandleComponent position="top" onResizeStart={handleResizeStart} />
-          <ResizeHandleComponent position="right" onResizeStart={handleResizeStart} />
-          <ResizeHandleComponent position="bottom" onResizeStart={handleResizeStart} />
-          <ResizeHandleComponent position="left" onResizeStart={handleResizeStart} />
+          <ResizeHandleComponent
+            position="top-left"
+            onResizeStart={handleResizeStart}
+          />
+          <ResizeHandleComponent
+            position="top-right"
+            onResizeStart={handleResizeStart}
+          />
+          <ResizeHandleComponent
+            position="bottom-left"
+            onResizeStart={handleResizeStart}
+          />
+          <ResizeHandleComponent
+            position="bottom-right"
+            onResizeStart={handleResizeStart}
+          />
+          <ResizeHandleComponent
+            position="top"
+            onResizeStart={handleResizeStart}
+          />
+          <ResizeHandleComponent
+            position="right"
+            onResizeStart={handleResizeStart}
+          />
+          <ResizeHandleComponent
+            position="bottom"
+            onResizeStart={handleResizeStart}
+          />
+          <ResizeHandleComponent
+            position="left"
+            onResizeStart={handleResizeStart}
+          />
         </>
       )}
     </div>
