@@ -37,6 +37,22 @@ export interface DataSource {
   };
 }
 
+/** 绑定类型定义 */
+export type BindingType = "static" | "variable" | "expression" | "datasource";
+
+export interface Binding {
+  type: BindingType;
+  // 变量绑定：user.name
+  variablePath?: string;
+  // 表达式绑定：{{user.name + ' ' + user.age}}
+  expression?: string;
+  // 数据源绑定：datasourceId.data.items[0]
+  datasourceId?: string;
+  dataPath?: string;
+  // 静态值
+  value?: any;
+}
+
 /** 设计节点 */
 export interface DesignerNode {
   id: string;
@@ -46,6 +62,8 @@ export interface DesignerNode {
   props?: Record<string, any>;
   style?: React.CSSProperties;
   children?: DesignerNode[];
+  // 属性绑定配置（新增）
+  bindings?: Record<string, Binding>;
 }
 
 /** 全局样式 */

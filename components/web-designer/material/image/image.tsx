@@ -181,7 +181,8 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
           style={{
             objectPosition,
           }}
-          {...props}
+          // 排除 children 和其他可能导致问题的 props
+          {...(({ children, dangerouslySetInnerHTML, ...rest }) => rest)(props)}
         />
       </div>
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { DesignerNode, Binding, Variable, DataSource } from "../types";
+import { DesignerNode, Binding } from "../types";
 import { findAsset } from "../utils/tools";
 
 // ============================================
@@ -237,7 +237,7 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
   onError,
   bindingContext,
 }) => {
-  const { id, componentName, props, style, children, isContainer } = node;
+  const { id, componentName, style, children, isContainer } = node;
 
   // 获取组件
   const Component = useMemo(() => {
@@ -280,17 +280,46 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
   // 错误边界处理
   try {
     // 合并 props 和 style（使用解析后的 props）
-    const finalProps = {
+    const finalProps: any = {
       ...resolvedProps,
       style: { ...resolvedProps?.style, ...style },
       "data-renderer-id": id, // 添加标识符，方便调试
     };
 
-    // 如果是预览模式，禁用某些交互
+    // 如果是预览模式，禁用编辑相关的交互
     if (preview) {
-      // 可以在这里添加预览模式的特殊处理
-      // 例如：禁用所有点击事件
-      // finalProps.onClick = (e: Event) => e.preventDefault();
+      // 禁用内容编辑
+      finalProps.contentEditable = false;
+      finalProps.suppressContentEditableWarning = true;
+
+      // 禁用拖拽等交互
+      finalProps.onDragStart = (e: React.DragEvent) => e.preventDefault();
+      finalProps.onDoubleClick = (e: React.MouseEvent) => e.preventDefault();
+      finalProps.onContextMenu = (e: React.MouseEvent) => e.preventDefault();
+
+      // 移除表单相关的编辑事件（但保留导航事件）
+      const isFormComponent = componentName.toLowerCase().includes("input") ||
+                             componentName.toLowerCase().includes("textarea") ||
+                             componentName.toLowerCase().includes("select");
+      
+      if (!isFormComponent && resolvedProps?.onClick) {
+        // 对于非表单组件的点击事件，仅保留导航能力
+        finalProps.onClick = (e: React.MouseEvent) => {
+          const href = resolvedProps?.href;
+          if (href) {
+            e.preventDefault();
+            if (href.startsWith("http")) {
+              window.open(href, "_blank");
+            } else {
+              window.location.href = href;
+            }
+          }
+          // 其他点击事件不执行
+        };
+      } else if (isFormComponent) {
+        // 禁用表单提交
+        finalProps.onSubmit = (e: React.FormEvent) => e.preventDefault();
+      }
     }
 
     // 调试：在开发环境显示绑定信息
@@ -302,10 +331,24 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
     }
 
     // 渲染组件
+    // 对于自闭合元素（如 img），不能传入 children
+    const isVoidElement = ["img", "image", "input", "br", "hr"].includes(
+      componentName.toLowerCase()
+    );
+
+    const componentProps = isVoidElement
+      ? { ...finalProps }
+      : finalProps;
+
+    // 移除 void 元素不需要的属性
+    if (isVoidElement && componentProps.children) {
+      delete componentProps.children;
+    }
+
     return (
-      <Component {...finalProps}>
-        {/* 渲染子节点 */}
-        {isContainer && children && children.length > 0 && (
+      <Component {...componentProps}>
+        {/* 渲染子节点：仅当是容器时才渲染 */}
+        {!isVoidElement && isContainer && children && children.length > 0 && (
           <>
             {children.map((child) => (
               <NodeRenderer
@@ -319,9 +362,9 @@ const NodeRenderer: React.FC<NodeRendererProps> = ({
             ))}
           </>
         )}
-        
-        {/* 如果没有子节点，渲染 props.children */}
-        {!isContainer && resolvedProps?.children}
+
+        {/* 渲染 props.children：仅对非容器、非 void 元素 */}
+        {!isVoidElement && !isContainer && componentProps.children}
       </Component>
     );
   } catch (error) {

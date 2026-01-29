@@ -11,8 +11,8 @@ import {
   NodePositon,
   PageSchema,
   Variable,
-  DataSource,
   Positon,
+  ViewMode,
 } from "../types";
 import PropertyPanel from "../property-panel";
 import materials from "../material";
@@ -21,16 +21,18 @@ import { NodeSelector } from "../node-selector";
 import { NodeItem } from "./node-item";
 import { PositionIndicator } from "../position-indicator";
 import DesignerSidebar from "../sidebar-panel";
-import DesignerHeader, { ViewMode } from "./designer-header";
+import DesignerHeader from "./designer-header";
 import { initialPageSchema } from "./initial-schema";
 import {
   IconClipboard,
   IconCopy,
   IconCut,
   IconTrash,
+  IconArrowLeft,
 } from "@tabler/icons-react";
 import { useHistory } from "../hooks/use-history";
 import { useClipboard } from "../hooks/use-clipboard";
+import { Renderer } from "../renderer";
 
 const { assets, snippets, categories } = materials;
 
@@ -77,7 +79,7 @@ export default function Designer() {
   );
 
   // 数据源运行时值
-  const [dataSourceValues, setDataSourceValues] = useState<Record<string, any>>(
+  const [dataSourceValues] = useState<Record<string, any>>(
     () => {
       const values: Record<string, any> = {};
       schema.dataSources.forEach((ds) => {
@@ -141,19 +143,20 @@ export default function Designer() {
     [setSchema]
   );
 
-  const setDataSources = useCallback(
-    (newDataSources: DataSource[]) => {
-      setSchema((prev) => ({
-        ...prev,
-        dataSources: newDataSources,
-        meta: {
-          ...prev.meta,
-          updatedAt: new Date().toISOString(),
-        },
-      }));
-    },
-    [setSchema]
-  );
+  // TODO: 数据源更新函数 - 在将来实现数据源编辑功能时使用
+  // const setDataSources = useCallback(
+  //   (newDataSources: DataSource[]) => {
+  //     setSchema((prev) => ({
+  //       ...prev,
+  //       dataSources: newDataSources,
+  //       meta: {
+  //         ...prev.meta,
+  //         updatedAt: new Date().toISOString(),
+  //       },
+  //     }));
+  //   },
+  //   [setSchema]
+  // );
 
   const removeItem = useCallback(
     (id: string, tree: DesignerNode[]): DesignerNode[] => {
@@ -227,7 +230,7 @@ export default function Designer() {
         capture: true,
       });
     };
-  }, [items]);
+  }, [items, viewMode]);
 
   const asset = useMemo(() => {
     if (selectedNode) {
@@ -796,6 +799,96 @@ export default function Designer() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [deleteNode, handleCopy, handleCut, handlePaste, history, selectedNode]);
+
+  // ============================================
+  // 预览模式 UI
+  // ============================================
+
+  if (viewMode === "preview") {
+    return (
+      <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+        {/* 简化的顶部栏 */}
+        <div className="h-11 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center gap-4 z-10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode("design")}
+            className="gap-2"
+          >
+            <IconArrowLeft className="w-4 h-4" />
+            返回编辑
+          </Button>
+          <div className="h-5 w-px bg-border" />
+          <span className="text-sm font-semibold">预览模式</span>
+          <div className="flex-1" />
+          <span className="text-xs text-muted-foreground">
+            {schema.meta.name}
+          </span>
+        </div>
+
+        {/* 预览内容区域 */}
+        <div className="flex-1 overflow-auto p-8 bg-muted/20">
+          <div className="mx-auto bg-card rounded-lg shadow-xl p-8 min-h-full max-w-6xl">
+            <Renderer
+              schema={items}
+              preview={true}
+              variables={variableValues}
+              dataSources={dataSourceValues}
+              onError={(error, node) => {
+                console.error(`[Preview] Error in ${node.componentName}:`, error);
+                toast.error(`预览错误: ${node.componentName}`);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // 代码模式 UI
+  // ============================================
+
+  if (viewMode === "code") {
+    return (
+      <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+        {/* 简化的顶部栏 */}
+        <div className="h-11 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center gap-4 z-10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode("design")}
+            className="gap-2"
+          >
+            <IconArrowLeft className="w-4 h-4" />
+            返回编辑
+          </Button>
+          <div className="h-5 w-px bg-border" />
+          <span className="text-sm font-semibold">代码模式</span>
+          <div className="flex-1" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const json = JSON.stringify(schema, null, 2);
+              navigator.clipboard.writeText(json).then(() => {
+                toast.success("Schema 已复制到剪贴板");
+              });
+            }}
+          >
+            复制 Schema
+          </Button>
+        </div>
+
+        {/* 代码展示区域 */}
+        <div className="flex-1 overflow-auto p-8 bg-muted/20">
+          <pre className="bg-card text-sm font-mono p-6 rounded-lg border max-w-6xl mx-auto">
+            <code>{JSON.stringify(schema, null, 2)}</code>
+          </pre>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
