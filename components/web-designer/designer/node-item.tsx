@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useMemo, useEffect } from "react";
+import { useCallback, useRef, useState, useMemo } from "react";
 import { DesignerNode, DragItem, DropResult } from "../types";
 import { useDrag, useDrop } from "react-dnd";
 import type { DropTargetMonitor } from "react-dnd";
@@ -8,12 +8,9 @@ import { cn } from "@/lib/utils";
 
 // 常量定义
 const INDENT_SIZE = 20;
-const HOVER_THROTTLE_MS = 32; // ~30fps throttle for better performance
-const AUTO_SCROLL_SPEED = 10;
-const AUTO_SCROLL_THRESHOLD = 50; // pixels from edge to trigger scroll
-const BOUNDARY_THRESHOLD = 0.15; // 15% of element size for boundary detection
+// 移除未使用的 HOVER_THROTTLE_MS 常量
 
-// 工具函数：计算距离（考虑滚动偏移）
+// 工具函数：计算距离
 const getDistance = (
   element: Element,
   point: { x: number; y: number },
@@ -24,117 +21,25 @@ const getDistance = (
   return Math.sqrt((point.x - centerX) ** 2 + (point.y - centerY) ** 2);
 };
 
-// 工具函数：获取组件方向（从 componentName 判断）
-const getComponentDirection = (componentName: string): "row" | "col" => {
-  return componentName.toLowerCase() === "col" ? "col" : "row";
-};
-
-// 工具函数：获取容器边界信息
-const getContainerBoundaryInfo = (
-  containerElement: Element,
-  clientPoint: { x: number; y: number },
-  direction: "row" | "col",
-  childrenCount: number,
-): { isBoundary: boolean; boundaryType?: "start" | "middle" | "end" } => {
-  if (childrenCount === 0) {
-    return { isBoundary: true, boundaryType: "start" };
-  }
-
-  const rect = containerElement.getBoundingClientRect();
-  const threshold =
-    direction === "row"
-      ? rect.width * BOUNDARY_THRESHOLD
-      : rect.height * BOUNDARY_THRESHOLD;
-
-  if (direction === "row") {
-    const distFromLeft = clientPoint.x - rect.left;
-    const distFromRight = rect.right - clientPoint.x;
-    if (distFromLeft < threshold) return { isBoundary: true, boundaryType: "start" };
-    if (distFromRight < threshold) return { isBoundary: true, boundaryType: "end" };
-  } else {
-    const distFromTop = clientPoint.y - rect.top;
-    const distFromBottom = rect.bottom - clientPoint.y;
-    if (distFromTop < threshold) return { isBoundary: true, boundaryType: "start" };
-    if (distFromBottom < threshold) return { isBoundary: true, boundaryType: "end" };
-  }
-
-  return { isBoundary: false, boundaryType: "middle" };
-};
-
-// 工具函数：判断位置（改进的百分比计算）
+// 工具函数：判断位置
 const getPosition = (
   element: Element,
   point: { x: number; y: number },
   direction: "row" | "col",
-  isContainer: boolean = false,
-): "left" | "right" | "top" | "bottom" | "inside" => {
+): "left" | "right" | "top" | "bottom" => {
   const rect = element.getBoundingClientRect();
   const { x, y } = point;
 
-  // 非容器元素：只能放在左/右或上/下
-  if (!isContainer) {
-    if (direction === "row") {
-      const midX = rect.left + rect.width / 2;
-      return x < midX ? "left" : "right";
-    } else {
-      const midY = rect.top + rect.height / 2;
-      return y < midY ? "top" : "bottom";
-    }
-  }
-
-  // 容器元素：可以放在里面
   if (direction === "row") {
-    const midX = rect.left + rect.width / 2;
-    return x < midX ? "left" : "right";
+    const distanceToLeft = Math.abs(x - rect.left);
+    const distanceToRight = Math.abs(x - rect.right);
+    return distanceToLeft < distanceToRight ? "left" : "right";
   } else {
-    const midY = rect.top + rect.height / 2;
-    return y < midY ? "top" : "bottom";
+    const distanceToTop = Math.abs(y - rect.top);
+    const distanceToBottom = Math.abs(y - rect.bottom);
+    return distanceToTop < distanceToBottom ? "top" : "bottom";
   }
 };
-
-// 工具函数：自动滚动
-const autoScrollElement = (
-  parentElement: Element | null,
-  clientPoint: { x: number; y: number },
-): void => {
-  if (!parentElement) return;
-
-  const rect = parentElement.getBoundingClientRect();
-  let scrollX = 0;
-  let scrollY = 0;
-
-  // 检测水平滚动
-  if (clientPoint.x - rect.left < AUTO_SCROLL_THRESHOLD) {
-    scrollX = -AUTO_SCROLL_SPEED;
-  } else if (rect.right - clientPoint.x < AUTO_SCROLL_THRESHOLD) {
-    scrollX = AUTO_SCROLL_SPEED;
-  }
-
-  // 检测垂直滚动
-  if (clientPoint.y - rect.top < AUTO_SCROLL_THRESHOLD) {
-    scrollY = -AUTO_SCROLL_SPEED;
-  } else if (rect.bottom - clientPoint.y < AUTO_SCROLL_THRESHOLD) {
-    scrollY = AUTO_SCROLL_SPEED;
-  }
-
-  if (scrollX !== 0) {
-    parentElement.scrollLeft += scrollX;
-  }
-  if (scrollY !== 0) {
-    parentElement.scrollTop += scrollY;
-  }
-};
-
-// 工具函数：检查是否应该节流 hover 回调
-const shouldThrottleHover = (lastTime: number): boolean => {
-  return Date.now() - lastTime < HOVER_THROTTLE_MS;
-};
-
-// 工具函数：更新 hover 时间
-const updateHoverTime = (): number => {
-  return Date.now();
-};
-
 
 interface NodeItemProps {
   item: DesignerNode;
@@ -168,14 +73,13 @@ export const NodeItem: React.FC<NodeItemProps> = ({
   moveItem,
   bindingContext,
 }) => {
-  const { id, children, isContainer, title, componentName, style } =
+  const { id, children, isContainer, title, componentName, props, style } =
     item;
   const [dropPosition, setDropPosition] = useState<DropResult | null>(null);
   const isSelected = selectedNodeId === id;
   const dragRef = useRef<HTMLDivElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
-  const lastHoverTimeRef = useRef<number>(0);
-  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // 移除未使用的 lastHoverTime ref
 
   // 拖拽配置
   const [{ isDragging }, drag] = useDrag({
@@ -200,7 +104,7 @@ export const NodeItem: React.FC<NodeItemProps> = ({
     canDrop: (dragItem: DragItem) => {
       if (dragItem.source === "panel") return true;
       if (dragItem.id === id) return false;
-      if (dragItem.parentId === id && (dragItem.depth ?? 0) < depth) return false;
+      if (dragItem.parentId === id && dragItem.depth < depth) return false;
       return true;
     },
     hover: (dragItem: DragItem, monitor: DropTargetMonitor) => {
@@ -214,23 +118,12 @@ export const NodeItem: React.FC<NodeItemProps> = ({
       const clientOffset = monitor.getClientOffset();
       if (!clientOffset) return;
 
-      // Optimization 5: 去抖处理 - 限制 hover 回调执行频率
-      if (shouldThrottleHover(lastHoverTimeRef.current)) {
-        return;
-      }
-      lastHoverTimeRef.current = updateHoverTime();
-
       // 计算放置位置
       const result = calculateDropPosition(clientOffset);
       setDropPosition(result);
 
       // 只通知位置变化，不执行实际移动
       moveItem(dragItem.id, id, result);
-
-      // Optimization 7: 自动滚动
-      if (dropRef.current) {
-        autoScrollElement(dropRef.current.parentElement, clientOffset);
-      }
     },
     drop: (dragItem: DragItem, monitor): DropResult | undefined => {
       if (!monitor.canDrop()) return undefined;
@@ -262,46 +155,13 @@ export const NodeItem: React.FC<NodeItemProps> = ({
   // 计算放置位置
   const calculateDropPosition = useCallback(
     (clientOffset: { x: number; y: number }): DropResult => {
-      // Optimization 1: 处理非容器元素的落点判断
-      if (!isContainer) {
-        return { id, position: "inside" };
+      let result: DropResult = { id, position: "inside" };
+
+      if (!isContainer || !children || children.length === 0) {
+        return result;
       }
 
-      // 容器为空时，返回 inside
-      if (!children || children.length === 0) {
-        return { id, position: "inside" };
-      }
-
-      // Optimization 4 & 7: 改进的方向检测（从 componentName 判断）
-      const direction = getComponentDirection(componentName);
-
-      // Optimization 8: 容器边界识别
-      const containerEl = document.querySelector(`[data-node-id="${id}"]`);
-      if (containerEl) {
-        const boundaryInfo = getContainerBoundaryInfo(
-          containerEl,
-          clientOffset,
-          direction,
-          children.length,
-        );
-
-        // 边界情况下直接返回容器内放置
-        if (boundaryInfo.isBoundary && boundaryInfo.boundaryType === "start") {
-          if (children.length > 0) {
-            const firstChild = children[0];
-            return { id: firstChild.id, position: direction === "row" ? "left" : "top" };
-          }
-          return { id, position: "inside" };
-        }
-
-        if (boundaryInfo.isBoundary && boundaryInfo.boundaryType === "end") {
-          if (children.length > 0) {
-            const lastChild = children[children.length - 1];
-            return { id: lastChild.id, position: direction === "row" ? "right" : "bottom" };
-          }
-          return { id, position: "inside" };
-        }
-      }
+      const direction = (props?.direction as "row" | "col") || "row";
 
       // 找到最近的子元素
       type ClosestChildType = {
@@ -323,30 +183,18 @@ export const NodeItem: React.FC<NodeItemProps> = ({
       });
 
       if (closestChild !== undefined) {
-        // Optimization 1: 修复非容器元素不能正确判断落点问题
         const position = getPosition(
           closestChild.element,
           clientOffset,
           direction,
-          false, // 子元素不是容器时只能左右/上下
         );
-        return { id: closestChild.id, position };
+        result = { id: closestChild.id, position };
       }
 
-      return { id, position: "inside" };
+      return result;
     },
-    [id, isContainer, children, componentName],
+    [id, isContainer, children, props?.direction],
   );
-
-  // Optimization 7 & 8: 清理自动滚动定时器
-  useEffect(() => {
-    return () => {
-      if (autoScrollIntervalRef.current) {
-        clearInterval(autoScrollIntervalRef.current);
-        autoScrollIntervalRef.current = null;
-      }
-    };
-  }, []);
 
   // 合并 refs
   const setRefs = useCallback(
