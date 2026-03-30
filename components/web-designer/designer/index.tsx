@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { DndProvider } from "react-dnd";
+import { DndProvider, useDragDropManager } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { toast } from "sonner";
 import { Button } from "../../ui/button";
@@ -16,7 +16,7 @@ import {
 } from "../types";
 import PropertyPanel from "../property-panel";
 import materials from "../material";
-import { findNode, generateNodeId } from "../utils/tools";
+import { findNode, findParentNodeId, generateNodeId } from "../utils/tools";
 import { NodeSelector } from "../node-selector";
 import { NodeItem } from "./node-item";
 import { PositionIndicator } from "../position-indicator";
@@ -32,13 +32,39 @@ import {
 } from "@tabler/icons-react";
 import { useHistory } from "../hooks/use-history";
 import { useClipboard } from "../hooks/use-clipboard";
-import { Renderer } from "../renderer";
+import { SafeRenderer } from "../renderer";
 
 const { assets, snippets, categories } = materials;
 
 const findAsset = (componentName: string) => {
   return assets.find((asset: any) => asset.componentName === componentName);
 };
+
+
+/**
+ * 必须在 DndProvider 内挂载：任意拖拽结束（释放、取消、放回不可投放处）时清空插入线状态。
+ */
+function ClearDropIndicatorOnDragEnd({
+  setDropInfo,
+}: {
+  setDropInfo: React.Dispatch<React.SetStateAction<DropResult | null>>;
+}) {
+  const manager = useDragDropManager();
+  const wasDraggingRef = useRef(false);
+
+  useEffect(() => {
+    const monitor = manager.getMonitor();
+    return monitor.subscribeToStateChange(() => {
+      const dragging = monitor.isDragging();
+      if (wasDraggingRef.current && !dragging) {
+        setDropInfo(null);
+      }
+      wasDraggingRef.current = dragging;
+    });
+  }, [manager, setDropInfo]);
+
+  return null;
+}
 
 /** 主组件 **/
 export default function Designer() {
@@ -67,6 +93,27 @@ export default function Designer() {
   const variables = schema.variables;
   const dataSources = schema.dataSources;
 
+  const dropContextContainerId = useMemo(() => {
+    if (!dropInfo?.id) return null;
+    if (dropInfo.position === "inside") return null;
+    return findParentNodeId(items, dropInfo.id);
+  }, [dropInfo, items]);
+
+  const dropHintLabel = useMemo(() => {
+    if (!dropInfo?.id) return null;
+    const lbl = (n: DesignerNode | undefined) =>
+      n?.title || n?.componentName || n?.id || "";
+    const self = findNode(dropInfo.id, items);
+    if (dropInfo.position === "inside") {
+      return `放入容器内：${lbl(self)}`;
+    }
+    const pid = findParentNodeId(items, dropInfo.id);
+    if (pid) {
+      return `仍在父容器「${lbl(findNode(pid, items))}」内 · 蓝线为插入位置`;
+    }
+    return `在「${lbl(self)}」附近插入`;
+  }, [dropInfo, items]);
+
   // 变量运行时值
   const [variableValues, setVariableValues] = useState<Record<string, any>>(
     () => {
@@ -78,16 +125,28 @@ export default function Designer() {
     }
   );
 
-  // 数据源运行时值
-  const [dataSourceValues] = useState<Record<string, any>>(
+  // 数据源运行时值（新建数据源时合并进 map；已有 id 保留运行时缓存）
+  const [dataSourceValues, setDataSourceValues] = useState<Record<string, any>>(
     () => {
       const values: Record<string, any> = {};
       schema.dataSources.forEach((ds) => {
-        values[ds.id] = ds.config.data || null;
+        values[ds.id] = ds.config.data ?? null;
       });
       return values;
     }
   );
+
+  useEffect(() => {
+    setDataSourceValues((prev) => {
+      const next = { ...prev };
+      for (const ds of schema.dataSources) {
+        if (!(ds.id in next)) {
+          next[ds.id] = ds.config.data ?? null;
+        }
+      }
+      return next;
+    });
+  }, [schema.dataSources]);
 
   const clipboard = useClipboard();
 
@@ -160,34 +219,38 @@ export default function Designer() {
 
   const removeItem = useCallback(
     (id: string, tree: DesignerNode[]): DesignerNode[] => {
-      const removeRecursive = (
-        id: string,
-        tree: DesignerNode[]
-      ): DesignerNode[] => {
-        return tree.filter((item) => {
-          if (item.id === id) {
-            if (selectedNode?.id === id) {
-              setSelectedNode(null);
+      const removeRecursive = (nodes: DesignerNode[]): DesignerNode[] => {
+        return nodes
+          .filter((item) => {
+            if (item.id === id) {
+              if (selectedNode?.id === id) {
+                setSelectedNode(null);
+              }
+              return false;
             }
-            return false;
-          }
-          if (item.isContainer && item.children) {
-            item.children = removeRecursive(id, item.children);
-          }
-          return true;
-        });
+            return true;
+          })
+          .map((item) => {
+            if (item.isContainer && item.children?.length) {
+              return {
+                ...item,
+                children: removeRecursive(item.children),
+              };
+            }
+            return item;
+          });
       };
-      return removeRecursive(id, tree);
+      return removeRecursive(tree);
     },
     [selectedNode]
   );
 
   const deleteNode = useCallback(
     (nodeId: string) => {
-      setItems(removeItem(nodeId, items));
+      setItems((prev) => removeItem(nodeId, prev));
       toast.success("删除成功");
     },
-    [items, removeItem, setItems]
+    [removeItem, setItems]
   );
 
   // ============================================
@@ -322,6 +385,7 @@ export default function Designer() {
       }
 
       if (source === "tree" && dragId === dropId) {
+        setDropInfo(null);
         return;
       }
 
@@ -331,6 +395,7 @@ export default function Designer() {
         const template = snippets.find((t: { id: string }) => t.id === dragId);
         if (!template) {
           toast.warning(`找不到组件模板: ${dragId}`);
+          setDropInfo(null);
           return;
         }
 
@@ -348,6 +413,7 @@ export default function Designer() {
         draggedItem = findItem(dragId)!;
         if (!draggedItem) {
           toast.warning(`找不到拖拽的元素: ${dragId}`);
+          setDropInfo(null);
           return;
         }
       }
@@ -355,6 +421,7 @@ export default function Designer() {
       const dropItem = findItem(dropId);
       if (!dropItem) {
         toast.warning(`找不到目标元素: ${dropId}`);
+        setDropInfo(null);
         return;
       }
 
@@ -370,12 +437,14 @@ export default function Designer() {
 
         if (position === "inside" && isDescendant(dragId, dropId)) {
           toast.warning(`不能将父节点拖拽到子节点中`);
+          setDropInfo(null);
           return;
         }
       }
 
       if (position === "inside" && !dropItem.isContainer) {
         toast.warning(`元素 ${dropId} 不是容器,不能包含子元素`);
+        setDropInfo(null);
         return;
       }
 
@@ -502,9 +571,9 @@ export default function Designer() {
         });
       };
 
-      setItems(updateNodeInTree(items));
+      setItems((prev) => updateNodeInTree(prev));
     },
-    [items, selectedNode?.id, setItems]
+    [selectedNode?.id, setItems]
   );
 
   // 调整大小功能
@@ -829,7 +898,7 @@ export default function Designer() {
         {/* 预览内容区域 */}
         <div className="flex-1 overflow-auto p-8 bg-muted/20">
           <div className="mx-auto bg-card rounded-lg shadow-xl p-8 min-h-full max-w-6xl">
-            <Renderer
+            <SafeRenderer
               schema={items}
               preview={true}
               variables={variableValues}
@@ -892,6 +961,7 @@ export default function Designer() {
 
   return (
     <DndProvider backend={HTML5Backend}>
+      <ClearDropIndicatorOnDragEnd setDropInfo={setDropInfo} />
       <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
         {/* 顶部导航栏 */}
         <DesignerHeader
@@ -1096,12 +1166,27 @@ export default function Designer() {
                     onResize={handleSmartResize} 
                   />
                 )}
+                {dropContextContainerId && (
+                  <PositionIndicator
+                    variant="context"
+                    canvasRef={canvasRef}
+                    nodeId={dropContextContainerId}
+                    position="inside"
+                  />
+                )}
                 {dropInfo?.id && (
                   <PositionIndicator
                     canvasRef={canvasRef}
-                    nodeId={dropInfo?.id}
+                    nodeId={dropInfo.id}
                     position={dropInfo.position}
                   />
+                )}
+                {dropHintLabel && (
+                  <div
+                    className="pointer-events-none absolute bottom-3 left-1/2 z-[1001] max-w-[min(28rem,90%)] -translate-x-1/2 rounded-md border border-border bg-popover/95 px-3 py-2 text-center text-xs text-popover-foreground shadow-md"
+                  >
+                    {dropHintLabel}
+                  </div>
                 )}
                 {outlineDropInfo?.nodeId && (
                   <PositionIndicator

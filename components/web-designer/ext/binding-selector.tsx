@@ -66,7 +66,7 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
       setLocalBinding({ type: "static", value });
       setStaticValue(value);
     }
-  }, [binding, value, ]);
+  }, [binding, value]);
 
   // 切换绑定模式
   const handleModeChange = (newMode: BindingType) => {
@@ -108,15 +108,6 @@ export const BindingSelector: React.FC<BindingSelectorProps> = ({
 
   return (
     <div className="space-y-2">
-      {/* 调试信息 */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs bg-yellow-50 border border-yellow-200 p-2 rounded">
-          <div>Mode: {mode}</div>
-          <div>Static Value: {JSON.stringify(staticValue)}</div>
-          <div>Binding Value: {JSON.stringify(binding?.value)}</div>
-        </div>
-      )}
-      
       {/* 绑定模式切换 */}
       <div className="flex gap-1 bg-muted p-1 rounded-md">
         <Button

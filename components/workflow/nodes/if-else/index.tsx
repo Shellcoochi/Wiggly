@@ -31,7 +31,7 @@ export default memo(function ConditionNode(props: FlowNodeProps) {
                 <React.Fragment key={condition.id}>
                   <ComparisonOperatorLabel
                     className="w-full"
-                    field={condition.variable.name}
+                    field={typeof condition.variable === "string" ? condition.variable : (condition.variable?.name ?? "")}
                     operator={condition.operator}
                     value={condition.value}
                   />

@@ -9,16 +9,19 @@ import { cn } from "@/lib/utils";
 // 常量定义
 const INDENT_SIZE = 20;
 
-// 工具函数：计算距离
-const getDistance = (
-  element: Element,
-  point: { x: number; y: number }
+/** 点到矩形包络的最短距离（点在矩形内为 0）；间隙里选最近子元素更准确 */
+const distancePointToRect = (
+  px: number,
+  py: number,
+  rect: DOMRectReadOnly
 ): number => {
-  const rect = element.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-  return Math.sqrt((point.x - centerX) ** 2 + (point.y - centerY) ** 2);
+  const cx = Math.min(Math.max(px, rect.left), rect.right);
+  const cy = Math.min(Math.max(py, rect.top), rect.bottom);
+  const dx = px - cx;
+  const dy = py - cy;
+  return Math.sqrt(dx * dx + dy * dy);
 };
+
 
 // 工具函数：判断位置
 const getPosition = (
@@ -103,7 +106,14 @@ export const NodeItem: React.FC<NodeItemProps> = ({
     canDrop: (dragItem: DragItem) => {
       if (dragItem.source === "panel") return true;
       if (dragItem.id === id) return false;
-      if (dragItem.parentId === id && dragItem.depth < depth) return false;
+      // 仅当 depth 存在时比较；勿用 ??0，否则 undefined 会被当成 0 误伤合法放置
+      if (
+        dragItem.parentId === id &&
+        dragItem.depth !== undefined &&
+        dragItem.depth < depth
+      ) {
+        return false;
+      }
       return true;
     },
     hover: (dragItem: DragItem, monitor: DropTargetMonitor) => {
@@ -171,9 +181,19 @@ export const NodeItem: React.FC<NodeItemProps> = ({
       const layout = (props?.direction as "row" | "col") || "row";
 
       /** --------------------------------
-       * 1️⃣ 非容器 / 无子节点
+       * 1️⃣ 空容器：必须优先 inside，否则 getPosition 只会得到四边，handleDrop 会当成 before/after
        * -------------------------------- */
-      if (!isContainer || !children || children.length === 0) {
+      if (isContainer && (!children || children.length === 0)) {
+        return {
+          id,
+          position: "inside",
+        };
+      }
+
+      /** --------------------------------
+       * 2️⃣ 非容器：在四边上插入为 before/after
+       * -------------------------------- */
+      if (!isContainer) {
         const position = getPosition(el, clientOffset, layout);
 
         return {
@@ -183,7 +203,7 @@ export const NodeItem: React.FC<NodeItemProps> = ({
       }
 
       /** --------------------------------
-       * 2️⃣ 容器 + 有子节点
+       * 3️⃣ 容器 + 有子节点：矩形内相对该子；间隙用点到子矩形最短距离再 getPosition（子容器四边也有蓝线）
        * -------------------------------- */
       type ClosestChild = {
         id: string;
@@ -191,37 +211,54 @@ export const NodeItem: React.FC<NodeItemProps> = ({
         distance: number;
       };
 
-      let closest: ClosestChild | null = null;
+      const childList = children ?? [];
+      if (childList.length === 0) {
+        return { id, position: "inside" };
+      }
 
-      for (const child of children) {
-        const childEl = document.querySelector(`[data-node-id="${child.id}"]`);
+      const px = clientOffset.x;
+      const py = clientOffset.y;
+
+      for (const child of childList) {
+        const childEl = document.querySelector(
+          `[data-node-id="${child.id}"]`,
+        ) as Element | null;
         if (!childEl) continue;
+        const r = childEl.getBoundingClientRect();
+        if (
+          px >= r.left &&
+          px <= r.right &&
+          py >= r.top &&
+          py <= r.bottom
+        ) {
+          const position = getPosition(childEl, clientOffset, layout);
+          return { id: child.id, position };
+        }
+      }
 
-        const distance = getDistance(childEl, clientOffset);
-
-        if (!closest || distance < closest.distance) {
+      let closest: ClosestChild | null = null;
+      for (const child of childList) {
+        const childEl = document.querySelector(
+          `[data-node-id="${child.id}"]`,
+        ) as Element | null;
+        if (!childEl) continue;
+        const r = childEl.getBoundingClientRect();
+        const d = distancePointToRect(px, py, r);
+        if (!closest || d < closest.distance) {
           closest = {
             id: child.id,
             element: childEl,
-            distance,
+            distance: d,
           };
         }
       }
 
-      // 理论兜底：真正的 inside（这里是合法的）
       if (!closest) {
-        return {
-          id,
-          position: "inside",
-        };
+        return { id, position: "inside" };
       }
 
-      const position = getPosition(closest.element, clientOffset, layout);
-
-      return {
-        id: closest.id,
-        position,
-      };
+      const edgePosition = getPosition(closest.element, clientOffset, layout);
+      return { id: closest.id, position: edgePosition };
     },
     [id, isContainer, children, props?.direction]
   );

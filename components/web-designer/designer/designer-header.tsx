@@ -28,8 +28,7 @@ import {
   IconFileText,
 } from "@tabler/icons-react";
 
-// 视图模式类型
-export type ViewMode = "design" | "preview" | "code";
+import type { ViewMode } from "../types";
 
 // Header Props
 interface DesignerHeaderProps {

@@ -48,5 +48,4 @@ const extractMaterials = (categories: any[]) => {
 };
 const materials = extractMaterials(categories);
 
-console.log(materials.assets);
 export default materials;

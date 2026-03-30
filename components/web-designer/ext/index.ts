@@ -59,20 +59,24 @@ const getValueByPath = (obj: any, path: string): any => {
   return result;
 };
 
-// 执行表达式
+const PATH_SEGMENT = /^[a-zA-Z_$][\w$]*(\[\d+\])?$/;
+
+function isSafeVariablePath(code: string): boolean {
+  if (!code) return false;
+  const segments = code.split(".");
+  return segments.length > 0 && segments.every((s) => PATH_SEGMENT.test(s));
+}
+
 const evaluateExpression = (
   expression: string,
   context: { variables: Record<string, any>; dataSources: Record<string, any> }
 ): any => {
-  // 移除 {{}} 包裹
   const code = expression.replace(/^\{\{|\}\}$/g, "").trim();
-  
-  // 创建安全的执行上下文
-  const func = new Function(
-    "variables",
-    "dataSources",
-    `with (variables) { return ${code}; }`
-  );
-  
-  return func(context.variables, context.dataSources);
+  if (!isSafeVariablePath(code)) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[ext] 表达式绑定仅支持简单路径。", expression);
+    }
+    return undefined;
+  }
+  return getValueByPath(context.variables, code);
 };

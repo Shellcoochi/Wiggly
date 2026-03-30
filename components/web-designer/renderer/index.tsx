@@ -31,36 +31,31 @@ const getValueByPath = (obj: any, path: string): any => {
   return result;
 };
 
-// 执行表达式（安全的）
+/** 仅允许类似 user.name、items[0].title 的路径片段，禁止任意 JS。 */
+const PATH_SEGMENT = /^[a-zA-Z_$][\w$]*(\[\d+\])?$/;
+
+function isSafeVariablePath(code: string): boolean {
+  if (!code) return false;
+  const segments = code.split(".");
+  return segments.length > 0 && segments.every((s) => PATH_SEGMENT.test(s));
+}
+
+// 表达式绑定：仅支持单一路径求值（与变量绑定等价子集），不再使用 new Function。
 const evaluateExpression = (
   expression: string,
   context: { variables: Record<string, any>; dataSources: Record<string, any> }
 ): any => {
-  try {
-    // 移除 {{}} 包裹
-    const code = expression.replace(/^\{\{|\}\}$/g, "").trim();
-    
-    // 创建安全的执行上下文
-    const func = new Function(
-      "variables",
-      "dataSources",
-      `
-        try {
-          with (variables) { 
-            return ${code}; 
-          }
-        } catch (e) {
-          console.error("表达式执行失败:", e);
-          return undefined;
-        }
-      `
-    );
-    
-    return func(context.variables, context.dataSources);
-  } catch (error) {
-    console.error("表达式解析失败:", error);
+  const code = expression.replace(/^\{\{|\}\}$/g, "").trim();
+  if (!isSafeVariablePath(code)) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn(
+        "[Renderer] 表达式绑定仅支持简单路径（如 user.age、list[0].x），已禁止任意代码。",
+        expression,
+      );
+    }
     return undefined;
   }
+  return getValueByPath(context.variables, code);
 };
 
 // 解析单个绑定
@@ -86,7 +81,7 @@ export const resolveBinding = (
         return variableValue !== undefined ? variableValue : staticValue;
 
       case "expression":
-        // 解析表达式: {{user.name + ' ' + user.age}}
+        // 仅支持安全路径子集（见 evaluateExpression）
         if (!binding.expression) return staticValue;
         const expressionValue = evaluateExpression(binding.expression, context);
         return expressionValue !== undefined ? expressionValue : staticValue;

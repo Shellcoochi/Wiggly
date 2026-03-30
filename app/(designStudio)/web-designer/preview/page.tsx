@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Renderer } from "@/components/web-designer/renderer";
+import { SafeRenderer } from "@/components/web-designer/renderer";
 import { PageSchema, DesignerNode } from "@/components/web-designer/types";
 import {
   IconArrowLeft,
@@ -134,7 +134,7 @@ export default function PreviewPage() {
       {/* 预览内容区域 */}
       <div className="flex-1 overflow-auto p-12 bg-muted/30">
         <div className="mx-auto bg-card rounded-lg shadow-2xl ring-1 ring-black/5 p-8 min-h-full max-w-6xl">
-          <Renderer
+          <SafeRenderer
             schema={schema.components as DesignerNode[]}
             preview={true}
             variables={variableValues}

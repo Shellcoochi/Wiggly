@@ -2,9 +2,12 @@ import { useEffect, useRef } from "react";
 import { Positon } from "../types";
 import { useCanvasRelativeRect } from "../hooks/use-canvas-relative-rect";
 
+type IndicatorVariant = "target" | "context";
+
 const getStyles = (
   position: Positon,
-  rect: { top: number; left: number; width: number; height: number }
+  rect: { top: number; left: number; width: number; height: number },
+  variant: IndicatorVariant
 ) => {
   const top = rect.top;
   const left = rect.left;
@@ -14,11 +17,15 @@ const getStyles = (
   const baseStyles: React.CSSProperties = {
     position: "absolute",
     pointerEvents: "none",
-    zIndex: 1000,
+    zIndex: variant === "context" ? 998 : 1000,
     boxSizing: "border-box",
+    transition: "opacity 0.12s ease, box-shadow 0.12s ease",
   };
 
-  const positionConfigs = {
+  const positionConfigs: Record<
+    Positon,
+    React.CSSProperties | undefined
+  > = {
     left: {
       top: `${top}px`,
       left: `${left - 4}px`,
@@ -55,14 +62,25 @@ const getStyles = (
       borderBottom: "2px solid #1890ff",
       backgroundColor: "#1890ff33",
     },
-    inside: {
-      top: `${top}px`,
-      left: `${left}px`,
-      width: `${width}px`,
-      height: `${height}px`,
-      border: "2px solid #1890ff",
-      backgroundColor: "#1890ff11",
-    },
+    inside:
+      variant === "context"
+        ? {
+            top: `${top}px`,
+            left: `${left}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            border: "2px dashed rgba(16, 185, 129, 0.75)",
+            backgroundColor: "rgba(16, 185, 129, 0.07)",
+            boxShadow: "inset 0 0 0 1px rgba(16, 185, 129, 0.25)",
+          }
+        : {
+            top: `${top}px`,
+            left: `${left}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            border: "2px solid #1890ff",
+            backgroundColor: "#1890ff11",
+          },
   };
 
   return {
@@ -75,7 +93,9 @@ export const PositionIndicator: React.FC<{
   nodeId: string;
   canvasRef: React.RefObject<HTMLDivElement | null>;
   position: Positon;
-}> = ({ nodeId, canvasRef, position }) => {
+  /** target: 精确落点；context: 父容器范围提示（通常配合 inside） */
+  variant?: IndicatorVariant;
+}> = ({ nodeId, canvasRef, position, variant = "target" }) => {
   const boxRef = useRef<HTMLDivElement>(null);
   const getRect = useCanvasRelativeRect(canvasRef);
 
@@ -92,13 +112,12 @@ export const PositionIndicator: React.FC<{
       const rect = getRect(targetEl);
       if (!rect) return;
 
-      const styles = getStyles(position, rect);
+      const styles = getStyles(position, rect, variant);
       Object.assign(box.style, styles);
     };
 
     updatePosition();
 
-    // 监听滚动和窗口大小变化
     const canvas = canvasRef.current;
     if (canvas) {
       canvas.addEventListener("scroll", updatePosition);
@@ -111,7 +130,7 @@ export const PositionIndicator: React.FC<{
       }
       window.removeEventListener("resize", updatePosition);
     };
-  }, [nodeId, position, canvasRef, getRect]);
+  }, [nodeId, position, variant, canvasRef, getRect]);
 
-  return <div ref={boxRef} />;
+  return <div ref={boxRef} aria-hidden />;
 };

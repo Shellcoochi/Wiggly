@@ -1,9 +1,7 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Binding, DataSource, DesignerNode, Variable } from "../types";
-import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 
@@ -86,28 +84,22 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
   const [localStyle, setLocalStyle] = useState<React.CSSProperties>({});
   const [localBindings, setLocalBindings] = useState<Record<string, Binding>>(
     {},
-  ); // 新增
-  const [hasChanges, setHasChanges] = useState(false);
+  );
 
-  // 修改：同步选中节点的数据，包括 bindings
   useEffect(() => {
     if (selectedNode) {
       setLocalProps(selectedNode.props || {});
       setLocalStyle(selectedNode.style || {});
-      setLocalBindings(selectedNode.bindings || {}); // 新增：同步 bindings
-      setHasChanges(false);
+      setLocalBindings(selectedNode.bindings || {});
     } else {
       setLocalProps({});
       setLocalStyle({});
-      setLocalBindings({}); // 新增：清空 bindings
-      setHasChanges(false);
+      setLocalBindings({});
     }
-  }, [selectedNode?.id]); // 修改：依赖项改为 selectedNode?.id
+  }, [selectedNode?.id]);
 
-  // 获取配置的属性列表
   const configProps = useMemo(() => asset?.configure?.props || [], [asset]);
 
-  // 在 PropertyPanel 组件中找到这个函数，替换为：
   const handlePropChange = useCallback(
     (key: string, value: any, binding?: Binding) => {
       if (!selectedNode) return;
@@ -115,25 +107,18 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
       const newProps = { ...localProps, [key]: value };
       setLocalProps(newProps);
 
-      // 更新 bindings
       let newBindings = { ...localBindings };
       if (binding && binding.type !== "static") {
-        // 关键修复：添加或更新绑定时，确保 binding.value 保存的是静态值
         const existingBinding = localBindings[key];
         newBindings[key] = {
           ...binding,
-          // 优先使用已存在的 binding.value（原始静态值）
-          // 如果没有，使用当前 props 值
           value: existingBinding?.value ?? localProps[key] ?? value,
         };
       } else {
-        // 移除绑定（切回静态值）
         delete newBindings[key];
       }
       setLocalBindings(newBindings);
-      setHasChanges(true);
 
-      // 实时更新到父组件
       onUpdate(selectedNode.id, {
         props: newProps,
         bindings: newBindings,
@@ -141,39 +126,17 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
     },
     [selectedNode, localProps, localBindings, onUpdate],
   );
-  // 处理样式变化
+
   const handleStyleChange = useCallback(
     (key: string, value: any) => {
+      if (!selectedNode) return;
       const newStyle = { ...localStyle, [key]: value };
       setLocalStyle(newStyle);
-      setHasChanges(true);
+      onUpdate(selectedNode.id, { style: newStyle });
     },
-    [localStyle],
+    [selectedNode, localStyle, onUpdate],
   );
 
-  // 修改：应用所有更改
-  const handleSave = useCallback(() => {
-    if (selectedNode) {
-      onUpdate(selectedNode.id, {
-        props: { ...localProps },
-        style: { ...localStyle },
-        bindings: { ...localBindings }, // 新增：保存 bindings
-      });
-      setHasChanges(false);
-    }
-  }, [selectedNode, localProps, localStyle, localBindings, onUpdate]); // 修改：添加 localBindings 依赖
-
-  // 修改：重置更改
-  const handleReset = useCallback(() => {
-    if (selectedNode) {
-      setLocalProps(selectedNode.props || {});
-      setLocalStyle(selectedNode.style || {});
-      setLocalBindings(selectedNode.bindings || {}); // 新增：重置 bindings
-      setHasChanges(false);
-    }
-  }, [selectedNode]);
-
-  // 空状态
   if (!selectedNode) {
     return (
       <div className="w-80 bg-white border-l border-gray-200 p-5 flex items-center justify-center text-gray-400">
@@ -200,7 +163,6 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
 
   return (
     <div className="w-80 bg-white border-l border-gray-200 flex flex-col h-full">
-      {/* 头部 */}
       <div className="p-5 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-800">属性设置</h3>
         <p className="text-xs text-gray-500 mt-1">
@@ -208,9 +170,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
         </p>
       </div>
 
-      {/* 内容区域 - 可滚动 */}
       <div className="flex-1 overflow-y-auto p-5 space-y-6">
-        {/* 基本信息 */}
         <section>
           <h4 className="text-sm font-medium mb-3 text-gray-700 flex items-center">
             <span className="w-1 h-4 bg-blue-500 rounded mr-2" />
@@ -237,7 +197,6 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           </div>
         </section>
 
-        {/* 组件属性 */}
         {configProps.length > 0 && (
           <section>
             <h4 className="text-sm font-medium mb-3 text-gray-700 flex items-center">
@@ -263,7 +222,6 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           </section>
         )}
 
-        {/* 样式设置 */}
         <section>
           <h4 className="text-sm font-medium mb-3 text-gray-700 flex items-center">
             <span className="w-1 h-4 bg-purple-500 rounded mr-2" />
@@ -310,7 +268,6 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           </div>
         </section>
 
-        {/* 预览 - 修改：显示 bindings */}
         <section>
           <h4 className="text-sm font-medium mb-3 text-gray-700 flex items-center">
             <span className="w-1 h-4 bg-orange-500 rounded mr-2" />
@@ -334,20 +291,6 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           </div>
         </section>
       </div>
-
-      {/* 底部操作栏 */}
-      {hasChanges && (
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex gap-2">
-            <Button onClick={handleSave} className="flex-1" size="sm">
-              应用更改
-            </Button>
-            <Button variant="outline" onClick={handleReset} size="sm">
-              重置
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
