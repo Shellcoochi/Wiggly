@@ -27,15 +27,15 @@ export function ComparisonOperatorLabel({
   return (
     <span
       className={clsx(
-        "text-xs text-gray-800 h-6",
+        "text-xs text-secondary-foreground h-6",
         "inline-flex items-center max-w-full overflow-hidden",
         "px-1 rounded-md",
-        "bg-gray-100",
+        "bg-secondary",
         className
       )}
     >
       <span className="font-medium truncate">{field}</span>
-      <span className="mx-1 text-primary shrink-0">{opLabel}</span>
+      <span className="mx-1 text-muted-foreground shrink-0">{opLabel}</span>
       {showValue && <span className="truncate">{value}</span>}
     </span>
   );

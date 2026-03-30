@@ -4,7 +4,7 @@ import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 import { FC, ReactNode, useState } from "react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
-import { IconArrowBarDown, IconArrowBarUp } from "@tabler/icons-react";
+import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 
 function CollapsibleRoot({
   ...props
@@ -39,6 +39,7 @@ interface CollapsibleProps {
   content: ReactNode;
   trigger?: ReactNode;
   className?: string;
+  defaultValue?: boolean;
 }
 
 const Collapsible: FC<CollapsibleProps> = ({
@@ -46,8 +47,9 @@ const Collapsible: FC<CollapsibleProps> = ({
   content,
   trigger,
   className,
+  defaultValue = false,
 }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultValue);
   return (
     <CollapsibleRoot
       className={cn(className)}
@@ -60,10 +62,10 @@ const Collapsible: FC<CollapsibleProps> = ({
           {trigger || (
             <Button
               variant="ghost"
-              size="icon-sm"
-              className="text-blue-500 hover:text-blue-700"
+              size="icon-xs"
+              className="text-primary hover:text-primary/90"
             >
-              {open ? <IconArrowBarUp /> : <IconArrowBarDown />}
+              {open ? <IconChevronDown /> : <IconChevronRight />}
             </Button>
           )}
         </CollapsibleTrigger>

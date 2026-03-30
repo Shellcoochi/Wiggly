@@ -13,10 +13,10 @@ function MentionComponent({
   const isSelected = useMentionSelection(nodeKey);
   return (
     <div
-      className={`flex  items-center rounded border px-1.5 py-px text-xs truncate select-none ${
+      className={`flex items-center rounded border px-1.5 py-px text-xs truncate select-none ${
         isSelected
-          ? "border-primary-active bg-blue-50 text-primary-active"
-          : "border-gray-300 bg-gray-100 text-primary hover:text-primary-active hover:border-primary-active"
+          ? "border-primary bg-accent text-accent-foreground"
+          : "bg-secondary"
       }`}
     >
       <span className="truncate">{name}</span>

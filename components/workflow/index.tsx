@@ -1,4 +1,6 @@
-import { useCallback, useState } from "react";
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
 import {
   ReactFlow,
   Controls,
@@ -10,6 +12,7 @@ import {
   ReactFlowProvider,
   Panel,
   useOnSelectionChange,
+  ColorMode,
 } from "@xyflow/react";
 import { NodeTypes } from "./nodes";
 import { EdgeTypes } from "./edges";
@@ -19,6 +22,8 @@ import { FlowNodeProps } from "./types";
 import Toolbar from "./toolbar";
 import { useAlignGuides } from "./hooks";
 import { Guideline } from "./components/guide-line";
+import { newId } from "./utils/flowHelper";
+import { useUi } from "@/store";
 
 const initialNodes = [
   {
@@ -31,18 +36,56 @@ const initialNodes = [
   {
     id: "2",
     type: "llm",
-    position: { x: 500, y: 100 },
+    position: { x: 400, y: 100 },
     width: 255,
     data: { label: "LLM" },
   },
+  {
+    id: "3",
+    type: "end",
+    position: { x: 700, y: 100 },
+    width: 255,
+    data: { label: "结束" },
+  },
+  {
+    id: "4",
+    type: "if-else",
+    position: { x: 400, y: 300 },
+    width: 255,
+    data: {
+      label: "条件",
+      cases: [
+        {
+          id: newId(),
+          type: "IF",
+          conditions: [],
+        },
+        {
+          id: newId(),
+          type: "ELIF",
+          conditions: [],
+        },
+      ],
+    },
+  },
 ];
-const initialEdges = [{ id: "e1-2", source: "1", target: "2", type: "base" }];
-
+const initialEdges = [
+  { id: "e1-1", source: "1", target: "2", type: "base" },
+  { id: "e1-2", source: "2", target: "3", type: "base" },
+  { id: "e1-3", source: "1", target: "4", type: "base" },
+];
+/** @todo 使用到的 Tag 替换成 Badge 组件*/
 function Flow() {
   const [currentNode, setCurrentNode] = useState<FlowNodeProps>();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const { guides, handleNodesChange } = useAlignGuides(onNodesChange);
+  const [colorMode, setColorMode] = useState<ColorMode>("light");
+  const localTheme = useUi.use.theme();
+
+  useEffect(() => {
+    setColorMode(localTheme.mode as ColorMode);
+  }, [localTheme]);
 
   const onConnect = useCallback(
     (params: any) =>
@@ -58,13 +101,13 @@ function Flow() {
   useOnSelectionChange({
     onChange,
   });
-
   return (
     <div className="h-full relative">
       <ReactFlow
         proOptions={{ hideAttribution: true }}
         nodes={nodes}
         edges={edges}
+        colorMode={colorMode}
         nodeTypes={NodeTypes}
         edgeTypes={EdgeTypes}
         onNodesChange={handleNodesChange}

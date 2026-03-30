@@ -90,9 +90,9 @@ const StartPanel: FC<PanelProps> = ({ node }) => {
               trigger={
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon-xs"
                   onClick={startAdding}
-                  className="text-blue-500 hover:text-blue-700"
+                  className="text-primary hover:text-primary/90"
                 >
                   <IconPlus />
                 </Button>
@@ -107,20 +107,20 @@ const StartPanel: FC<PanelProps> = ({ node }) => {
               {variables?.map((variable) => (
                 <div
                   key={variable.id}
-                  className="flex w-full items-center justify-between p-2 bg-gray-50 rounded"
+                  className="flex w-full items-center justify-between p-2 bg-popover rounded"
                 >
                   <div className="flex-1 min-w-0 break-all overflow-hidden">
                     <Collapsible
                       content={
-                        <div className="flex flex-col gap-1 text-sm text-gray-600 min-w-0 break-all">
+                        <div className="flex p-2 flex-col gap-2 text-xs  min-w-0 break-all">
                           {variable.desrc && (
                             <div className="whitespace-pre-wrap break-all min-w-0">
-                              描述：<div>{variable.desrc}</div>
+                              描述：<div className="px-2 text-muted-foreground">{variable.desrc}</div>
                             </div>
                           )}
                           <div className="min-w-0">
                             默认值：
-                            <pre className="rounded px-2 py-1 overflow-auto break-all whitespace-pre-wrap max-w-full">
+                            <pre className="rounded px-2 py-1 text-muted-foreground overflow-auto break-all whitespace-pre-wrap max-w-full">
                               {typeof variable.defaultValue === "object"
                                 ? JSON.stringify(variable.defaultValue, null, 2)
                                 : String(variable.defaultValue)}
@@ -139,18 +139,18 @@ const StartPanel: FC<PanelProps> = ({ node }) => {
                   <div className="flex gap-1 ml-1 items-start h-full shrink-0">
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon-xs"
                       onClick={() => startEditing(variable)}
-                      className="text-blue-500 hover:text-blue-700"
+                      className="text-primary hover:text-primary/90"
                     >
                       <IconEdit />
                     </Button>
 
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon-xs"
                       onClick={() => removeVariable(variable.id)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-destructive hover:text-destructive/90"
                     >
                       <IconTrash />
                     </Button>

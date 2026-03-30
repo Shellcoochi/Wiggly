@@ -146,13 +146,13 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
     return (
       <Dialog {...restProps}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent>
+        <DialogContent className="bg-popover">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm text-popover-foreground">
                 变量名称
               </label>
               <Input
@@ -162,7 +162,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
               />
             </div>
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm text-popover-foreground">
                 变量描述
               </label>
               <Input
@@ -172,7 +172,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
               />
             </div>
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm text-popover-foreground">
                 变量类型
               </label>
               <Select
@@ -194,7 +194,7 @@ export const AddVariableDialog: FC<AddVariableDialogProps> = memo(
               </Select>
             </div>
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-700">
+              <label className="block mb-1 text-sm text-popover-foreground">
                 默认值
               </label>
               {renderDefaultValueInput()}

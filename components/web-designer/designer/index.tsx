@@ -1,0 +1,1131 @@
+"use client";
+
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { toast } from "sonner";
+import { Button } from "../../ui/button";
+import {
+  DesignerNode,
+  DropResult,
+  NodePositon,
+  PageSchema,
+  Variable,
+  Positon,
+  ViewMode,
+} from "../types";
+import PropertyPanel from "../property-panel";
+import materials from "../material";
+import { findNode, generateNodeId } from "../utils/tools";
+import { NodeSelector } from "../node-selector";
+import { NodeItem } from "./node-item";
+import { PositionIndicator } from "../position-indicator";
+import DesignerSidebar from "../sidebar-panel";
+import DesignerHeader from "./designer-header";
+import { initialPageSchema } from "./initial-schema";
+import {
+  IconClipboard,
+  IconCopy,
+  IconCut,
+  IconTrash,
+  IconArrowLeft,
+} from "@tabler/icons-react";
+import { useHistory } from "../hooks/use-history";
+import { useClipboard } from "../hooks/use-clipboard";
+import { Renderer } from "../renderer";
+
+const { assets, snippets, categories } = materials;
+
+const findAsset = (componentName: string) => {
+  return assets.find((asset: any) => asset.componentName === componentName);
+};
+
+/** 主组件 **/
+export default function Designer() {
+  // ✅ 使用 useHistory 管理 Schema
+  const history = useHistory<PageSchema>(initialPageSchema);
+  const schema = history.state;
+  const setSchema = history.set;
+  const [maintainAspectRatio, setMaintainAspectRatio] = useState(false);
+
+  // UI 状态
+  const [selectedNode, setSelectedNode] = useState<DesignerNode | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [dropInfo, setDropInfo] = useState<DropResult | null>(null);
+  const [outlineDropInfo, setOutlineDropInfo] = useState<{
+    nodeId: string;
+    position: Positon;
+  } | null>(null);
+
+  const [viewMode, setViewMode] = useState<ViewMode>("design");
+  const [zoom, setZoom] = useState(100);
+
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  // ✅ 从 schema 中解构
+  const items = schema.components;
+  const variables = schema.variables;
+  const dataSources = schema.dataSources;
+
+  // 变量运行时值
+  const [variableValues, setVariableValues] = useState<Record<string, any>>(
+    () => {
+      const values: Record<string, any> = {};
+      schema.variables.forEach((v) => {
+        values[v.name] = v.defaultValue;
+      });
+      return values;
+    }
+  );
+
+  // 数据源运行时值
+  const [dataSourceValues] = useState<Record<string, any>>(
+    () => {
+      const values: Record<string, any> = {};
+      schema.dataSources.forEach((ds) => {
+        values[ds.id] = ds.config.data || null;
+      });
+      return values;
+    }
+  );
+
+  const clipboard = useClipboard();
+
+  // 创建绑定上下文
+  const bindingContext = useMemo(
+    () => ({
+      variables: variableValues,
+      dataSources: dataSourceValues,
+    }),
+    [variableValues, dataSourceValues]
+  );
+
+  // ============================================
+  // Schema 更新方法
+  // ============================================
+
+  const setItems = useCallback(
+    (
+      newItemsOrUpdater:
+        | DesignerNode[]
+        | ((prev: DesignerNode[]) => DesignerNode[])
+    ) => {
+      setSchema((prev) => {
+        const newComponents =
+          typeof newItemsOrUpdater === "function"
+            ? newItemsOrUpdater(prev.components)
+            : newItemsOrUpdater;
+
+        return {
+          ...prev,
+          components: newComponents,
+          meta: {
+            ...prev.meta,
+            updatedAt: new Date().toISOString(),
+          },
+        };
+      });
+    },
+    [setSchema]
+  );
+
+  const setVariables = useCallback(
+    (newVariables: Variable[]) => {
+      setSchema((prev) => ({
+        ...prev,
+        variables: newVariables,
+        meta: {
+          ...prev.meta,
+          updatedAt: new Date().toISOString(),
+        },
+      }));
+    },
+    [setSchema]
+  );
+
+  // TODO: 数据源更新函数 - 在将来实现数据源编辑功能时使用
+  // const setDataSources = useCallback(
+  //   (newDataSources: DataSource[]) => {
+  //     setSchema((prev) => ({
+  //       ...prev,
+  //       dataSources: newDataSources,
+  //       meta: {
+  //         ...prev.meta,
+  //         updatedAt: new Date().toISOString(),
+  //       },
+  //     }));
+  //   },
+  //   [setSchema]
+  // );
+
+  const removeItem = useCallback(
+    (id: string, tree: DesignerNode[]): DesignerNode[] => {
+      const removeRecursive = (
+        id: string,
+        tree: DesignerNode[]
+      ): DesignerNode[] => {
+        return tree.filter((item) => {
+          if (item.id === id) {
+            if (selectedNode?.id === id) {
+              setSelectedNode(null);
+            }
+            return false;
+          }
+          if (item.isContainer && item.children) {
+            item.children = removeRecursive(id, item.children);
+          }
+          return true;
+        });
+      };
+      return removeRecursive(id, tree);
+    },
+    [selectedNode]
+  );
+
+  const deleteNode = useCallback(
+    (nodeId: string) => {
+      setItems(removeItem(nodeId, items));
+      toast.success("删除成功");
+    },
+    [items, removeItem, setItems]
+  );
+
+  // ============================================
+  // 画布交互监听
+  // ============================================
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const nodeId = el
+        ?.closest?.("[data-node-id]")
+        ?.getAttribute("data-node-id");
+      setHoveredNodeId(nodeId || null);
+    };
+
+    const handleClickCapture = (e: MouseEvent) => {
+      const el = e.target as HTMLElement;
+      const nodeEl = el.closest?.("[data-node-id]");
+      const id = nodeEl?.getAttribute("data-node-id");
+
+      if (id) {
+        const node = findNode(id, items);
+        setSelectedNode(node || null);
+      } else {
+        setSelectedNode(null);
+      }
+    };
+
+    canvas.addEventListener("mousemove", handleMouseMove, { capture: true });
+    canvas.addEventListener("click", handleClickCapture, { capture: true });
+
+    return () => {
+      canvas.removeEventListener("mousemove", handleMouseMove, {
+        capture: true,
+      });
+      canvas.removeEventListener("click", handleClickCapture, {
+        capture: true,
+      });
+    };
+  }, [items, viewMode]);
+
+  const asset = useMemo(() => {
+    if (selectedNode) {
+      return findAsset(selectedNode.componentName);
+    } else {
+      return null;
+    }
+  }, [selectedNode]);
+
+  // ============================================
+  // 节点操作辅助方法
+  // ============================================
+
+  const findItem = useCallback(
+    function findItemRecursive(
+      id: string,
+      tree: DesignerNode[] = items
+    ): DesignerNode | undefined {
+      for (const item of tree) {
+        if (item.id === id) return item;
+        if (item.isContainer && item.children) {
+          const found = findItemRecursive(id, item.children);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    },
+    [items]
+  );
+
+  const insertItem = useCallback(
+    (
+      item: DesignerNode,
+      targetId: string,
+      position: NodePositon,
+      tree: DesignerNode[]
+    ): DesignerNode[] => {
+      return tree.flatMap((node) => {
+        if (node.id === targetId) {
+          if (position === "inside") {
+            if (!node.isContainer) {
+              toast.warning(`元素 ${targetId} 不是容器,不能包含子元素`);
+              return [node];
+            }
+            return [
+              {
+                ...node,
+                children: [item, ...(node.children ?? [])],
+              },
+            ];
+          } else if (position === "before") {
+            return [item, node];
+          } else {
+            return [node, item];
+          }
+        }
+
+        if (node.isContainer && node.children) {
+          return [
+            {
+              ...node,
+              children: insertItem(item, targetId, position, node.children),
+            },
+          ];
+        }
+
+        return [node];
+      });
+    },
+    []
+  );
+
+  // ============================================
+  // 拖拽处理
+  // ============================================
+
+  const handleDrop = useCallback(
+    (dragId: string, result: DropResult, source: "panel" | "tree" = "tree") => {
+      const dropId = result.id;
+      let position: NodePositon = "inside";
+      if (result.position === "left" || result.position === "top") {
+        position = "before";
+      }
+      if (result.position === "right" || result.position === "bottom") {
+        position = "after";
+      }
+      if (result.position === "inside") {
+        position = "inside";
+      }
+
+      if (source === "tree" && dragId === dropId) {
+        return;
+      }
+
+      let draggedItem: DesignerNode;
+
+      if (source === "panel") {
+        const template = snippets.find((t: { id: string }) => t.id === dragId);
+        if (!template) {
+          toast.warning(`找不到组件模板: ${dragId}`);
+          return;
+        }
+
+        const asset = findAsset(template.schema.componentName);
+        draggedItem = {
+          id: generateNodeId(),
+          title: template.title,
+          componentName: template.schema.componentName,
+          isContainer: asset.configure?.component?.isContainer,
+          props: { ...template.schema.props },
+          style: { ...template.schema.style },
+          children: asset.configure?.component?.isContainer ? [] : undefined,
+        };
+      } else {
+        draggedItem = findItem(dragId)!;
+        if (!draggedItem) {
+          toast.warning(`找不到拖拽的元素: ${dragId}`);
+          return;
+        }
+      }
+
+      const dropItem = findItem(dropId);
+      if (!dropItem) {
+        toast.warning(`找不到目标元素: ${dropId}`);
+        return;
+      }
+
+      if (source === "tree") {
+        const isDescendant = (parentId: string, childId: string): boolean => {
+          const item = findItem(parentId);
+          if (!item) return false;
+          if (item.children?.some((child) => child.id === childId)) return true;
+          return !!item.children?.some((child) =>
+            isDescendant(child.id, childId)
+          );
+        };
+
+        if (position === "inside" && isDescendant(dragId, dropId)) {
+          toast.warning(`不能将父节点拖拽到子节点中`);
+          return;
+        }
+      }
+
+      if (position === "inside" && !dropItem.isContainer) {
+        toast.warning(`元素 ${dropId} 不是容器,不能包含子元素`);
+        return;
+      }
+
+      setItems((prevItems) => {
+        let newItems = prevItems;
+
+        if (source === "tree") {
+          newItems = removeItem(dragId, prevItems);
+        }
+
+        return insertItem(draggedItem, dropId, position, newItems);
+      });
+
+      setSelectedNode(draggedItem);
+      setDropInfo(null);
+    },
+    [findItem, removeItem, insertItem, setItems]
+  );
+
+  const handleOutlineMove = useCallback(
+    (
+      dragId: string,
+      targetId: string,
+      position: "before" | "after" | "inside"
+    ) => {
+      const draggedItem = findItem(dragId);
+      if (!draggedItem) {
+        toast.warning(`找不到拖拽的元素: ${dragId}`);
+        return;
+      }
+
+      const targetItem = findItem(targetId);
+      if (!targetItem) {
+        toast.warning(`找不到目标元素: ${targetId}`);
+        return;
+      }
+
+      const isDescendant = (parentId: string, childId: string): boolean => {
+        const item = findItem(parentId);
+        if (!item) return false;
+        if (item.children?.some((child) => child.id === childId)) return true;
+        return !!item.children?.some((child) =>
+          isDescendant(child.id, childId)
+        );
+      };
+
+      if (position === "inside" && isDescendant(dragId, targetId)) {
+        toast.warning(`不能将父节点拖拽到子节点中`);
+        return;
+      }
+
+      if (position === "inside" && !targetItem.isContainer) {
+        toast.warning(`元素 ${targetId} 不是容器,不能包含子元素`);
+        return;
+      }
+
+      setItems((prevItems) => {
+        const newItems = removeItem(dragId, prevItems);
+        return insertItem(draggedItem, targetId, position, newItems);
+      });
+
+      toast.success("移动成功");
+    },
+    [findItem, removeItem, insertItem, setItems]
+  );
+
+  const handleOutlineHover = useCallback(
+    (
+      dragId: string,
+      targetId: string,
+      position: "before" | "after" | "inside"
+    ) => {
+      let canvasPosition: "left" | "right" | "top" | "bottom" | "inside" =
+        "inside";
+      if (position === "before") {
+        canvasPosition = "top";
+      } else if (position === "after") {
+        canvasPosition = "bottom";
+      } else {
+        canvasPosition = "inside";
+      }
+
+      setOutlineDropInfo({
+        nodeId: targetId,
+        position: canvasPosition as any,
+      });
+    },
+    []
+  );
+
+  const handleOutlineHoverEnd = useCallback(() => {
+    setOutlineDropInfo(null);
+  }, []);
+
+  const moveItem = useCallback(
+    (dragId: string, hoverId: string, dropResult: DropResult) => {
+      setDropInfo(dropResult);
+    },
+    []
+  );
+
+  // ============================================
+  // 节点更新和删除
+  // ============================================
+
+  const updateNode = useCallback(
+    (nodeId: string, updates: Partial<DesignerNode>) => {
+      const updateNodeInTree = (tree: DesignerNode[]): DesignerNode[] => {
+        return tree.map((item) => {
+          if (item.id === nodeId) {
+            const updated = { ...item, ...updates };
+            if (selectedNode?.id === nodeId) {
+              setSelectedNode(updated);
+            }
+            return updated;
+          }
+          if (item.isContainer && item.children) {
+            return {
+              ...item,
+              children: updateNodeInTree(item.children),
+            };
+          }
+          return item;
+        });
+      };
+
+      setItems(updateNodeInTree(items));
+    },
+    [items, selectedNode?.id, setItems]
+  );
+
+  // 调整大小功能
+  // ============================================
+
+   const handleSmartResize = useCallback((
+    nodeId: string, 
+    updates: {
+      width?: string;
+      height?: string;
+      marginLeft?: string;
+      marginRight?: string;
+      marginTop?: string;
+      marginBottom?: string;
+      flexGrow?: number;
+    }
+  ) => {
+    const node = findItem(nodeId);
+    if (!node) return;
+
+    const newStyle = { ...node.style };
+    
+    // 应用所有更新
+    if (updates.width) newStyle.width = updates.width;
+    if (updates.height) newStyle.height = updates.height;
+    if (updates.marginLeft) newStyle.marginLeft = updates.marginLeft;
+    if (updates.marginRight) newStyle.marginRight = updates.marginRight;
+    if (updates.marginTop) newStyle.marginTop = updates.marginTop;
+    if (updates.marginBottom) newStyle.marginBottom = updates.marginBottom;
+    if (updates.flexGrow !== undefined) newStyle.flexGrow = updates.flexGrow;
+
+    updateNode(nodeId, { style: newStyle });
+
+    console.log('智能调整:', {
+      nodeId,
+      updates,
+      newStyle
+    });
+  }, [findItem, updateNode]);
+
+  // 防抖版本的调整大小(可选,用于优化性能)
+  // const debouncedResize = useMemo(
+  //   () =>
+  //     debounce((nodeId: string, width: number, height: number) => {
+  //       handleResize(nodeId, width, height);
+  //     }, 100),
+  //   [handleResize]
+  // );
+
+  // ============================================
+  // 智能滚动
+  // ============================================
+
+  const scrollCanvasToNode = useCallback((nodeId: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const nodeEl = canvas.querySelector<HTMLElement>(
+      `[data-node-id="${nodeId}"]`
+    );
+    if (!nodeEl) return;
+
+    const canvasRect = canvas.getBoundingClientRect();
+    const nodeRect = nodeEl.getBoundingClientRect();
+
+    const relativeTop = nodeRect.top - canvasRect.top + canvas.scrollTop;
+    const relativeBottom = relativeTop + nodeRect.height;
+
+    const isAboveView = relativeTop < canvas.scrollTop;
+    const isBelowView = relativeBottom > canvas.scrollTop + canvas.clientHeight;
+
+    if (isAboveView) {
+      canvas.scrollTo({
+        top: relativeTop - 100,
+        behavior: "smooth",
+      });
+    } else if (isBelowView) {
+      canvas.scrollTo({
+        top: relativeBottom - canvas.clientHeight + 100,
+        behavior: "smooth",
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedNode?.id) {
+      setTimeout(() => {
+        scrollCanvasToNode(selectedNode.id);
+      }, 100);
+    }
+  }, [selectedNode?.id, scrollCanvasToNode]);
+
+  useEffect(() => {
+    if (outlineDropInfo?.nodeId) {
+      scrollCanvasToNode(outlineDropInfo.nodeId);
+    }
+  }, [outlineDropInfo?.nodeId, scrollCanvasToNode]);
+
+  const canvasDropInfoForOutline = useMemo(() => {
+    if (!dropInfo) return null;
+
+    let position: "before" | "after" | "inside" = "inside";
+
+    if (dropInfo.position === "left" || dropInfo.position === "top") {
+      position = "before";
+    } else if (
+      dropInfo.position === "right" ||
+      dropInfo.position === "bottom"
+    ) {
+      position = "after";
+    } else if (dropInfo.position === "inside") {
+      position = "inside";
+    }
+
+    return {
+      nodeId: dropInfo.id,
+      position,
+    };
+  }, [dropInfo]);
+
+  // ============================================
+  // 保存/导出/导入
+  // ============================================
+
+  const handleSave = useCallback(() => {
+    const updatedSchema = {
+      ...schema,
+      meta: {
+        ...schema.meta,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+
+    localStorage.setItem("page-schema", JSON.stringify(updatedSchema));
+
+    console.log("保存的 Schema:", updatedSchema);
+    toast.success("保存成功");
+  }, [schema]);
+
+  const handlePublish = useCallback(() => {
+    console.log("发布 Schema:", schema);
+    toast.success("发布成功");
+  }, [schema]);
+
+  const handleShare = useCallback(() => {
+    const json = JSON.stringify(schema, null, 2);
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(json).then(() => {
+        toast.success("Schema 已复制到剪贴板");
+      });
+    } else {
+      console.log("分享 Schema:", json);
+      toast.success("Schema 已输出到控制台");
+    }
+  }, [schema]);
+
+  const handleCopy = useCallback(() => {
+    if (!selectedNode || selectedNode.id === "root") {
+      toast.warning("请先选择要复制的组件");
+      return;
+    }
+    clipboard.copy([selectedNode]);
+    toast.success("已复制");
+  }, [selectedNode, clipboard]);
+
+  // 剪切
+  const handleCut = useCallback(() => {
+    if (!selectedNode || selectedNode.id === "root") {
+      toast.warning("请先选择要剪切的组件");
+      return;
+    }
+    clipboard.cut([selectedNode]);
+    toast.success("已剪切");
+  }, [selectedNode, clipboard]);
+
+  // 粘贴
+  const handlePaste = useCallback(() => {
+    if (!clipboard.hasClipboard) {
+      toast.warning("剪贴板为空");
+      return;
+    }
+
+    const result = clipboard.paste();
+    if (!result) return;
+
+    const targetId = selectedNode?.id || "root";
+
+    setItems((prevItems) => {
+      let newItems = prevItems;
+
+      // 如果是剪切,先删除原节点
+      if (result.operation === "cut") {
+        result.sourceIds.forEach((id) => {
+          newItems = removeItem(id, newItems);
+        });
+      }
+
+      // 插入新节点
+      const targetNode = findItem(targetId, newItems);
+      result.nodes.forEach((node) => {
+        if (targetNode?.isContainer) {
+          newItems = insertItem(node, targetId, "inside", newItems);
+        } else {
+          newItems = insertItem(node, targetId, "after", newItems);
+        }
+      });
+
+      return newItems;
+    });
+
+    if (result.operation === "cut") {
+      clipboard.clear();
+    }
+
+    toast.success(`已粘贴 ${result.nodes.length} 个组件`);
+  }, [clipboard, selectedNode, findItem, setItems, removeItem, insertItem]);
+
+  // ============================================
+  // 快捷键支持
+  // ============================================
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 检查是否在输入框中
+      const target = e.target as HTMLElement;
+      const isInput =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+
+      if (isInput) return;
+
+      // Ctrl+Z / Cmd+Z - 撤销
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (history.canUndo) {
+          history.undo();
+          toast.success("撤销成功");
+        }
+      }
+
+      // Ctrl+Shift+Z / Cmd+Shift+Z - 重做
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) {
+        e.preventDefault();
+        if (history.canRedo) {
+          history.redo();
+          toast.success("重做成功");
+        }
+      }
+
+      // Ctrl+Y / Cmd+Y - 重做(备选)
+      if ((e.ctrlKey || e.metaKey) && e.key === "y") {
+        e.preventDefault();
+        if (history.canRedo) {
+          history.redo();
+          toast.success("重做成功");
+        }
+      }
+
+      // Delete - 删除选中元素
+      if (e.key === "Delete" && selectedNode && selectedNode.id !== "root") {
+        e.preventDefault();
+        deleteNode(selectedNode.id);
+      }
+
+      // Escape - 取消选中
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setSelectedNode(null);
+      }
+
+      // Ctrl+C - 复制
+      if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+        e.preventDefault();
+        handleCopy();
+      }
+
+      // Ctrl+X - 剪切
+      if ((e.ctrlKey || e.metaKey) && e.key === "x") {
+        e.preventDefault();
+        handleCut();
+      }
+
+      // Ctrl+V - 粘贴
+      if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+        e.preventDefault();
+        handlePaste();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deleteNode, handleCopy, handleCut, handlePaste, history, selectedNode]);
+
+  // ============================================
+  // 预览模式 UI
+  // ============================================
+
+  if (viewMode === "preview") {
+    return (
+      <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+        {/* 简化的顶部栏 */}
+        <div className="h-11 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center gap-4 z-10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode("design")}
+            className="gap-2"
+          >
+            <IconArrowLeft className="w-4 h-4" />
+            返回编辑
+          </Button>
+          <div className="h-5 w-px bg-border" />
+          <span className="text-sm font-semibold">预览模式</span>
+          <div className="flex-1" />
+          <span className="text-xs text-muted-foreground">
+            {schema.meta.name}
+          </span>
+        </div>
+
+        {/* 预览内容区域 */}
+        <div className="flex-1 overflow-auto p-8 bg-muted/20">
+          <div className="mx-auto bg-card rounded-lg shadow-xl p-8 min-h-full max-w-6xl">
+            <Renderer
+              schema={items}
+              preview={true}
+              variables={variableValues}
+              dataSources={dataSourceValues}
+              onError={(error, node) => {
+                console.error(`[Preview] Error in ${node.componentName}:`, error);
+                toast.error(`预览错误: ${node.componentName}`);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // 代码模式 UI
+  // ============================================
+
+  if (viewMode === "code") {
+    return (
+      <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+        {/* 简化的顶部栏 */}
+        <div className="h-11 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center gap-4 z-10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode("design")}
+            className="gap-2"
+          >
+            <IconArrowLeft className="w-4 h-4" />
+            返回编辑
+          </Button>
+          <div className="h-5 w-px bg-border" />
+          <span className="text-sm font-semibold">代码模式</span>
+          <div className="flex-1" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const json = JSON.stringify(schema, null, 2);
+              navigator.clipboard.writeText(json).then(() => {
+                toast.success("Schema 已复制到剪贴板");
+              });
+            }}
+          >
+            复制 Schema
+          </Button>
+        </div>
+
+        {/* 代码展示区域 */}
+        <div className="flex-1 overflow-auto p-8 bg-muted/20">
+          <pre className="bg-card text-sm font-mono p-6 rounded-lg border max-w-6xl mx-auto">
+            <code>{JSON.stringify(schema, null, 2)}</code>
+          </pre>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+        {/* 顶部导航栏 */}
+        <DesignerHeader
+          projectName={schema.meta.name}
+          pageName={schema.meta.name}
+          canUndo={history.canUndo}
+          canRedo={history.canRedo}
+          onUndo={() => {
+            history.undo();
+            toast.success("撤销成功");
+          }}
+          onRedo={() => {
+            history.redo();
+            toast.success("重做成功");
+          }}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          zoom={zoom}
+          onZoomChange={setZoom}
+          onSave={handleSave}
+          onPublish={handlePublish}
+          onShare={handleShare}
+          onPageChange={(id) => console.log("切换页面:", id)}
+          onCreatePage={() => console.log("新建页面")}
+          onSettings={() => console.log("设置")}
+          onLogout={() => console.log("退出登录")}
+        />
+
+        <div className="flex-1 flex overflow-hidden">
+          {/* 左侧:组件/资源面板 */}
+          <div className="w-72 border-r bg-card shrink-0 z-10 shadow-sm border-border">
+            <DesignerSidebar
+              templates={categories}
+              variables={variables}
+              variableValues={variableValues}
+              onVariablesChange={setVariables}
+              onVariableValuesChange={setVariableValues}
+              items={items}
+              selectedNodeId={selectedNode?.id || null}
+              onSelectNode={setSelectedNode}
+              onMoveNode={handleOutlineMove}
+              onHoverNode={handleOutlineHover}
+              onHoverEndNode={handleOutlineHoverEnd}
+              canvasDropInfo={canvasDropInfoForOutline}
+            />
+          </div>
+
+          {/* 中间:主工作区 */}
+          <main className="flex-1 relative bg-background flex flex-col overflow-hidden">
+            {/* 工具栏 */}
+            <div className="h-10 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center justify-between z-10">
+              <div className="h-10 border-b bg-background/80 backdrop-blur-sm px-4 flex items-center justify-between z-10">
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-px bg-border mx-2" />
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={maintainAspectRatio}
+                      onChange={(e) => setMaintainAspectRatio(e.target.checked)}
+                      className="w-3 h-3"
+                    />
+                    保持宽高比
+                  </label>
+                  {/* 复制按钮 */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopy}
+                    disabled={!selectedNode || selectedNode.id === "root"}
+                    title="复制 (Ctrl+C)"
+                  >
+                    <IconCopy className="w-4 h-4 mr-1" />
+                    复制
+                  </Button>
+
+                  {/* 剪切按钮 */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCut}
+                    disabled={!selectedNode || selectedNode.id === "root"}
+                    title="剪切 (Ctrl+X)"
+                  >
+                    <IconCut className="w-4 h-4 mr-1" />
+                    剪切
+                  </Button>
+
+                  {/* 粘贴按钮 */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePaste}
+                    disabled={!clipboard.hasClipboard}
+                    title="粘贴 (Ctrl+V)"
+                  >
+                    <IconClipboard className="w-4 h-4 mr-1" />
+                    粘贴
+                    {clipboard.hasClipboard && (
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        ({clipboard.clipboard?.nodes.length})
+                      </span>
+                    )}
+                  </Button>
+
+                  <div className="h-4 w-px bg-border mx-2" />
+
+                  {/* 删除按钮 */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10"
+                    onClick={() => selectedNode && deleteNode(selectedNode.id)}
+                    disabled={!selectedNode || selectedNode.id === "root"}
+                    title="删除 (Delete)"
+                  >
+                    <IconTrash className="w-4 h-4 mr-1" />
+                    删除
+                  </Button>
+
+                  <div className="h-4 w-px bg-border mx-2" />
+
+                  <span className="text-xs text-muted-foreground">
+                    {selectedNode
+                      ? `选中: ${selectedNode.title}`
+                      : "未选中组件"}
+                  </span>
+                </div>
+
+                {/* 剪贴板状态提示 */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {clipboard.hasClipboard && (
+                    <span className="px-2 py-1 rounded bg-accent">
+                      {clipboard.isCut ? "已剪切" : "已复制"}:{" "}
+                      {clipboard.clipboard?.nodes.length} 个组件
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 历史记录状态提示 */}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  {history.canUndo ? "可撤销" : ""}
+                  {history.canUndo && history.canRedo ? " | " : ""}
+                  {history.canRedo ? "可重做" : ""}
+                </span>
+              </div>
+            </div>
+
+            {/* 画布滚动区域 */}
+            <div
+              ref={canvasRef}
+              className="flex-1 overflow-auto p-12 custom-scrollbar relative scroll-smooth"
+              style={{
+                backgroundImage:
+                  "radial-gradient(#e5e7eb 1px, transparent 1px)",
+                backgroundSize: "24px 24px",
+              }}
+            >
+              {/* 模拟页面纸张感 */}
+              <div
+                className="mx-auto bg-card shadow-2xl ring-1 ring-black/5 min-h-full transition-all duration-300 origin-top"
+                style={{
+                  transform: `scale(${zoom / 100})`,
+                }}
+              >
+                {items.map((item, index) => (
+                  <NodeItem
+                    key={item.id}
+                    item={item}
+                    depth={0}
+                    index={index}
+                    parentId={null}
+                    selectedNodeId={selectedNode?.id || null}
+                    onSelect={setSelectedNode}
+                    onDrop={handleDrop}
+                    findItem={findItem}
+                    moveItem={moveItem}
+                    bindingContext={bindingContext}
+                  />
+                ))}
+
+                {/* 空白页提示 */}
+                {items[0]?.children?.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-40 text-muted-foreground border-2 border-dashed m-4 rounded-lg">
+                    <p>拖拽组件到此处开始构建</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Overlay 高亮层 */}
+              <div className="absolute inset-0 pointer-events-none">
+                {hoveredNodeId && hoveredNodeId !== selectedNode?.id && (
+                  <NodeSelector nodeId={hoveredNodeId} canvasRef={canvasRef} />
+                )}
+                {selectedNode && (
+                  <NodeSelector
+                    nodeId={selectedNode.id}
+                    canvasRef={canvasRef}
+                    zoom={zoom}
+                    isSelected
+                    onResize={handleSmartResize} 
+                  />
+                )}
+                {dropInfo?.id && (
+                  <PositionIndicator
+                    canvasRef={canvasRef}
+                    nodeId={dropInfo?.id}
+                    position={dropInfo.position}
+                  />
+                )}
+                {outlineDropInfo?.nodeId && (
+                  <PositionIndicator
+                    canvasRef={canvasRef}
+                    nodeId={outlineDropInfo.nodeId}
+                    position={outlineDropInfo.position}
+                  />
+                )}
+              </div>
+            </div>
+          </main>
+
+          {/* 右侧:属性面板 */}
+          <div className="w-80 border-l bg-card shrink-0 z-10 shadow-sm border-border">
+            <PropertyPanel
+              asset={asset}
+              selectedNode={selectedNode}
+              onUpdate={updateNode}
+              variables={variables}
+              dataSources={dataSources}
+            />
+          </div>
+        </div>
+      </div>
+    </DndProvider>
+  );
+}

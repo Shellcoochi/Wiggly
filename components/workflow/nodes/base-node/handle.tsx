@@ -7,18 +7,14 @@ import {
   useReactFlow,
   useNodes,
 } from "@xyflow/react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import Popover from "@/components/ui/popover";
 import Selector, { SectionItemProps } from "./selector";
 import {
   layoutNewNode,
   numericId,
 } from "@/components/workflow/utils/flowHelper";
 import { EdgeType, NodeConfig } from "@/components/workflow/const";
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 import { IconPlus } from "@tabler/icons-react";
 
 export interface HandleProps {
@@ -96,8 +92,10 @@ export default memo(function CustomHandle({
   };
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
+    <Popover
+      open={open}
+      onOpenChange={handleOpenChange}
+      trigger={
         <Handle
           id={id}
           type={type}
@@ -114,13 +112,15 @@ export default memo(function CustomHandle({
           isConnectable={isConnectable}
         >
           {hovered && isSource ? (
-            <IconPlus size="12" className="pointer-events-none text-primary-foreground"/>
+            <IconPlus
+              size="12"
+              className="pointer-events-none text-primary-foreground"
+            />
           ) : null}
         </Handle>
-      </PopoverTrigger>
-      <PopoverContent>
-        <Selector onChange={handleSelectorChange} />
-      </PopoverContent>
+      }
+    >
+      <Selector onChange={handleSelectorChange} />
     </Popover>
   );
 });

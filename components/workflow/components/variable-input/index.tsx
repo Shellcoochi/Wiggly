@@ -78,10 +78,10 @@ export const VariableInput = () => {
       <LexicalComposer initialConfig={initialConfig}>
         <RichTextPlugin
           contentEditable={
-            <ContentEditable className="min-h-25 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
+            <ContentEditable className="min-h-25 p-3 border border-border rounded-lg focus:ring-1 focus:ring-ring" />
           }
           placeholder={
-            <div className="absolute top-3 left-3 text-gray-400 pointer-events-none">
+            <div className="absolute top-3 left-3 text-muted-foreground pointer-events-none">
               输入@插入变量...
             </div>
           }
