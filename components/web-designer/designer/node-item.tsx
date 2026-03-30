@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useMemo } from "react";
-import { DesignerNode, DragItem, DropResult } from "../types";
+import { DesignerNode, DragItem, DropResult, Positon } from "../types";
 import { useDrag, useDrop } from "react-dnd";
 import type { DropTargetMonitor } from "react-dnd";
 import { findAsset } from "../utils/tools";
@@ -8,12 +8,11 @@ import { cn } from "@/lib/utils";
 
 // 常量定义
 const INDENT_SIZE = 20;
-// 移除未使用的 HOVER_THROTTLE_MS 常量
 
 // 工具函数：计算距离
 const getDistance = (
   element: Element,
-  point: { x: number; y: number },
+  point: { x: number; y: number }
 ): number => {
   const rect = element.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
@@ -25,7 +24,7 @@ const getDistance = (
 const getPosition = (
   element: Element,
   point: { x: number; y: number },
-  direction: "row" | "col",
+  direction: "row" | "col"
 ): "left" | "right" | "top" | "bottom" => {
   const rect = element.getBoundingClientRect();
   const { x, y } = point;
@@ -52,7 +51,7 @@ interface NodeItemProps {
     dragId: string,
     position: DropResult,
     source: "panel" | "tree",
-    nodeData?: DesignerNode,
+    nodeData?: DesignerNode
   ) => void;
   findItem: (id: string) => DesignerNode | undefined;
   moveItem: (dragId: string, hoverId: string, position: DropResult) => void;
@@ -136,7 +135,7 @@ export const NodeItem: React.FC<NodeItemProps> = ({
         dragItem.id,
         position,
         dragItem.source || "tree",
-        dragItem.nodeData,
+        dragItem.nodeData
       );
       return position;
     },
@@ -149,51 +148,82 @@ export const NodeItem: React.FC<NodeItemProps> = ({
   // 在组件内解析绑定
   const resolvedProps = useMemo(
     () => resolveNodeBindings(item, bindingContext),
-    [item, bindingContext],
+    [item, bindingContext]
   );
 
   // 计算放置位置
   const calculateDropPosition = useCallback(
     (clientOffset: { x: number; y: number }): DropResult => {
-      let result: DropResult = { id, position: "inside" };
+      // 一个“永远可执行”的兜底（不会产生非法语义）
+      const result: DropResult = {
+        id,
+        position: "inside",
+      };
 
-      if (!isContainer || !children || children.length === 0) {
+      const el = document.querySelector(
+        `[data-node-id="${id}"]`
+      ) as Element | null;
+
+      if (!el) {
         return result;
       }
 
-      const direction = (props?.direction as "row" | "col") || "row";
+      const layout = (props?.direction as "row" | "col") || "row";
 
-      // 找到最近的子元素
-      type ClosestChildType = {
-        id: string;
-        distance: number;
-        element: Element;
-      };
+      /** --------------------------------
+       * 1️⃣ 非容器 / 无子节点
+       * -------------------------------- */
+      if (!isContainer || !children || children.length === 0) {
+        const position = getPosition(el, clientOffset, layout);
 
-      let closestChild: ClosestChildType | undefined;
-
-      children.forEach((child) => {
-        const childEl = document.querySelector(`[data-node-id="${child.id}"]`);
-        if (!childEl) return;
-
-        const distance = getDistance(childEl, clientOffset);
-        if (closestChild === undefined || distance < closestChild.distance) {
-          closestChild = { id: child.id, distance, element: childEl };
-        }
-      });
-
-      if (closestChild !== undefined) {
-        const position = getPosition(
-          closestChild.element,
-          clientOffset,
-          direction,
-        );
-        result = { id: closestChild.id, position };
+        return {
+          id,
+          position,
+        };
       }
 
-      return result;
+      /** --------------------------------
+       * 2️⃣ 容器 + 有子节点
+       * -------------------------------- */
+      type ClosestChild = {
+        id: string;
+        element: Element;
+        distance: number;
+      };
+
+      let closest: ClosestChild | null = null;
+
+      for (const child of children) {
+        const childEl = document.querySelector(`[data-node-id="${child.id}"]`);
+        if (!childEl) continue;
+
+        const distance = getDistance(childEl, clientOffset);
+
+        if (!closest || distance < closest.distance) {
+          closest = {
+            id: child.id,
+            element: childEl,
+            distance,
+          };
+        }
+      }
+
+      // 理论兜底：真正的 inside（这里是合法的）
+      if (!closest) {
+        return {
+          id,
+          position: "inside",
+        };
+      }
+
+      const position = getPosition(closest.element, clientOffset, layout);
+
+      return {
+        id: closest.id,
+        position,
+      };
     },
-    [id, isContainer, children, props?.direction],
+    [id, isContainer, children, props?.direction]
   );
 
   // 合并 refs
@@ -204,7 +234,7 @@ export const NodeItem: React.FC<NodeItemProps> = ({
       drag(node);
       drop(node);
     },
-    [drag, drop],
+    [drag, drop]
   );
 
   // 容器样式
@@ -297,7 +327,7 @@ export const NodeItem: React.FC<NodeItemProps> = ({
           "transition-colors",
           isOver && dropPosition?.position === "inside"
             ? "bg-accent/50 border-primary text-foreground"
-            : "bg-muted/30 border-border",
+            : "bg-muted/30 border-border"
         )}
       >
         {isOver && dropPosition?.position === "inside"
